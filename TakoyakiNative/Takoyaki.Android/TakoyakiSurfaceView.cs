@@ -467,5 +467,10 @@ namespace Takoyaki.Android
             
             // Actually, I'll rewrite the class to include _meshData field.
         }
+
+        public void Reset()
+        {
+            if (_stateMachine != null) _stateMachine.Reset();
+        }
     }
 }

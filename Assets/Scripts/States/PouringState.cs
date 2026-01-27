@@ -1,4 +1,6 @@
 using UnityEngine;
+using TakoyakiPhysics.Feedback;
+using TakoyakiPhysics;
 
 namespace TakoyakiPhysics.States
 {

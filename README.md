@@ -9,7 +9,8 @@ This project is designed with a "Code-First" approach. Most of the logic is deco
 We have included a custom Editor Tool to set up the scene for you.
 1. In Unity, go to the Top Menu bar.
 2. Click **Takoyaki > Setup > Create Game Scene**.
-3. This will create the Main Camera, Lights, Managers, UI, and the Takoyaki player object with all necessary scripts attached.
+3. This will create the Main Camera, Lights, Managers, UI, and the Takoyaki player object.
+    *   **Note**: It also generates and assigns **Procedural Textures** (Noise, Batter, Cooked) so you can see the shader effects immediately without importing external assets.
 
 ## Key Components
 

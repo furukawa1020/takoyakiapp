@@ -4,6 +4,8 @@ namespace TakoyakiPhysics.Visuals
 {
     public class ToppingVisuals : MonoBehaviour
     {
+        public bool HasOctopus { get; private set; } = false;
+        
         private GameObject _octopusLeg;
         private ParticleSystem _gingerFX;
         private ParticleSystem _aonoriFX;
@@ -32,10 +34,18 @@ namespace TakoyakiPhysics.Visuals
             r.material.color = new Color(0.8f, 0.1f, 0.1f); // Deep Red
             r.material.smoothness = 0.7f; // Wet look
             
-            // Initially visible (Simulation: Raw state already optionally has octopus)
-            // Or make hidden? Let's hide it for now. User needs to adding it? 
-            // For now, let's show it so user sees "It's not just a ball".
-            _octopusLeg.SetActive(true); 
+            // Initially hidden. Must be added by player.
+            _octopusLeg.SetActive(false); 
+        }
+
+        public void AddOctopus()
+        {
+            if (_octopusLeg != null)
+            {
+                _octopusLeg.SetActive(true);
+                HasOctopus = true;
+                // Add "Plop" effect here later
+            }
         }
 
         private void CreateGingerFX()

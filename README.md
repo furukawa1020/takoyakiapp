@@ -11,20 +11,18 @@ We have included a custom Editor Tool to set up the scene for you.
 
 ## Key Components
 
-### physics & Controls
+### Physics & Controls
 - **InputManager**: Handles Gyro and Accelerometer. Call `InputManager.Instance.Calibrate()` to center the gyro.
 - **TakoyakiController**: Main physics logic.
-- **SoftBodyJiggle**: Simulates the "gooey" internal physics using perlin noise vertex displacement.
+- **TakoyakiSoftBody**: **[NEW]** Mass-Spring-Damper system. Simulates inertia, gravity sag, and impact jitter on a per-vertex basis.
 
 ### Visuals (Shader)
 - **Material Setup**:
-    - Create a new Material (e.g., `Mat_Takoyaki`).
-    - Set Shader to `Takoyaki/TakoyakiSurface`.
-    - Assign Textures:
-        - `Raw Batter Texture`: Creamy white/yellow noise.
-        - `Cooked Texture`: Golden brown baked texture.
-        - `Burnt Texture`: Black/Dark brown charred texture.
-        - `Noise Map`: Any grayscale noise texture (for uneven cooking).
+    - Create a new Material.
+    - Set Shader to **`Takoyaki/TakoyakiCinematic`**.
+    - **SSS Settings**: Simulates the translucent batter look. High intensity = raw, Low = cooked.
+    - **Oil Settings**: Control the `Fresnel Power` and `Roughness` to get that perfect "wet glaze" look.
+    - **Displacement**: Uses the noise map to "puff up" the surface as it cooks.
 
 ### Game Loop
 - **GameManager**: Controls the state (Title -> Pouring -> Cooking -> Result).

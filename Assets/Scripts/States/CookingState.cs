@@ -16,23 +16,38 @@ namespace TakoyakiPhysics.States
 
         public override void UpdateState()
         {
-            // Simulate heat
-            Controller.CookLevel += Time.deltaTime * _cookingSpeed;
-
-            // Visual feedback (Log for now)
-            // In real impl, we would update shader properties here
+            float dt = Time.deltaTime;
             
+            // 1. Calculate Heat Direction
+            // Which part of the takoyaki is touching the bottom?
+            // "Down" in local space is the part touching the pan
+            Vector3 localDown = Controller.transform.InverseTransformDirection(Vector3.down);
+            
+            // For now, we simulate "Directional Cooking" by just updating the global cook level
+            // but effectively "weighting" it by how much the ball is stable.
+            // A rapidly spinning ball cooks evenly (slowly). A still ball cooks locally (fast).
+            
+            float stability = 1.0f - Mathf.Clamp01(Controller.Rb.angularVelocity.magnitude * 0.1f);
+            
+            // If stable, we cook faster (but locally - simplified to global multiplier here)
+            // In a full implementation, we would write into a Texture2D at UV coordinates mapped from localDown.
+            float effectiveHeat = _cookingSpeed * (0.5f + 0.5f * stability);
+
+            Controller.CookLevel += effectiveHeat * dt;
+
+            // Simulate "Reaction" to heat (sound/particles)
+            AudioManager.Instance.StartSizzle(Controller.CookLevel * 0.5f);
+
+            // Transition Logic (Placeholder input)
             if (Controller.CookLevel > 0.5f && Input.GetKeyDown(KeyCode.Space)) 
             {
-                // Placeholder for "Turning" input
-                // In reality, this would be a gesture detection
                 Controller.TransitionToState(new TurningState(Controller));
             }
 
-            if (Controller.CookLevel > 1.5f)
+            if (Controller.CookLevel > 1.8f) // Burnt threshold
             {
                 Debug.Log("Burnt!");
-                // Fail state or just burnt visual
+                AudioManager.Instance.StopSizzle();
             }
         }
     }

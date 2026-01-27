@@ -62,6 +62,7 @@ public class SceneSetupWizard : EditorWindow
         // Add new High Fidelity Physics
         tako.AddComponent<TakoyakiSoftBody>();
         tako.AddComponent<ParticleController>();
+        tako.AddComponent<RuntimeTextureSetup>();
         
         Rigidbody rb = tako.GetComponent<Rigidbody>();
         rb.mass = 0.1f; // Light dough

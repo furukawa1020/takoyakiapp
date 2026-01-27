@@ -52,5 +52,22 @@ namespace TakoyakiPhysics.Feedback
         {
             loopSource.Stop();
         }
+
+        public void StartPouring() 
+        {
+            // Placeholder for pouring sound
+            // In a real app, use a liquid sound
+             if (pourClip != null) 
+             {
+                 sfxSource.PlayOneShot(pourClip);
+             }
+             else 
+             {
+                 // Haptic fallback
+                 HapticManager.Instance?.TriggerLightImpact();
+             }
+        }
+    
+        public void StopPouring() { }
     }
 }

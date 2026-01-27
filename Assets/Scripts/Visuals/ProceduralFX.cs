@@ -19,35 +19,33 @@ namespace TakoyakiPhysics.Visuals
             renderer.material = new Material(Shader.Find("Sprites/Default")); 
             
             var main = ps.main;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(1.5f, 2.5f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.4f);
-            main.startColor = new Color(1f, 1f, 1f, 0.15f); // More transparent, but more particles
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.0f, 3.5f); // Longer life
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.2f); // Faster rise
+            main.startSize = new ParticleSystem.MinMaxCurve(0.3f, 0.8f); // Much bigger steam clouds
+            main.startColor = new Color(1f, 1f, 1f, 0.2f); // Slightly more opaque
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.loop = true;
             main.playOnAwake = false;
-            // Prewarm to look like it's been cooking if started late
-            // main.prewarm = true; 
 
             var emission = ps.emission;
-            emission.rateOverTime = 20f; // More dense steam
+            emission.rateOverTime = 60f; // 3x Density (Dramatic!)
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Cone;
-            shape.angle = 15f;
-            shape.radius = 0.2f;
+            shape.angle = 25f; // Wider spread
+            shape.radius = 0.3f;
 
             var noise = ps.noise;
             noise.enabled = true;
-            noise.strength = 0.1f;
-            noise.frequency = 0.5f;
+            noise.strength = 0.5f; // More turbulence
+            noise.frequency = 0.8f;
 
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
             Gradient grad = new Gradient();
             grad.SetKeys(
                 new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(0.0f, 0.0f), new GradientAlphaKey(0.3f, 0.3f), new GradientAlphaKey(0.0f, 1.0f) }
+                new GradientAlphaKey[] { new GradientAlphaKey(0.0f, 0.0f), new GradientAlphaKey(0.4f, 0.2f), new GradientAlphaKey(0.0f, 1.0f) }
             );
             colorOverLifetime.color = grad;
 
@@ -55,7 +53,7 @@ namespace TakoyakiPhysics.Visuals
             sizeOverLifetime.enabled = true;
             AnimationCurve curve = new AnimationCurve();
             curve.AddKey(0.0f, 0.5f);
-            curve.AddKey(1.0f, 2.0f); // Grow as it rises
+            curve.AddKey(1.0f, 3.0f); // Expands significantly
             sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1.0f, curve);
 
             return ps;
@@ -70,26 +68,26 @@ namespace TakoyakiPhysics.Visuals
             ParticleSystem ps = obj.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.duration = 0.5f;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.4f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(1.0f, 2.0f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.02f, 0.05f);
-            main.startColor = new Color(1f, 0.9f, 0.6f, 0.8f); // Oily yellow
-            main.gravityModifier = 1.0f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2.0f, 5.0f); // High velocity splash
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.15f); // Bigger droplets
+            main.startColor = new Color(1f, 0.9f, 0.6f, 0.9f); 
+            main.gravityModifier = 2.0f; // Heavy oil
             main.playOnAwake = false;
             main.loop = false;
 
             var emission = ps.emission;
             emission.rateOverTime = 0;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0.0f, 5, 10) });
+            // HUGE burst
+            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0.0f, 20, 40) }); 
 
             var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.1f;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere; // Spray upwards/outwards
+            shape.radius = 0.2f;
 
             var renderer = obj.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             
-            // Assign a default material to avoid Pink Box
             renderer.material = new Material(Shader.Find("Sprites/Default"));
             
             return ps;

@@ -11,6 +11,7 @@ namespace Takoyaki.Android
         private TakoyakiRenderer _renderer;
         private TakoyakiHaptics _haptics;
         private TakoyakiAudio _audio;
+        private TakoyakiSensor _sensor;
 
         public TakoyakiSurfaceView(Context context) : base(context)
         {
@@ -18,10 +19,23 @@ namespace Takoyaki.Android
             
             _haptics = new TakoyakiHaptics(context);
             _audio = new TakoyakiAudio(context);
+            _sensor = new TakoyakiSensor(context);
             
-            _renderer = new TakoyakiRenderer(_haptics, _audio);
+            _renderer = new TakoyakiRenderer(_haptics, _audio, _sensor);
             SetRenderer(_renderer);
             RenderMode = Rendermode.Continuously;
+        }
+
+        public override void OnResume()
+        {
+            base.OnResume();
+            _sensor.Start();
+        }
+
+        public override void OnPause()
+        {
+            base.OnPause();
+            _sensor.Stop();
         }
 
         public override bool OnTouchEvent(MotionEvent? e)
@@ -286,11 +300,13 @@ namespace Takoyaki.Android
 
         private TakoyakiHaptics _haptics;
         private TakoyakiAudio _audio;
+        private TakoyakiSensor _sensor;
 
-        public TakoyakiRenderer(TakoyakiHaptics haptics, TakoyakiAudio audio)
+        public TakoyakiRenderer(TakoyakiHaptics haptics, TakoyakiAudio audio, TakoyakiSensor sensor)
         {
             _haptics = haptics;
             _audio = audio;
+            _sensor = sensor;
         }
         
         // ... (OnSurfaceCreated etc remain same)
@@ -298,11 +314,37 @@ namespace Takoyaki.Android
         // Inside UpdateLogic
         private void UpdateLogic(float dt)
         {
-            // Physics
-            _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(0, -9.8f, 0));
+            // Input from Sensors
+            _inputState.Tilt = _sensor.CurrentTilt;
+            _inputState.Acceleration = _sensor.CurrentAcceleration;
+
+            // Physics Gravity Direction
+            // 0, -9.8, 0 is default down. 
+            // If tilted, gravity effectively changes relative to the "Pan" space if we rotate the world.
+            // OR we apply force to the ball to simulate rolling on pan.
             
-            // Interaction
-            if (_inputState.IsSwipe)
+            // Simulating Pan Rotation:
+            // Tilt X -> Gravity X
+            // Tilt Y -> Gravity Z
+            
+            float gScale = 9.8f;
+            Vector3 gravity = new Vector3(
+                _inputState.Tilt.X * gScale, 
+                -gScale, 
+                _inputState.Tilt.Y * gScale // Y mapping to Z for 3D depth roll
+            );
+
+            _physics.Update(dt, System.Numerics.Vector3.Zero, gravity);
+            
+            // Interaction (Touch still rotates mostly for debug/legacy interaction, 
+            // but now Tilt should drive the "Rolling feeling")
+            
+            // Visual Rolling based on Tilt
+             // Simple visual feedback
+            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * dt * 10f, 0, 0, 1); // Z-axis roll
+            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * dt * 10f, 1, 0, 0); // X-axis pitch
+            
+            // ... (Rest of Swipe/Tap logic) ...
             {
                 // ... Rotation logic ...
                 Matrix.RotateM(_modelMatrix, 0, _inputState.SwipeDelta.X * 0.5f, 0, 1, 0);

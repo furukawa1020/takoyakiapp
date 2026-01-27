@@ -12,6 +12,8 @@ namespace TakoyakiPhysics.States
         {
             base.Enter();
             Debug.Log("Cooking Started...");
+            var pc = Controller.GetComponent<Visuals.ParticleController>();
+            if (pc != null) pc.PlaySteam(true);
         }
 
         public override void UpdateState()
@@ -50,6 +52,14 @@ namespace TakoyakiPhysics.States
                 Controller.NotifyBurn();
                 AudioManager.Instance.StopSizzle();
             }
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            var pc = Controller.GetComponent<Visuals.ParticleController>();
+            if (pc != null) pc.PlaySteam(false);
+            AudioManager.Instance.StopSizzle();
         }
     }
 }

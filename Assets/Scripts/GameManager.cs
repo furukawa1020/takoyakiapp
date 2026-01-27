@@ -104,7 +104,10 @@ namespace TakoyakiPhysics
                         if (Meta.ScoreManager.Instance != null && ActiveTakoyaki != null)
                         {
                             Meta.ScoreManager.Instance.CalculateScore(ActiveTakoyaki);
-                             // Update Result UI (assuming UIManager has a method, which we should add)
+                             // Update Result UI
+                             float score = Meta.ScoreManager.Instance.TotalScore;
+                             string comment = Meta.CommentGenerator.GetComment(score, ActiveTakoyaki.CookLevel, ActiveTakoyaki.ShapeIntegrity);
+                             UI.UIManager.Instance.UpdateResultUI(score, comment);
                         }
                         UI.UIManager.Instance.ShowResult();
                         break;

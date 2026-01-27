@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Takoyaki.Android
 {
-    public class TakoyakiAudio
+    public class TakoyakiAudio : Takoyaki.Core.ITakoyakiAudio
     {
         private SoundPool _soundPool;
         private int _sizzleSoundId;

@@ -2,13 +2,21 @@ using System;
 
 namespace Takoyaki.Core
 {
+    public interface ITakoyakiAudio
+    {
+        void PlayDing();
+        void PlayTurn();
+        void PlayServe();
+    }
+    
+    // ... rest of file
     // Simplified State Interface (No Unity)
     // Simplified State Interface
     // Simplified State Interface
     public interface ITakoyakiState
     {
-        void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio);
-        void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio);
+        void Enter(TakoyakiBall ball, ITakoyakiAudio audio);
+        void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio);
         void Exit(TakoyakiBall ball);
     }
 
@@ -16,9 +24,9 @@ namespace Takoyaki.Core
     {
         private ITakoyakiState _currentState;
         private TakoyakiBall _ball;
-        private Takoyaki.Android.TakoyakiAudio _audio;
+        private ITakoyakiAudio _audio;
 
-        public TakoyakiStateMachine(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio)
+        public TakoyakiStateMachine(TakoyakiBall ball, ITakoyakiAudio audio)
         {
             _ball = ball;
             _audio = audio;
@@ -44,7 +52,7 @@ namespace Takoyaki.Core
 
     public class StateRaw : ITakoyakiState
     {
-        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) 
+        public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) 
         {
              ball.BatterLevel = 0f;
              ball.CookLevel = 0f;
@@ -52,7 +60,7 @@ namespace Takoyaki.Core
         }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
             if (input.Tilt.Y > 0.2f)
             {
@@ -70,16 +78,14 @@ namespace Takoyaki.Core
 
     public class StateCooking : ITakoyakiState
     {
-        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) { }
+        public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) { }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
             // Input: Swipe to Turn
-            // Simple swipe check
-            if (input.IsSwipe && ball.CookLevel > 0.3f) // Min cook constraint
+            if (input.IsSwipe && ball.CookLevel > 0.3f) 
             {
-                // Trigger Turn
                 audio.PlayTurn(); // RHYTHM CUE
                 machine.TransitionTo(new StateTurned());
             }
@@ -90,20 +96,16 @@ namespace Takoyaki.Core
     {
         private float _timeInState = 0f;
 
-        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) 
+        public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) 
         {
-            // Rotate 180 visual (Simple flip)
-            // In real physics we would add torque, here we just snap/Lerp for prototype
              ball.Rotation = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitX, (float)Math.PI);
         }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
             _timeInState += dt;
-            
-            // Allow Serve Gesture (Thrust)
-            // Z-Acceleration < -5.0 (Thrust forward)
+            // Thrift forward (Negative Z accel)
             if (input.Acceleration.Z < -8.0f && _timeInState > 0.5f)
             {
                  audio.PlayServe(); // RHYTHM CUE
@@ -114,12 +116,12 @@ namespace Takoyaki.Core
 
     public class StateFinished : ITakoyakiState
     {
-        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) { }
+        public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) { }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
-            // Do nothing. Freeze.
+            // Freeze
         }
     }
 }

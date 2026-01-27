@@ -19,28 +19,35 @@ namespace TakoyakiPhysics.Visuals
             renderer.material = new Material(Shader.Find("Sprites/Default")); 
             
             var main = ps.main;
-            main.startLifetime = 1.5f;
-            main.startSpeed = 0.5f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.1f, 0.3f);
-            main.startColor = new Color(1f, 1f, 1f, 0.3f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.5f, 2.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.4f);
+            main.startColor = new Color(1f, 1f, 1f, 0.15f); // More transparent, but more particles
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.loop = true;
             main.playOnAwake = false;
+            // Prewarm to look like it's been cooking if started late
+            // main.prewarm = true; 
 
             var emission = ps.emission;
-            emission.rateOverTime = 10f;
+            emission.rateOverTime = 20f; // More dense steam
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Cone;
-            shape.angle = 10f;
-            shape.radius = 0.1f;
+            shape.angle = 15f;
+            shape.radius = 0.2f;
+
+            var noise = ps.noise;
+            noise.enabled = true;
+            noise.strength = 0.1f;
+            noise.frequency = 0.5f;
 
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
             Gradient grad = new Gradient();
             grad.SetKeys(
                 new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(0.0f, 0.0f), new GradientAlphaKey(0.5f, 0.2f), new GradientAlphaKey(0.0f, 1.0f) }
+                new GradientAlphaKey[] { new GradientAlphaKey(0.0f, 0.0f), new GradientAlphaKey(0.3f, 0.3f), new GradientAlphaKey(0.0f, 1.0f) }
             );
             colorOverLifetime.color = grad;
 
@@ -48,7 +55,7 @@ namespace TakoyakiPhysics.Visuals
             sizeOverLifetime.enabled = true;
             AnimationCurve curve = new AnimationCurve();
             curve.AddKey(0.0f, 0.5f);
-            curve.AddKey(1.0f, 1.5f);
+            curve.AddKey(1.0f, 2.0f); // Grow as it rises
             sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1.0f, curve);
 
             return ps;

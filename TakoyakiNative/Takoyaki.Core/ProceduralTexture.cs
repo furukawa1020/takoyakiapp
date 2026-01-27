@@ -41,34 +41,27 @@ namespace Takoyaki.Core
 
         public static ProceduralTexture GenerateCooked(int size)
         {
-            // Golden Brown with high contrast "Crispy" spots
-            // Reference: https://imgur.com/takoyaki_render.png
-            // Needs to look like fried dough, not just brown noise
-            return GenerateAdvancedNoise(size, 15.0f, 
-                new Vector4(0.85f, 0.55f, 0.1f, 1f), // Golden
-                new Vector4(0.5f, 0.25f, 0.05f, 1f), // Deep Fried
-                2.0f, 0.3f); // Strong warping for "fried" texture
-        }
-        
-        public static ProceduralTexture GenerateBurnt(int size)
-        {
-            // Carbonized, sharp details
-            return GenerateAdvancedNoise(size, 30.0f, 
-                new Vector4(0.2f, 0.1f, 0.05f, 1f), // Dark Brown
-                new Vector4(0.05f, 0.05f, 0.05f, 1f), // Black Char
-                0.0f, 0.5f); // High grit
+            // Reference: Deep fried, bubbly crust.
+            // Worley Noise creates the "Bubble" shapes.
+            // We invert it 1-W to get "Cracks" or use W for "Bumps".
+            
+            return GenerateWorleyCrust(size, 8.0f, 
+                new Vector4(0.85f, 0.55f, 0.1f, 1f), // Base Golden
+                new Vector4(0.4f, 0.2f, 0.05f, 1f),  // Deep Fried Spots
+                new Vector4(1.0f, 0.9f, 0.8f, 1f));  // Highlight/Flour
         }
 
-        // Generates the Height/displacement map
         public static ProceduralTexture GenerateNoiseMap(int size)
         {
-            return GenerateAdvancedNoise(size, 12.0f, 
+            // Height Map: Needs to match the visual crust.
+            // High Worley values = Bumps.
+            return GenerateWorleyCrust(size, 8.0f, 
                 new Vector4(0f, 0f, 0f, 1f), 
                 new Vector4(1f, 1f, 1f, 1f), 
-                1.0f, 0.2f); 
+                new Vector4(0.5f, 0.5f, 0.5f, 1f));
         }
 
-        private static ProceduralTexture GenerateAdvancedNoise(int size, float scale, Vector4 colA, Vector4 colB, float warpStrength, float gritAmount)
+        private static ProceduralTexture GenerateWorleyCrust(int size, float scale, Vector4 colBase, Vector4 colDeep, Vector4 colHigh)
         {
             var tex = new ProceduralTexture(size);
             float seed = (float)(new Random().NextDouble() * 100);
@@ -77,30 +70,48 @@ namespace Takoyaki.Core
             {
                 for (int x = 0; x < size; x++)
                 {
-                    // 1. Domain Warping (f(p + f(p)))
                     float nx = (float)x / size * scale;
                     float ny = (float)y / size * scale;
 
-                    float qx = PerlinNoise.Noise(nx + seed, ny + seed);
-                    float qy = PerlinNoise.Noise(nx + 5.2f + seed, ny + 1.3f + seed);
-
-                    float rx = nx + warpStrength * qx;
-                    float ry = ny + warpStrength * qy;
-
-                    float n = PerlinNoise.Noise(rx, ry); // Base Organic Noise
-
-                    // 2. Add "Grit" (High frequency detail for crispiness/tenkasu)
-                    float grit = PerlinNoise.Noise(nx * 10f, ny * 10f);
-                    n += grit * gritAmount;
-
-                    // Normalize roughly -1..1 -> 0..1
-                    n = n * 0.5f + 0.5f;
+                    // 1. Base Worley (Large Bubbles)
+                    float w1 = WorleyNoise.Noise(nx, ny, seed);
                     
-                    // Contrast Curve (Sharpen details)
-                    n = n * n * (3 - 2 * n); 
+                    // 2. Detail Worley (Small crispies)
+                    float w2 = WorleyNoise.Noise(nx * 4f, ny * 4f, seed + 10f);
 
-                    Vector4 finalCol = Vector4.Lerp(colA, colB, Math.Clamp(n, 0f, 1f));
-                    finalCol.W = 1.0f; // Alpha
+                    // Composite
+                    // w1 is dist to center. 0=Center, 1=Edge.
+                    // Fried food often has "bubbled" surface. 
+                    // Let's use (1-w1) as the "Bump". Center is high.
+                    float bump = (1.0f - w1); 
+                    
+                    // Add micro details
+                    bump += (1.0f - w2) * 0.3f; 
+
+                    // Sharpen
+                    bump = Math.Clamp(bump, 0f, 1f);
+                    
+                    // Color Mapping
+                    // Low bump (crevices) -> Deep Color (Oil pools, darker)
+                    // High bump (tops) -> Base Color -> Webbing Highlight
+                    
+                    Vector4 finalCol;
+                    if (bump < 0.3f)
+                    {
+                        // Crevice
+                        float t = bump / 0.3f;
+                        finalCol = Vector4.Lerp(colDeep, colBase, t);
+                    }
+                    else
+                    {
+                        // Top
+                        float t = (bump - 0.3f) / 0.7f;
+                        // Add some flour noise on top
+                        float flour = PerlinNoise.Noise(nx * 10f, ny * 10f) > 0.6f ? 0.2f : 0.0f;
+                        finalCol = Vector4.Lerp(colBase, colHigh, t * 0.5f + flour);
+                    }
+
+                    finalCol.W = 1.0f;
                     tex.SetPixel(x, y, finalCol);
                 }
             }

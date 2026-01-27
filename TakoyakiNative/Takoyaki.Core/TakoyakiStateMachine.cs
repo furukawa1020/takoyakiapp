@@ -4,10 +4,11 @@ namespace Takoyaki.Core
 {
     // Simplified State Interface (No Unity)
     // Simplified State Interface
+    // Simplified State Interface
     public interface ITakoyakiState
     {
-        void Enter(TakoyakiBall ball);
-        void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt);
+        void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio);
+        void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio);
         void Exit(TakoyakiBall ball);
     }
 
@@ -15,23 +16,25 @@ namespace Takoyaki.Core
     {
         private ITakoyakiState _currentState;
         private TakoyakiBall _ball;
+        private Takoyaki.Android.TakoyakiAudio _audio;
 
-        public TakoyakiStateMachine(TakoyakiBall ball)
+        public TakoyakiStateMachine(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio)
         {
             _ball = ball;
+            _audio = audio;
             TransitionTo(new StateRaw());
         }
 
         public void Update(InputState input, float dt)
         {
-            _currentState?.Update(this, _ball, input, dt);
+            _currentState?.Update(this, _ball, input, dt, _audio);
         }
 
         public void TransitionTo(ITakoyakiState newState)
         {
             _currentState?.Exit(_ball);
             _currentState = newState;
-            _currentState.Enter(_ball);
+            _currentState.Enter(_ball, _audio);
         }
         
         public ITakoyakiState CurrentState => _currentState;
@@ -41,26 +44,25 @@ namespace Takoyaki.Core
 
     public class StateRaw : ITakoyakiState
     {
-        public void Enter(TakoyakiBall ball) 
+        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) 
         {
              ball.BatterLevel = 0f;
              ball.CookLevel = 0f;
+             ball.Rotation = System.Numerics.Quaternion.Identity;
         }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
         {
-            // Logic: Tilt forward (Tilt.Y > 0.3) to pour
-            // Tilt.Y is positive when phone top goes DOWN (assuming Landscape/Portrait mapping)
-            // Let's assume Tilt.Y > 0.2 is pouring
             if (input.Tilt.Y > 0.2f)
             {
-                ball.BatterLevel += dt * 0.5f; // Fill speed
+                ball.BatterLevel += dt * 0.8f; // Faster fill for rhythm
             }
 
             if (ball.BatterLevel >= 1.0f)
             {
                 ball.BatterLevel = 1.0f;
+                audio.PlayDing(); // RHYTHM CUE
                 machine.TransitionTo(new StateCooking());
             }
         }
@@ -68,22 +70,56 @@ namespace Takoyaki.Core
 
     public class StateCooking : ITakoyakiState
     {
-        public void Enter(TakoyakiBall ball) { }
+        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) { }
         public void Exit(TakoyakiBall ball) { }
 
-        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt)
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
         {
-            // Cooking happens in HeatSimulation, but we monitor it here
-            if (ball.CookLevel > 1.0f)
-            {
-                // Maybe burn or finishing?
-            }
-            
             // Input: Swipe to Turn
-            if (input.IsSwipe)
+            // Simple swipe check
+            if (input.IsSwipe && ball.CookLevel > 0.3f) // Min cook constraint
             {
-                // Initiate turn?
+                // Trigger Turn
+                audio.PlayTurn(); // RHYTHM CUE
+                machine.TransitionTo(new StateTurned());
             }
+        }
+    }
+
+    public class StateTurned : ITakoyakiState
+    {
+        private float _timeInState = 0f;
+
+        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) 
+        {
+            // Rotate 180 visual (Simple flip)
+            // In real physics we would add torque, here we just snap/Lerp for prototype
+             ball.Rotation = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitX, (float)Math.PI);
+        }
+        public void Exit(TakoyakiBall ball) { }
+
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        {
+            _timeInState += dt;
+            
+            // Allow Serve Gesture (Thrust)
+            // Z-Acceleration < -5.0 (Thrust forward)
+            if (input.Acceleration.Z < -8.0f && _timeInState > 0.5f)
+            {
+                 audio.PlayServe(); // RHYTHM CUE
+                 machine.TransitionTo(new StateFinished());
+            }
+        }
+    }
+
+    public class StateFinished : ITakoyakiState
+    {
+        public void Enter(TakoyakiBall ball, Takoyaki.Android.TakoyakiAudio audio) { }
+        public void Exit(TakoyakiBall ball) { }
+
+        public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, Takoyaki.Android.TakoyakiAudio audio)
+        {
+            // Do nothing. Freeze.
         }
     }
 }

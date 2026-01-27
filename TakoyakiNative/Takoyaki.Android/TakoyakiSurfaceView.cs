@@ -87,7 +87,7 @@ namespace Takoyaki.Android
             _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
             _physics = new Takoyaki.Core.SoftBodySolver(_ball);
             _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
-            _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball);
+            _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
 
             // Particles
             _steam = new SteamParticles(Android.App.Application.Context);
@@ -338,6 +338,18 @@ namespace Takoyaki.Android
             
             // Interaction: Visual Rolling based on Tilt (Simple visual feedback)
             Matrix.SetIdentityM(_modelMatrix, 0); // Reset generic rotation
+            
+            // Base Rotation from StateMachine (e.g. Flipped)
+            System.Numerics.Quaternion q = _ball.Rotation;
+            // Convert Quaternion to Matrix? Or just simple Euler check for prototype.
+            // If ball.Rotation has 180 flip (X axis PI), apply it.
+            // Quaternion to Axis Angle:
+            // Since we set it via CreateFromAxisAngle(UnitX, PI)
+            if (_stateMachine.CurrentState is Takoyaki.Core.StateTurned || _stateMachine.CurrentState is Takoyaki.Core.StateFinished)
+            {
+                Matrix.RotateM(_modelMatrix, 0, 180f, 1, 0, 0);
+            }
+
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1); // Z-axis roll
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * 45f, 1, 0, 0); // X-axis pitch
             

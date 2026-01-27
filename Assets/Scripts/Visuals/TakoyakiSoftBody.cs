@@ -107,8 +107,15 @@ namespace TakoyakiPhysics.Visuals
                 // Add Gravity Sag (Soft body droops down)
                 force += localGravity * gravityInfluence;
 
-                // Add Inertia Reaction (Shake)
+                // Add Inertia Reaction (Shake) from Transform movement
                 force -= localInertia * inertiaScale * intensity;
+
+                // Add Explicit Acceleration from InputManager (Gyro/Keyboard Shake)
+                if (InputManager.Instance != null)
+                {
+                    Vector3 inputAccel = transform.InverseTransformDirection(InputManager.Instance.CurrentAcceleration);
+                    force -= inputAccel * mass * intensity; // F = ma, so a = F/m -> F = ma
+                }
 
                 // 6. Integrate (Euler)
                 Vector3 acceleration = force / mass;

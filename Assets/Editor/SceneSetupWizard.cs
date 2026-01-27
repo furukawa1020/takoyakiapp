@@ -58,7 +58,7 @@ public class SceneSetupWizard : EditorWindow
         startTextObj.transform.SetParent(titlePanel.transform, false);
         Text startText = startTextObj.AddComponent<Text>();
         startText.text = "TAP TO START";
-        startText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        startText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         startText.color = Color.white;
         startText.fontSize = 60;
         startText.alignment = TextAnchor.MiddleCenter;
@@ -69,7 +69,7 @@ public class SceneSetupWizard : EditorWindow
         scoreTextObj.transform.SetParent(resultPanel.transform, false);
         Text scoreText = scoreTextObj.AddComponent<Text>();
         scoreText.text = "Score: --";
-        scoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        scoreText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         scoreText.color = Color.white;
         scoreText.fontSize = 50;
         scoreText.alignment = TextAnchor.MiddleCenter;
@@ -81,7 +81,7 @@ public class SceneSetupWizard : EditorWindow
         hudTextObj.transform.SetParent(hudPanel.transform, false);
         Text hudText = hudTextObj.AddComponent<Text>();
         hudText.text = "TAP BALLS TO ADD TOPPINGS!\nPRESS 'S' TO FINISH";
-        hudText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        hudText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         hudText.color = new Color(1f, 1f, 1f, 0.8f);
         hudText.fontSize = 30;
         hudText.alignment = TextAnchor.LowerCenter;

@@ -34,9 +34,18 @@ namespace TakoyakiPhysics.Visuals
 
         private void Start()
         {
-            _originalMesh = GetComponent<MeshFilter>().sharedMesh;
+            var mf = GetComponent<MeshFilter>();
+            if (mf == null) return;
+            
+            _originalMesh = mf.sharedMesh;
+            if (_originalMesh == null) 
+            {
+                Debug.LogError("[TakoyakiSoftBody] Mesh is null! Soft body physics cannot run.");
+                return;
+            }
+
             _workingMesh = Instantiate(_originalMesh);
-            GetComponent<MeshFilter>().mesh = _workingMesh;
+            mf.mesh = _workingMesh;
 
             Vector3[] originalVerts = _originalMesh.vertices;
             _meshVertices = new Vector3[originalVerts.Length];
@@ -56,6 +65,8 @@ namespace TakoyakiPhysics.Visuals
 
         private void Update()
         {
+            if (_physicsVertices == null) return; // Safety check
+            
             UpdatePhysics(Time.deltaTime);
             
             // Map physics positions back to mesh

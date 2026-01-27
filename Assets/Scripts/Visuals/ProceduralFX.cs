@@ -82,19 +82,5 @@ namespace TakoyakiPhysics.Visuals
             return ps;
         }
 
-        public static ParticleSystem CreateSteamFX(Transform parent)
-        {
-            GameObject obj = new GameObject("FX_Steam");
-            obj.transform.SetParent(parent);
-            obj.transform.localPosition = Vector3.zero;
-            obj.transform.localRotation = Quaternion.Euler(-90, 0, 0); // Upwards
 
-            ParticleSystem ps = obj.AddComponent<ParticleSystem>();
-            var renderer = obj.GetComponent<ParticleSystemRenderer>();
-             // Assign a default material
-            renderer.material = new Material(Shader.Find("Particles/Standard Unlit"));
-
-            var main = ps.main;
-            main.startLifetime = 1.5f;
-    }
 }

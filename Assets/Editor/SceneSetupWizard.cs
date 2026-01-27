@@ -31,7 +31,7 @@ public class SceneSetupWizard : EditorWindow
             }
 
             // ---------------------------------------------------------
-            // 1. CREATE GAME WORLD (Priority)
+            // 1. CREATE GAME WORLD (Priority: Physics & Visuals first)
             // ---------------------------------------------------------
             GameObject world = new GameObject("--- WORLD ---");
             
@@ -43,7 +43,7 @@ public class SceneSetupWizard : EditorWindow
             MeshFilter mf = pan.AddComponent<MeshFilter>();
             MeshRenderer panMr = pan.AddComponent<MeshRenderer>();
             MeshCollider mc = pan.AddComponent<MeshCollider>();
-            mc.skinWidth = 0.01f; // Fix physics jitter
+            mc.skinWidth = 0.005f; 
             
             int rows = 3;
             int cols = 3;
@@ -80,13 +80,13 @@ public class SceneSetupWizard : EditorWindow
             {
                 takoMat.shader = takoShader != null ? takoShader : Shader.Find("Standard");
             }
-            // Assign defaults immediately
+            // Better Textures (We will improve generation next)
             takoMat.SetTexture("_MainTex", ProceduralTextureGen.GenerateBatterTexture());
             takoMat.SetTexture("_CookedTex", ProceduralTextureGen.GenerateCookedTexture());
             takoMat.SetTexture("_BurntTex", ProceduralTextureGen.GenerateBurntTexture());
             takoMat.SetTexture("_NoiseTex", ProceduralTextureGen.GenerateNoiseMap());
 
-            // Spawn Balls
+            // Spawn Balls interactively
             float startX = -((cols - 1) * spacing) / 2.0f;
             float startZ = -((rows - 1) * spacing) / 2.0f;
 
@@ -98,7 +98,7 @@ public class SceneSetupWizard : EditorWindow
                     tako.transform.SetParent(world.transform);
                     Vector3 pitPos = new Vector3(startX + c * spacing, 0.5f, startZ + r * spacing);
                     tako.transform.position = pitPos;
-                    tako.transform.localScale = Vector3.one * 0.8f; 
+                    tako.transform.localScale = Vector3.one * 0.82f; // Slight larger
 
                     MeshFilter takoMf = tako.AddComponent<MeshFilter>();
                     MeshRenderer takoMr = tako.AddComponent<MeshRenderer>();
@@ -119,18 +119,18 @@ public class SceneSetupWizard : EditorWindow
                     if (rb == null) rb = tako.AddComponent<Rigidbody>(); 
                     
                     rb.mass = 0.5f;
-                    rb.linearDamping = 0.5f;
-                    rb.angularDamping = 0.5f;
+                    rb.linearDamping = 0.8f; // More stable
+                    rb.angularDamping = 0.8f;
                     ctrl.Rb = rb;
                     ctrl.MeshRenderer = takoMr;
                 }
             }
 
-            // Camera
+            // Camera - Ensure functionality even if UI fails
             GameObject camObj = new GameObject("Main Camera");
             camObj.tag = "MainCamera";
             camObj.transform.SetParent(world.transform);
-            camObj.transform.position = new Vector3(0, 8.5f, -6.0f); 
+            camObj.transform.position = new Vector3(0, 9.5f, -6.5f); // Slightly further back
             camObj.transform.LookAt(Vector3.zero);
             Camera cam = camObj.AddComponent<Camera>();
             camObj.AddComponent<AudioListener>();
@@ -140,8 +140,8 @@ public class SceneSetupWizard : EditorWindow
             lightObj.transform.SetParent(world.transform);
             Light light = lightObj.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.2f;
-            light.color = new Color(1.0f, 0.96f, 0.92f); 
+            light.intensity = 1.5f;
+            light.color = new Color(1.0f, 0.95f, 0.9f); 
             lightObj.transform.rotation = Quaternion.Euler(60, -30, 0);
 
             GameObject pointLightObj = new GameObject("Point Light (Warmth)");
@@ -166,7 +166,7 @@ public class SceneSetupWizard : EditorWindow
             CreateManager<TakoyakiPhysics.Game.ToppingManager>(managers);
 
             // ---------------------------------------------------------
-            // 3. CREATE UI (Risky)
+            // 3. CREATE UI (Robust)
             // ---------------------------------------------------------
             try 
             {
@@ -185,7 +185,7 @@ public class SceneSetupWizard : EditorWindow
                 canvas.AddComponent<CanvasScaler>();
                 canvas.AddComponent<GraphicRaycaster>();
                 
-                // Helper to get font safely
+                // Safe Font Loading
                 Font uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 if (uiFont == null) uiFont = Resources.GetBuiltinResource<Font>("Arial");
                 
@@ -193,41 +193,21 @@ public class SceneSetupWizard : EditorWindow
                 GameObject hudPanel = CreatePanel(canvas, "GameHUD", Color.clear);
                 GameObject resultPanel = CreatePanel(canvas, "ResultPanel", new Color(0, 1, 0, 0.3f));
                 
-                // Title Text
-                GameObject startTextObj = new GameObject("StartText");
-                startTextObj.transform.SetParent(titlePanel.transform, false);
-                Text startText = startTextObj.AddComponent<Text>();
-                startText.text = "TAP TO START";
-                startText.font = uiFont;
-                startText.color = Color.white;
-                startText.fontSize = 60;
-                startText.alignment = TextAnchor.MiddleCenter;
-                startTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 200);
+                // Title
+                CreateText(titlePanel, "StartText", "TAP TO START", 60, new Vector2(0, 0), new Vector2(800, 200), uiFont);
 
-                // HUD Text
-                GameObject hudTextObj = new GameObject("ControlHint");
-                hudTextObj.transform.SetParent(hudPanel.transform, false);
-                Text hudText = hudTextObj.AddComponent<Text>();
-                hudText.text = "TAP BALLS TO ADD TOPPINGS!\nPRESS 'S' TO FINISH";
-                hudText.font = uiFont;
-                hudText.color = new Color(1f, 1f, 1f, 0.8f);
-                hudText.fontSize = 30;
-                hudText.alignment = TextAnchor.LowerCenter;
-                hudTextObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 50);
-                hudTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 100);
+                // HUD Instructions
+                CreateText(hudPanel, "ControlHint", "TAP BALLS TO COOK!\nUSE ARROWS TO TILT!", 24, new Vector2(0, -300), new Vector2(800, 100), uiFont);
 
-                // Result Text
-                GameObject scoreTextObj = new GameObject("ScoreText");
-                scoreTextObj.transform.SetParent(resultPanel.transform, false);
-                Text scoreText = scoreTextObj.AddComponent<Text>();
-                scoreText.text = "Score: --";
-                scoreText.font = uiFont;
-                scoreText.color = Color.white;
-                scoreText.fontSize = 50;
-                scoreText.alignment = TextAnchor.MiddleCenter;
-                scoreTextObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 50);
-                scoreTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 600);
+                // Arrow Controls (Anchored Bottom Right)
+                CreateArrowButton(hudPanel, "ArrowUp", new Vector2(0, 1), new Vector2(350, -100), 0);
+                CreateArrowButton(hudPanel, "ArrowDown", new Vector2(0, -1), new Vector2(350, -200), 180);
+                CreateArrowButton(hudPanel, "ArrowLeft", new Vector2(-1, 0), new Vector2(250, -150), 90);
+                CreateArrowButton(hudPanel, "ArrowRight", new Vector2(1, 0), new Vector2(450, -150), -90);
 
+                // Result
+                CreateText(resultPanel, "ScoreText", "Score: --", 50, new Vector2(0, 50), new Vector2(800, 600), uiFont);
+                
                 resultPanel.SetActive(false);
                 hudPanel.SetActive(false);
 
@@ -241,7 +221,7 @@ public class SceneSetupWizard : EditorWindow
                 Debug.LogError($"UI Setup Failed: {e.Message}. Scene was created but UI might be missing.");
             }
 
-            Debug.Log("Takoyaki Scene Setup Completed.");
+            Debug.Log("Takoyaki Scene Setup Completed Successfully!");
             Selection.activeGameObject = managers;
             
             // Auto-Save

@@ -1,4 +1,4 @@
-# 一球入魂 たこ焼き – TAKOYAKI PHYSICS
+# 一球入魂！ たこ焼き – TAKOYAKI PHYSICS
 
 ![Takoyaki Cinematic Render](takoyaki_render.png)
 

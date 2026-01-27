@@ -1,4 +1,5 @@
 using UnityEngine;
+using TakoyakiPhysics;
 
 namespace TakoyakiPhysics.Visuals
 {

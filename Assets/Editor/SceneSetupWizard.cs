@@ -37,6 +37,8 @@ public class SceneSetupWizard : EditorWindow
         CreateManager<HapticManager>(managers);
         CreateManager<ScoreManager>(managers);
         CreateManager<ShareManager>(managers);
+        // New: Topping Manager for interaction
+        CreateManager<TakoyakiPhysics.Game.ToppingManager>(managers);
 
         // 2. Create UI
         GameObject uiRoot = new GameObject("--- UI ---");

@@ -12,6 +12,8 @@ namespace Takoyaki.Android
         private TakoyakiHaptics _haptics;
         private TakoyakiAudio _audio;
         private TakoyakiSensor _sensor;
+        
+        public event Action<int>? GameFinished;
 
         public TakoyakiSurfaceView(Context context) : base(context)
         {
@@ -22,8 +24,17 @@ namespace Takoyaki.Android
             _sensor = new TakoyakiSensor(context);
             
             _renderer = new TakoyakiRenderer(_haptics, _audio, _sensor);
+            _renderer.OnGameFinished = (score) => GameFinished?.Invoke(score);
+            
             SetRenderer(_renderer);
             RenderMode = Rendermode.Continuously;
+        }
+
+        public void ResetGame()
+        {
+            QueueEvent(new Runnable(() => {
+                _renderer.Reset();
+            }));
         }
 
         public override void OnResume()
@@ -78,6 +89,8 @@ namespace Takoyaki.Android
 
         private SteamParticles _steam;
 
+        public Action<int> OnGameFinished;
+
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
             GLES30.GlEnable(GLES30.GlDepthTest);
@@ -88,6 +101,8 @@ namespace Takoyaki.Android
             _physics = new Takoyaki.Core.SoftBodySolver(_ball);
             _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
             _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
+            
+            _stateMachine.OnFinished = (score) => OnGameFinished?.Invoke(score);
 
             // Particles
             _steam = new SteamParticles(Android.App.Application.Context);

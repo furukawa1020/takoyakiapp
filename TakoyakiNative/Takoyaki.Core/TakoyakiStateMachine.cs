@@ -25,6 +25,8 @@ namespace Takoyaki.Core
         private ITakoyakiState _currentState;
         private TakoyakiBall _ball;
         private ITakoyakiAudio _audio;
+        
+        public Action<int> OnFinished;
 
         public TakoyakiStateMachine(TakoyakiBall ball, ITakoyakiAudio audio)
         {
@@ -43,6 +45,25 @@ namespace Takoyaki.Core
             _currentState?.Exit(_ball);
             _currentState = newState;
             _currentState.Enter(_ball, _audio);
+            
+            if (newState is StateFinished)
+            {
+                // Calculate Score
+                // Perfect: CookLevel 1.0, Shape (Deformed vs Base) close
+                // Simple logic for prototype:
+                // Score = 100 - abs(CookLevel - 1.0) * 100
+                int score = 100 - (int)(Math.Abs(_ball.CookLevel - 1.0f) * 50);
+                if (_ball.CookLevel < 0.5f) score = 10; // Raw penalty
+                if (score < 0) score = 0;
+                if (score > 100) score = 100;
+                
+                OnFinished?.Invoke(score);
+            }
+        }
+        
+        public void Reset()
+        {
+            TransitionTo(new StateRaw());
         }
         
         public ITakoyakiState CurrentState => _currentState;

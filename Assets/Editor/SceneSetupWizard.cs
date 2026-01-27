@@ -48,13 +48,40 @@ public class SceneSetupWizard : EditorWindow
         canvas.AddComponent<CanvasScaler>();
         canvas.AddComponent<GraphicRaycaster>();
         
-        // Make Title transparent blue so we can see the Takoyaki waiting
-        GameObject titlePanel = CreatePanel(canvas, "TitlePanel", new Color(0, 0, 1, 0.1f));
-        GameObject hudPanel = CreatePanel(canvas, "GameHUD", Color.clear);
-        GameObject resultPanel = CreatePanel(canvas, "ResultPanel", new Color(0, 1, 0, 0.3f));
+        // Add "Tap to Start" Hint
+        GameObject startTextObj = new GameObject("StartText");
+        startTextObj.transform.SetParent(titlePanel.transform, false);
+        Text startText = startTextObj.AddComponent<Text>();
+        startText.text = "TAP TO START";
+        startText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        startText.color = Color.white;
+        startText.fontSize = 60;
+        startText.alignment = TextAnchor.MiddleCenter;
+        startTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 200);
+
+        // Result Score UI
+        GameObject scoreTextObj = new GameObject("ScoreText");
+        scoreTextObj.transform.SetParent(resultPanel.transform, false);
+        Text scoreText = scoreTextObj.AddComponent<Text>();
+        scoreText.text = "Score: --";
+        scoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        scoreText.color = Color.white;
+        scoreText.fontSize = 50;
+        scoreText.alignment = TextAnchor.MiddleCenter;
+        scoreTextObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 50);
+        scoreTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 600);
         
-        GameObject hint = new GameObject("TEXT: TAP TO START");
-        hint.transform.SetParent(titlePanel.transform);
+        // HUD Instruction
+        GameObject hudTextObj = new GameObject("ControlHint");
+        hudTextObj.transform.SetParent(hudPanel.transform, false);
+        Text hudText = hudTextObj.AddComponent<Text>();
+        hudText.text = "TAP BALLS TO ADD TOPPINGS!\nPRESS 'S' TO FINISH";
+        hudText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        hudText.color = new Color(1f, 1f, 1f, 0.8f);
+        hudText.fontSize = 30;
+        hudText.alignment = TextAnchor.LowerCenter;
+        hudTextObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 50);
+        hudTextObj.GetComponent<RectTransform>().sizeDelta = new Vector2(800, 100);
         
         resultPanel.SetActive(false);
         hudPanel.SetActive(false);

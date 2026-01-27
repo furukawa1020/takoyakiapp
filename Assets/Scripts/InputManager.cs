@@ -79,12 +79,28 @@ namespace TakoyakiPhysics
             {
                 // Fallback for editor testing
                 float h = Input.GetAxis("Horizontal");
-                float v = Input.GetAxis("Vertical");
-                TiltVector = new Vector3(h, -1f, v).normalized; // Simulated gravity/tilt
+                float v = Input.GetAxis("Vertical"); 
+                // In Editor, Arrow keys simulate tilting the device
+                TiltVector = new Vector3(h, -1f, v).normalized; 
             }
 
-            // Acceleration Input (for flicks/shakes)
-            CurrentAcceleration = Input.acceleration * accelSensitivity;
+            // Acceleration Input
+            if (SystemInfo.supportsGyroscope)
+            {
+                CurrentAcceleration = Input.acceleration * accelSensitivity;
+            }
+            else
+            {
+                 // Emulate "Shake/Impact" with Spacebar
+                 if (Input.GetKeyDown(KeyCode.Space))
+                 {
+                     CurrentAcceleration = Vector3.up * 2.0f * accelSensitivity; // Sudden jolt
+                 }
+                 else
+                 {
+                     CurrentAcceleration = Vector3.MoveTowards(CurrentAcceleration, Vector3.zero, Time.deltaTime * 5f);
+                 }
+            }
         }
 
         public Vector3 GetSimulatedRotation()

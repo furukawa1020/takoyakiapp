@@ -1,37 +1,39 @@
-# One Ball Soul Takoyaki - Unity Project Guide
+# 一球入魂 たこ焼き – TAKOYAKI PHYSICS
 
 ![Takoyaki Cinematic Render](takoyaki_render.png)
 
-## Overview
-This project is designed with a "Code-First" approach. Most of the logic is decoupled from the Unity Editor, but there are a few setup steps required to connect the visual assets.
+## 概要
+これは「効率」のゲームではない。「一個にこだわる体験」だ。
+コードファーストで設計されており、Unityエディタ上でセットアップツールを走らせるだけで、私の魂（物理・シェーダー・構成）が即座に立ち上がる。
 
-## Quick Setup (Automation)
-We have included a custom Editor Tool to set up the scene for you.
-1. In Unity, go to the Top Menu bar.
-2. Click **Takoyaki > Setup > Create Game Scene**.
-3. This will create the Main Camera, Lights, Managers, UI, and the Takoyaki player object.
-    *   **Note**: It also generates and assigns **Procedural Textures** (Noise, Batter, Cooked) so you can see the shader effects immediately without importing external assets.
+## クイックセットアップ（自動化された魂）
+面倒な手作業は排除した。以下の手順で、世界一丁寧な「たこ焼き環境」を構築せよ。
 
-## Key Components
+1. Unityを開く。
+2. 上部メニューの **Takoyaki > Setup > Create Game Scene** を叩く。
+3. 自動的にカメラ、ライト、UI、そして物理演算とシェーダーを纏った「たこ焼き（プレイヤー）」が生成される。
+    *   **注記**: 外部アセットは不要だ。私のコードが、生の生地(Batter)、焼き目(Cooked)、そして焦げ(Burnt)のテクスチャをその場で**プロシージャル生成**し、シェーダーに注入する。すぐに“質感”を確認できるはずだ。
 
-### Physics & Controls
-- **InputManager**: Handles Gyro and Accelerometer. Call `InputManager.Instance.Calibrate()` to center the gyro.
-- **TakoyakiController**: Main physics logic.
-- **TakoyakiSoftBody**: **[NEW]** Mass-Spring-Damper system. Simulates inertia, gravity sag, and impact jitter on a per-vertex basis.
+## 技術の核（このアプリの魂）
 
-### Visuals (Shader)
-- **Material Setup**:
-    - Create a new Material.
-    - Set Shader to **`Takoyaki/TakoyakiCinematic`**.
-    - **SSS Settings**: Simulates the translucent batter look. High intensity = raw, Low = cooked.
-    - **Oil Settings**: Control the `Fresnel Power` and `Roughness` to get that perfect "wet glaze" look.
-    - **Displacement**: Uses the noise map to "puff up" the surface as it cooks.
+### 物理と操作 (Physics & Controls)
+*   **InputManager**: ジャイロと加速度の翻訳者。実機では `InputManager.Instance.Calibrate()` で"構え"をゼロ補正する。エディタ上では矢印キーで傾き、スペースキーで「返し/振動」をエミュレートする。
+*   **TakoyakiSoftBody**: **[NEW]** 質量バネダンパモデルによる頂点物理。単純な揺れではない。慣性、重力による沈み込み、衝撃による波打ち…生地の"重い粘性"を再現した。
 
-### Game Loop
-- **GameManager**: Controls the state (Title -> Pouring -> Cooking -> Result).
-- **ScoreManager**: Tracks the shape quality and cooking level.
+### 視覚表現 (Cinematic Shader)
+*   **TakoyakiCinematic**: ただの色変えではない。
+    *   **SSS (サブサーフェス・スキャタリング)**: 生地の透け感を再現。火が通るにつれ、徐々に不透明な固体へと変化する。
+    *   **Fresnel Oil (油膜フチ)**: 表面を覆う油のテラつき。焼き始めはヌルッと、焼けるとカリッとドライに、光沢が変化する。
+    *   **Vertex Displacement (気泡)**: 熱で生地が膨らむ「あの感じ」を、ノイズマップによる頂点変位で表現。
 
-## Folder Structure
-- `Scripts/`: C# Logic
-- `Scripts/Visuals/`: Shaders and visual controllers
-- `Editor/`: Automation tools
+### ゲームループ
+*   **GameManager**: 準備、注ぎ、焼き、仕上げ、提供。一連の「所作」を管理する。
+*   **ScoreManager**: 形の真円度、焼き色のグラデーション、そして所作の美しさを評価する。
+
+## 開発者へのメモ
+*   `Scripts/` : ロジックの全て
+*   `Scripts/Visuals/` : シェーダーと物理の魔術
+*   `Editor/` : 面倒を消し去る自動化ツール
+
+さあ、Unityを開いて再生ボタンを押せ。あるいはビルドして実機で振れ。
+そこに「熱」はあるか？

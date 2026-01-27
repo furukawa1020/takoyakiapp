@@ -8,8 +8,14 @@ namespace TakoyakiPhysics.Visuals
         {
             Mesh mesh = new Mesh();
             mesh.name = "TakoyakiPanMesh";
+            // Enable support for > 65535 vertices
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
-            int gridSize = 40; // Resolution
+            int gridSize = 250; // Increased resolution (was 40) ~ 62,500 vertices (Safe high-res)
+            // If user wants "100x", 40x40=1600. 1600*100 = 160,000. 
+            // Let's maximize within reasonable performance: 300x300 = 90,000.
+            gridSize = 350; // ~122,500 vertices. Ultra High Poly.
+            
             float size = 2.0f; // Total width
             float pitRadius = 0.6f;
             float pitDepth = 0.5f;

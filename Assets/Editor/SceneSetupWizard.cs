@@ -94,12 +94,21 @@ public class SceneSetupWizard : EditorWindow
         panMr.sharedMaterial = panMat;
 
         // Takoyaki (The Player/Object)
-        GameObject tako = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        tako.name = "Takoyaki_Player";
+        GameObject tako = new GameObject("Takoyaki_Player");
         tako.transform.SetParent(world.transform);
         // Position slightly above the pit
         tako.transform.position = new Vector3(0, 0.4f, 0); 
         tako.transform.localScale = Vector3.one * 0.8f; // Fit in the hole (Radius 0.6)
+
+        MeshFilter takoMf = tako.AddComponent<MeshFilter>();
+        MeshRenderer takoMr = tako.AddComponent<MeshRenderer>();
+        // Ultra High Res Sphere (250 lat/lon lines = ~60k verts, 120k tris) -> >100x detail
+        takoMf.mesh = ProceduralBallMesh.Generate(250); 
+        
+        // Physics Collider needs to be efficient. Using MeshCollider with convex is expensive for high poly.
+        // Stick to SphereCollider for Physics, but Mesh is high poly visual.
+        SphereCollider sc = tako.AddComponent<SphereCollider>(); 
+        sc.radius = 1.0f; // Unit sphere mesh
 
         TakoyakiController ctrl = tako.AddComponent<TakoyakiController>();
         tako.AddComponent<TakoyakiVisuals>();

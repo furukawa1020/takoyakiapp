@@ -60,6 +60,8 @@ namespace Takoyaki.Android
         // Cache for VBO updates
         private float[] _meshData;
 
+        private SteamParticles _steam;
+
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
             GLES30.GlEnable(GLES30.GlDepthTest);
@@ -70,6 +72,9 @@ namespace Takoyaki.Android
             _physics = new Takoyaki.Core.SoftBodySolver(_ball);
             _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
 
+            // Particles
+            _steam = new SteamParticles(Android.App.Application.Context);
+
             // 2. Load Shaders
             _program = ShaderHelper.LoadProgram(Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
             GLES30.GlUseProgram(_program);
@@ -77,9 +82,7 @@ namespace Takoyaki.Android
             _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
             _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
 
-            // Texture Uniforms - (Logic preserved, simplified for brevity in this replace, assume previous lines exist)
-            // ... (Textures setup previously) ...
-            // Re-asserting texture setup to ensure no code loss
+            // Texture Uniforms
              int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
             int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
             int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
@@ -275,6 +278,10 @@ namespace Takoyaki.Android
 
             GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
             GLES30.GlBindVertexArray(0);
+            
+            // 3. Draw Particles (After opaque geometry)
+            _steam.Update(dt, _ball.CookLevel > 0.3f ? 1.0f : 0.0f); // Steam if cooking
+            _steam.Draw(_mvpMatrix);
         }
 
         private TakoyakiHaptics _haptics;

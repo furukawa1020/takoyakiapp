@@ -10,10 +10,18 @@ namespace TakoyakiPhysics.States
         {
             base.Enter();
             Debug.Log("Start Pouring Physics...");
+            AudioManager.Instance.StartPouring();
+            
             // Reset values
             Controller.BatterAmount = 0f;
             Controller.CookLevel = 0f;
             Controller.ShapeIntegrity = 0f; 
+        }
+        
+        public override void Exit()
+        {
+            base.Exit();
+            AudioManager.Instance.StopPouring();
         }
 
         public override void UpdateState()

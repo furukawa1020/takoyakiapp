@@ -32,7 +32,11 @@ namespace TakoyakiPhysics.Game
 
         private void HandleInput()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Camera cam = Camera.main;
+            if (cam == null) cam = FindObjectOfType<Camera>(); // Fallback
+            if (cam == null) return; // No camera at all
+
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
                 TakoyakiController tako = hit.collider.GetComponent<TakoyakiController>();

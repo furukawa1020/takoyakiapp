@@ -47,10 +47,11 @@ Shader "Takoyaki/TakoyakiCinematic"
             float2 uv_NoiseTex;
             float3 viewDir;
             float3 worldNormal;
+            INTERNAL_DATA
         };
 
         half _CookLevel;
-        half _BatterAmount; // Unused visually but kept for property block compatibility
+        half _BatterAmount; 
         half _OilRoughness;
         half _OilFresnel;
         fixed4 _OilColor;
@@ -58,10 +59,9 @@ Shader "Takoyaki/TakoyakiCinematic"
         half _SSSIntensity;
         half _DisplacementStrength;
 
-        // Vertex Modifier using appdata_full to access texcoords
+        // Vertex Modifier
         void vert (inout appdata_full v) {
             float noise = tex2Dlod(_NoiseTex, float4(v.texcoord.xy, 0, 0)).r;
-            // Displacement grows as it cooks (puffing up)
             float puff = smoothstep(0.0, 1.0, _CookLevel) * 0.5 + 0.5;
             v.vertex.xyz += v.normal * noise * _DisplacementStrength * puff;
         }
@@ -73,11 +73,9 @@ Shader "Takoyaki/TakoyakiCinematic"
             fixed4 c_cooked = tex2D (_CookedTex, IN.uv_MainTex);
             fixed4 c_burnt = tex2D (_BurntTex, IN.uv_MainTex);
             
-            // Noise for uneven cooking
             float cookNoise = tex2D(_NoiseTex, IN.uv_NoiseTex).r;
             float localCook = _CookLevel * (0.8 + cookNoise * 0.4);
 
-            // Blend Factors
             float toCooked = smoothstep(0.2, 0.8, localCook);
             float toBurnt = smoothstep(1.2, 1.8, localCook);
             
@@ -88,23 +86,20 @@ Shader "Takoyaki/TakoyakiCinematic"
             o.Alpha = albedo.a;
             o.Normal = UnpackNormal (tex2D (_BumpMap, IN.uv_MainTex));
 
-            // 2. Oil / Specular / Roughness
-            // Raw = Wet (Smooth), Cooked = Dry (Rough), Burnt = Dry
-            // BUT oil makes it shiny again
+            // 2. Oil / Specular
             float baseRoughness = lerp(0.3, 0.9, toCooked); 
             
-            // Oil Layer Logic
-            float fresnel = pow(1.0 - saturate(dot(IN.worldNormal, normalize(IN.viewDir))), _OilFresnel);
+            // Fix: Use WorldNormalVector when writing to o.Normal
+            float3 worldNormal = WorldNormalVector(IN, o.Normal);
+            float fresnel = pow(1.0 - saturate(dot(worldNormal, normalize(IN.viewDir))), _OilFresnel);
             float oilFactor = 0.5; 
             
-            // Final Smoothness: Base roughness modified by oil fresnel
             o.Smoothness = (1.0 - baseRoughness) + (fresnel * oilFactor);
             o.Metallic = 0.0;
 
             // 3. Fake SSS (Emission)
-            // Light passing through raw batter
-            float sssMask = 1.0 - toCooked; // Only raw parts
-            float backlight = pow(1.0 - saturate(dot(IN.viewDir, -IN.worldNormal)), 2.0);
+            float sssMask = 1.0 - toCooked; 
+            float backlight = pow(1.0 - saturate(dot(IN.viewDir, -worldNormal)), 2.0);
             o.Emission = _SSSColor * _SSSIntensity * sssMask * backlight; 
         }
         ENDCG

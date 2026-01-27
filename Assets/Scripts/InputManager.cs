@@ -15,6 +15,8 @@ namespace TakoyakiPhysics
         
         // Calculated input for "pouring" or "tilting"
         public Vector3 TiltVector { get; private set; }
+        
+        private Quaternion _calibrationOffset = Quaternion.identity;
 
         private void Awake()
         {
@@ -29,6 +31,17 @@ namespace TakoyakiPhysics
             }
         
             EnableGyro();
+        }
+        
+        public void Calibrate()
+        {
+            if (SystemInfo.supportsGyroscope)
+            {
+                // Set current rotation as the "zero" point
+                // We want the inverse of the current rotation to be applied to future readings
+                _calibrationOffset = Quaternion.Inverse(Input.gyro.attitude);
+                Debug.Log("Gyro Calibrated!");
+            }
         }
 
         private void EnableGyro()
@@ -54,8 +67,13 @@ namespace TakoyakiPhysics
             if (SystemInfo.supportsGyroscope)
             {
                 CurrentGyroRotation = Input.gyro.rotationRate * gyroSensitivity;
-                // Basic tilt calculation - can be refined based on device orientation
-                TiltVector = Input.gyro.gravity; 
+                
+                // Apply Calibration
+                Quaternion calibratedAttitude = _calibrationOffset * Input.gyro.attitude;
+                
+                // Remap Unity's Gyro attitude to a useful Vector3 for tilt
+                // Just using gravity from the calibrated attitude
+                TiltVector = calibratedAttitude * Vector3.down; 
             }
             else
             {

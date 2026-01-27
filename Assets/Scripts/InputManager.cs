@@ -77,9 +77,17 @@ namespace TakoyakiPhysics
             }
             else
             {
-                // Fallback for editor testing
+                // Fallback for editor testing OR Virtual Buttons
                 float h = Input.GetAxis("Horizontal");
                 float v = Input.GetAxis("Vertical"); 
+                
+                // Add virtual input
+                h += _virtualInput.x;
+                v += _virtualInput.y;
+                
+                h = Mathf.Clamp(h, -1f, 1f);
+                v = Mathf.Clamp(v, -1f, 1f);
+
                 // In Editor, Arrow keys simulate tilting the device
                 TiltVector = new Vector3(h, -1f, v).normalized; 
             }
@@ -107,6 +115,12 @@ namespace TakoyakiPhysics
         {
              // Returns a vector useful for rotating the pan or pouring simulation
              return TiltVector;
+        }
+
+        private Vector2 _virtualInput;
+        public void SetVirtualInput(Vector2 input)
+        {
+            _virtualInput = input;
         }
     }
 }

@@ -67,17 +67,26 @@ namespace TakoyakiPhysics.Visuals
         {
             if (_physicsVertices == null) return; // Safety check
             
-            UpdatePhysics(Time.deltaTime);
-            
-            // Map physics positions back to mesh
-            for (int i = 0; i < _physicsVertices.Length; i++)
+            try 
             {
-                _meshVertices[i] = _physicsVertices[i].Position;
+                UpdatePhysics(Time.deltaTime);
+                
+                // Map physics positions back to mesh
+                for (int i = 0; i < _physicsVertices.Length; i++)
+                {
+                    _meshVertices[i] = _physicsVertices[i].Position;
+                }
+                
+                _workingMesh.vertices = _meshVertices;
+                _workingMesh.RecalculateNormals();
+                _workingMesh.RecalculateBounds();
             }
-            
-            _workingMesh.vertices = _meshVertices;
-            _workingMesh.RecalculateNormals();
-            _workingMesh.RecalculateBounds();
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[TakoyakiSoftBody] Error in Update: {e.Message}\nStack: {e.StackTrace}");
+                // Disable to stop spam
+                this.enabled = false;
+            }
         }
 
         private void UpdatePhysics(float dt)

@@ -37,15 +37,14 @@ public class SceneSetupWizard : EditorWindow
         CreateManager<HapticManager>(managers);
         CreateManager<ScoreManager>(managers);
         CreateManager<ShareManager>(managers);
-        // New: Topping Manager for interaction
         CreateManager<TakoyakiPhysics.Game.ToppingManager>(managers);
 
         // 2. Create UI
         GameObject uiRoot = new GameObject("--- UI ---");
         GameObject canvas = new GameObject("Canvas");
         canvas.transform.SetParent(uiRoot.transform);
-        Canvas c = canvas.AddComponent<Canvas>();
-        c.renderMode = RenderMode.ScreenSpaceOverlay;
+        Canvas gameCanvas = canvas.AddComponent<Canvas>(); // Unique name
+        gameCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.AddComponent<CanvasScaler>();
         canvas.AddComponent<GraphicRaycaster>();
         
@@ -54,7 +53,6 @@ public class SceneSetupWizard : EditorWindow
         GameObject hudPanel = CreatePanel(canvas, "GameHUD", Color.clear);
         GameObject resultPanel = CreatePanel(canvas, "ResultPanel", new Color(0, 1, 0, 0.3f));
         
-        // Add "Tap to Start" Hint (Simulated by empty GameObject name for now as we don't have Text setup logic fully automated)
         GameObject hint = new GameObject("TEXT: TAP TO START");
         hint.transform.SetParent(titlePanel.transform);
         
@@ -81,7 +79,7 @@ public class SceneSetupWizard : EditorWindow
         // Generate Mesh (3x3 Grid)
         int rows = 3;
         int cols = 3;
-        float spacing = 1.4f; // Spacing between centers
+        float spacing = 1.4f; 
         
         Mesh panMesh = ProceduralPanMesh.Generate(rows, cols, spacing);
         mf.mesh = panMesh;
@@ -97,23 +95,22 @@ public class SceneSetupWizard : EditorWindow
         Material panMat = new Material(ironShader != null ? ironShader : Shader.Find("Standard"));
         if (ironShader == null) panMat.color = Color.black; 
         
-        // Adjust texture scale for larger pan
         panMat.SetFloat("_NoiseScale", 200.0f); 
         panMr.sharedMaterial = panMat;
 
-        // Material for Takoyaki (Shared)
-        string shaderPath = "Assets/Scripts/Visuals/TakoyakiCinematic.shader";
-        AssetDatabase.ImportAsset(shaderPath, ImportAssetOptions.ForceUpdate);
+        // Material for Takoyaki (Shared) - Clean Logic
+        string takoShaderPath = "Assets/Scripts/Visuals/TakoyakiCinematic.shader";
+        AssetDatabase.ImportAsset(takoShaderPath, ImportAssetOptions.ForceUpdate);
         
         Shader takoShader = Shader.Find("Takoyaki/TakoyakiCinematic");
-        if (takoShader == null) takoShader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+        if (takoShader == null) takoShader = AssetDatabase.LoadAssetAtPath<Shader>(takoShaderPath);
         
-        string matPath = "Assets/Materials/TakoyakiCinematic.mat";
-        Material takoMat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+        string takoMatPath = "Assets/Materials/TakoyakiCinematic.mat";
+        Material takoMat = AssetDatabase.LoadAssetAtPath<Material>(takoMatPath);
         if (takoMat == null)
         {
             takoMat = new Material(takoShader != null ? takoShader : Shader.Find("Standard"));
-            AssetDatabase.CreateAsset(takoMat, matPath);
+            AssetDatabase.CreateAsset(takoMat, takoMatPath);
         }
         else
         {
@@ -127,7 +124,7 @@ public class SceneSetupWizard : EditorWindow
         takoMat.SetColor("_SSSColor", new Color(1f, 0.8f, 0.6f));
         takoMat.SetFloat("_OilFresnel", 5.0f);
         takoMat.SetFloat("_OilRoughness", 0.2f);
-        takoMat.SetFloat("_DisplacementStrength", 0.15f); // Stronger displacement for "lumpy" look
+        takoMat.SetFloat("_DisplacementStrength", 0.05f); 
 
         // Spawn Takoyaki Balls (Loop)
         float startX = -((cols - 1) * spacing) / 2.0f;
@@ -135,7 +132,7 @@ public class SceneSetupWizard : EditorWindow
 
         for (int r = 0; r < rows; r++)
         {
-            for (int c = 0; c < cols; c++)
+            for (int c = 0; c < cols; c++) // Loop logic ok now since canvas 'c' is renamed
             {
                 GameObject tako = new GameObject($"Takoyaki_Player_{r}_{c}");
                 tako.transform.SetParent(world.transform);
@@ -147,9 +144,9 @@ public class SceneSetupWizard : EditorWindow
 
                 MeshFilter takoMf = tako.AddComponent<MeshFilter>();
                 MeshRenderer takoMr = tako.AddComponent<MeshRenderer>();
-                // High Res Sphere
+                
                 takoMf.mesh = ProceduralBallMesh.Generate(250); 
-                takoMr.sharedMaterial = takoMat;
+                takoMr.sharedMaterial = takoMat; // Assign the shared material created earlier
                 
                 SphereCollider sc = tako.AddComponent<SphereCollider>(); 
                 sc.radius = 1.0f;
@@ -159,7 +156,6 @@ public class SceneSetupWizard : EditorWindow
                 tako.AddComponent<TakoyakiSoftBody>();
                 tako.AddComponent<ParticleController>(); 
                 tako.AddComponent<RuntimeTextureSetup>();
-                // Add Toppings Logic
                 tako.AddComponent<ToppingVisuals>();
                 
                 Rigidbody rb = tako.AddComponent<Rigidbody>();
@@ -175,7 +171,6 @@ public class SceneSetupWizard : EditorWindow
         // Camera Update
         GameObject camObj = new GameObject("Main Camera");
         camObj.transform.SetParent(world.transform);
-        // Pull camera back to see whole grid
         camObj.transform.position = new Vector3(0, 8.5f, -6.0f); 
         camObj.transform.LookAt(Vector3.zero);
         Camera cam = camObj.AddComponent<Camera>();
@@ -194,51 +189,10 @@ public class SceneSetupWizard : EditorWindow
         pointLightObj.transform.SetParent(world.transform);
         Light pointLight = pointLightObj.AddComponent<Light>();
         pointLight.type = LightType.Point;
-        pointLight.intensity = 4.0f; // Stronger for larger area
+        pointLight.intensity = 4.0f; 
         pointLight.range = 15.0f;
         pointLight.color = new Color(1.0f, 0.6f, 0.3f); 
         pointLightObj.transform.position = new Vector3(0, 4, 0);
-
-        // Material Setup for TAKOYAKI
-        // Fix for "Shader not found": Ensure asset database is aware
-        string shaderPath = "Assets/Scripts/Visuals/TakoyakiCinematic.shader";
-        AssetDatabase.ImportAsset(shaderPath, ImportAssetOptions.ForceUpdate);
-        
-        Shader takoShader = Shader.Find("Takoyaki/TakoyakiCinematic");
-        if (takoShader == null) 
-        {
-            takoShader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
-        }
-        
-        if (takoShader == null) Debug.LogError("FATAL: Moving to Standard Shader. TakoyakiCinematic could not be compiled or loaded.");
-
-        // Create persistent material to debug easily
-        string matPath = "Assets/Materials/TakoyakiCinematic.mat";
-        Material mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
-        if (mat == null)
-        {
-            mat = new Material(takoShader != null ? takoShader : Shader.Find("Standard"));
-            AssetDatabase.CreateAsset(mat, matPath);
-        }
-        else
-        {
-            mat.shader = takoShader != null ? takoShader : Shader.Find("Standard");
-        }
-        
-        mat.SetTexture("_MainTex", ProceduralTextureGen.GenerateBatterTexture());
-        mat.SetTexture("_CookedTex", ProceduralTextureGen.GenerateCookedTexture());
-        mat.SetTexture("_BurntTex", ProceduralTextureGen.GenerateBurntTexture());
-        mat.SetTexture("_NoiseTex", ProceduralTextureGen.GenerateNoiseMap());
-        
-        // Settings for "Cinematic" Look
-        mat.SetFloat("_SSSIntensity", 0.5f);
-        mat.SetColor("_SSSColor", new Color(1f, 0.8f, 0.6f));
-        mat.SetFloat("_OilFresnel", 5.0f);
-        mat.SetFloat("_OilRoughness", 0.2f);
-        mat.SetFloat("_DisplacementStrength", 0.05f); // Visible displacement
-
-        MeshRenderer mr = tako.GetComponent<MeshRenderer>();
-        mr.sharedMaterial = mat;
 
         Debug.Log("Takoyaki Scene Structure Created Successfully! (Procedural Pan & Textures Included)");
         Selection.activeGameObject = managers;

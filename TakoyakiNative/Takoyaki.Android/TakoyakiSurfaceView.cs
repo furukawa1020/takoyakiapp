@@ -68,6 +68,23 @@ namespace Takoyaki.Android
             _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
             _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
 
+            // Texture Uniforms
+            int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
+            int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
+            int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
+            int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
+
+            GLES30.GlUniform1i(uBatter, 0);
+            GLES30.GlUniform1i(uCooked, 1);
+            GLES30.GlUniform1i(uBurnt, 2);
+            GLES30.GlUniform1i(uNoise, 3);
+
+            // Generate & Upload Textures
+            LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
+            LoadTexture(1, Takoyaki.Core.ProceduralTexture.GenerateCooked(512));
+            LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
+            LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
+
             // 3. Generate Mesh & Buffers
             var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); // High res
             float[] meshData = mesh.ToInterleavedArray();
@@ -118,6 +135,26 @@ namespace Takoyaki.Android
             Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
             
             _lastTimeNs = System.nanoTime();
+        }
+
+        private void LoadTexture(int unit, Takoyaki.Core.ProceduralTexture tex)
+        {
+            int[] textureIds = new int[1];
+            GLES30.GlGenTextures(1, textureIds, 0);
+            int texId = textureIds[0];
+
+            GLES30.GlActiveTexture(GLES30.GlTexture0 + unit);
+            GLES30.GlBindTexture(GLES30.GlTexture2d, texId);
+
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMinFilter, GLES30.GlLinearMipmapLinear);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, GLES30.GlLinear);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlRepeat);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlRepeat);
+
+            // Upload
+            var buffer = java.nio.ByteBuffer.Wrap(tex.Pixels);
+            GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, tex.Width, tex.Height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, buffer);
+            GLES30.GlGenerateMipmap(GLES30.GlTexture2d);
         }
 
         public void OnSurfaceChanged(IGL10? gl, int width, int height)

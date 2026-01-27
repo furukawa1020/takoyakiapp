@@ -59,16 +59,29 @@ namespace TakoyakiPhysics.Game
             }
             else
             {
-                // Toggle between Ginger and Aonori for variety
-                if (Random.value > 0.5f)
+                // Topping Cycle: Ginger/Aonori -> Bonito -> Mayo
+                // Need to track state better? For now, random/accumulative.
+                
+                // If we implemented a proper "HasTopping" check in Visuals it would be cleaner.
+                // For now, let's just layer them based on clicks or check visual state via assumption?
+                // Let's assume user taps multiple times.
+                
+                // Simple probabilistic progression for demo:
+                float r = Random.value;
+                if (r < 0.4f)
                 {
-                    visuals.AddGinger();
-                    Debug.Log("Added Ginger!");
+                   if (Random.value > 0.5f) visuals.AddGinger();
+                   else visuals.AddAonori();
+                }
+                else if (r < 0.7f)
+                {
+                    visuals.AddBonito();
+                    Debug.Log("Added Bonito!");
                 }
                 else
                 {
-                    visuals.AddAonori();
-                    Debug.Log("Added Aonori!");
+                    visuals.AddMayo();
+                    Debug.Log("Added Mayo!");
                 }
             }
         }

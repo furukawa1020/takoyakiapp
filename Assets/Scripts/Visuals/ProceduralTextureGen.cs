@@ -6,8 +6,8 @@ namespace TakoyakiPhysics.Visuals
     {
         public static Texture2D GenerateBatterTexture()
         {
-            // Pale, slight creamy, wet look
-            return GenerateFractalNoiseTexture(256, 8.0f, new Color(0.95f, 0.92f, 0.85f), new Color(0.9f, 0.88f, 0.8f), 2); 
+            // Yellowish Dashi Egg Batter (User requested "Yellow")
+            return GenerateFractalNoiseTexture(256, 8.0f, new Color(1.0f, 0.92f, 0.6f), new Color(0.95f, 0.85f, 0.5f), 2); 
         }
 
         public static Texture2D GenerateCookedTexture()

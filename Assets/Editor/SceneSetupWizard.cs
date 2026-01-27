@@ -12,6 +12,16 @@ public class SceneSetupWizard : EditorWindow
     [MenuItem("Takoyaki/Setup/Create Game Scene")]
     public static void CreateGameScene()
     {
+        // 0. Clean up existing scene (prevent duplication)
+        GameObject[] roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+        foreach (var r in roots)
+        {
+            if (r.name.StartsWith("---") || r.name == "Main Camera" || r.name == "Directional Light" || r.name == "Canvas")
+            {
+                DestroyImmediate(r);
+            }
+        }
+    
         // 1. Create Core Managers
         GameObject managers = new GameObject("--- MANAGERS ---");
         
@@ -31,9 +41,14 @@ public class SceneSetupWizard : EditorWindow
         canvas.AddComponent<CanvasScaler>();
         canvas.AddComponent<GraphicRaycaster>();
         
-        GameObject titlePanel = CreatePanel(canvas, "TitlePanel", Color.blue);
+        // Make Title transparent blue so we can see the Takoyaki waiting
+        GameObject titlePanel = CreatePanel(canvas, "TitlePanel", new Color(0, 0, 1, 0.1f));
         GameObject hudPanel = CreatePanel(canvas, "GameHUD", Color.clear);
-        GameObject resultPanel = CreatePanel(canvas, "ResultPanel", Color.green);
+        GameObject resultPanel = CreatePanel(canvas, "ResultPanel", new Color(0, 1, 0, 0.3f));
+        
+        // Add "Tap to Start" Hint (Simulated by empty GameObject name for now as we don't have Text setup logic fully automated)
+        GameObject hint = new GameObject("TEXT: TAP TO START");
+        hint.transform.SetParent(titlePanel.transform);
         
         resultPanel.SetActive(false);
         hudPanel.SetActive(false);

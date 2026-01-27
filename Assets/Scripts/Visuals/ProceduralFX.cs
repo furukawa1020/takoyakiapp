@@ -14,8 +14,9 @@ namespace TakoyakiPhysics.Visuals
             ParticleSystem ps = obj.AddComponent<ParticleSystem>();
             
             // Fix Pink Box
+            // Fix Pink Box
             var renderer = obj.GetComponent<ParticleSystemRenderer>();
-            renderer.material = new Material(Shader.Find("Particles/Standard Unlit")); 
+            renderer.material = new Material(Shader.Find("Sprites/Default")); 
             
             var main = ps.main;
             main.startLifetime = 1.5f;
@@ -82,7 +83,7 @@ namespace TakoyakiPhysics.Visuals
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             
             // Assign a default material to avoid Pink Box
-            renderer.material = new Material(Shader.Find("Particles/Standard Surface"));
+            renderer.material = new Material(Shader.Find("Sprites/Default"));
             
             return ps;
         }

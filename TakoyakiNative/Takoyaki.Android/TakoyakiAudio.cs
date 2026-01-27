@@ -13,6 +13,11 @@ namespace Takoyaki.Android
 
         private float _currentSizzleVolume = 0f;
 
+        private ToneGenerator _toneGen;
+        private int _dingSoundId;
+        private int _turnSoundId;
+        private int _serveSoundId;
+
         public TakoyakiAudio(Context context)
         {
             var attributes = new AudioAttributes.Builder()
@@ -24,39 +29,40 @@ namespace Takoyaki.Android
                 .SetAudioAttributes(attributes)
                 .SetMaxStreams(5)
                 .Build();
-
-            // Load assets (Assuming files exist in Assets, transparently handled by Xamarin/Maui usually via AssetManager, 
-            // but SoundPool.Load(Context, ResId, Priority) is easier if mapped to Resources/raw)
-            // For this prototype, we'll try to load from Assets via AssetFileDescriptor
             
-            // To prevent crashes if files miss, we wrap in try/catch or just assume scaffolding
-            // In a real scenario: context.Assets.OpenFd("sizzle.wav");
-            
-            // _sizzleSoundId = LoadSound(context, "sizzle.wav");
-            // _tapSoundId = LoadSound(context, "tap.wav");
-        }
+            _toneGen = new ToneGenerator(Stream.Music, 100);
 
-        private int LoadSound(Context context, string filename)
-        {
-            try
-            {
-                var afd = context.Assets.OpenFd(filename);
-                return _soundPool.Load(afd, 1);
-            }
-            catch
-            {
-                return 0; // Fail silently
-            }
+            // Placeholder loads (would fail silently if files missing)
+            // _dingSoundId = LoadSound(context, "ding.wav");
+            // _turnSoundId = LoadSound(context, "turn.wav");
+            // _serveSoundId = LoadSound(context, "serve.wav");
         }
 
         public void PlayTap()
         {
             if (_tapSoundId != 0)
             {
-                // Play with random pitch for variety
                 float pitch = 0.9f + (float)new System.Random().NextDouble() * 0.2f;
                 _soundPool.Play(_tapSoundId, 1f, 1f, 1, 0, pitch);
             }
+        }
+
+        public void PlayDing()
+        {
+            if (_dingSoundId != 0) _soundPool.Play(_dingSoundId, 1f, 1f, 1, 0, 1.0f);
+            else _toneGen.StartTone(Tone.CdmaAlertCallGuard, 150); // High pitch beep
+        }
+
+        public void PlayTurn()
+        {
+            if (_turnSoundId != 0) _soundPool.Play(_turnSoundId, 1f, 1f, 1, 0, 1.0f);
+            else _toneGen.StartTone(Tone.PropBeep, 50); // Short blip
+        }
+
+        public void PlayServe()
+        {
+            if (_serveSoundId != 0) _soundPool.Play(_serveSoundId, 1f, 1f, 1, 0, 1.0f);
+            else _toneGen.StartTone(Tone.CdmaConfirm, 300); // Longer confirmation
         }
 
         public void UpdateSizzle(float cookLevel, bool isCooking)

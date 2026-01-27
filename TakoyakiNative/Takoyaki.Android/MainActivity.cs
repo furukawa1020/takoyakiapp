@@ -14,10 +14,13 @@ namespace Takoyaki.Android
     public class MainActivity : AppCompatActivity
     {
         private TakoyakiSurfaceView _surfaceView;
-        private Android.Widget.RelativeLayout _uiOverlay;
-        private Android.Widget.TextView _scoreText;
-        private Android.Widget.TextView _commentText;
-        private Android.Widget.Button _resetButton;
+        // ... fields ...
+
+        public override bool DispatchKeyEvent(KeyEvent e)
+        {
+            if (_surfaceView.HandleKeyEvent(e)) return true;
+            return base.DispatchKeyEvent(e);
+        }
 
         protected override void OnCreate(Bundle? savedInstanceState)
         {

@@ -49,6 +49,11 @@ namespace Takoyaki.Android
             _sensor.Stop();
         }
 
+        public bool HandleKeyEvent(KeyEvent e)
+        {
+            return _renderer.HandleKeyEvent(e);
+        }
+
         public override bool OnTouchEvent(MotionEvent? e)
         {
             if (e == null) return false;
@@ -277,6 +282,38 @@ namespace Takoyaki.Android
                 _inputState.IsSwipe = false;
             }
         }
+        
+        // Emulation State
+        private float _emuTiltX = 0f;
+        private float _emuTiltY = 0f;
+        private bool _emuTrust = false;
+
+        public bool HandleKeyEvent(KeyEvent e)
+        {
+            if (e.Action == KeyEventActions.Down)
+            {
+                switch (e.KeyCode)
+                {
+                    case Keycode.DpadUp: _emuTiltY = -0.5f; return true;
+                    case Keycode.DpadDown: _emuTiltY = 0.5f; return true; // Pouring (Tilt Forward)
+                    case Keycode.DpadLeft: _emuTiltX = -0.5f; return true;
+                    case Keycode.DpadRight: _emuTiltX = 0.5f; return true;
+                    case Keycode.Space: _emuTrust = true; return true; // Serve
+                }
+            }
+            else if (e.Action == KeyEventActions.Up)
+            {
+                switch (e.KeyCode)
+                {
+                    case Keycode.DpadUp: 
+                    case Keycode.DpadDown: _emuTiltY = 0f; return true;
+                    case Keycode.DpadLeft: 
+                    case Keycode.DpadRight: _emuTiltX = 0f; return true;
+                    case Keycode.Space: _emuTrust = false; return true;
+                }
+            }
+            return false;
+        }
 
         public void OnDrawFrame(IGL10? gl)
         {
@@ -338,6 +375,16 @@ namespace Takoyaki.Android
             // Input from Sensors
             _inputState.Tilt = _sensor.CurrentTilt;
             _inputState.Acceleration = _sensor.CurrentAcceleration;
+            
+            // Apply Emulation Override
+            if (Math.Abs(_emuTiltX) > 0.01f) _inputState.Tilt.X = _emuTiltX;
+            if (Math.Abs(_emuTiltY) > 0.01f) _inputState.Tilt.Y = _emuTiltY; // Override for Pouring
+            
+            if (_emuTrust)
+            {
+                // Emulate Thrust (Strong negative Z accel)
+                _inputState.Acceleration.Z = -15.0f;
+            }
 
             // Physics Gravity Direction
             // 0, -9.8, 0 is default down. 

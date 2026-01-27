@@ -321,14 +321,8 @@ namespace Takoyaki.Android
             // Physics Gravity Direction
             // 0, -9.8, 0 is default down. 
             // If tilted, gravity effectively changes relative to the "Pan" space if we rotate the world.
-            // OR we apply force to the ball to simulate rolling on pan.
-            
-            // Simulating Pan Rotation:
-            // Tilt X -> Gravity X
-            // Tilt Y -> Gravity Z
-            
             float gScale = 9.8f;
-            Vector3 gravity = new Vector3(
+            System.Numerics.Vector3 gravity = new System.Numerics.Vector3(
                 _inputState.Tilt.X * gScale, 
                 -gScale, 
                 _inputState.Tilt.Y * gScale // Y mapping to Z for 3D depth roll
@@ -336,15 +330,17 @@ namespace Takoyaki.Android
 
             _physics.Update(dt, System.Numerics.Vector3.Zero, gravity);
             
-            // Interaction (Touch still rotates mostly for debug/legacy interaction, 
-            // but now Tilt should drive the "Rolling feeling")
+            // Interaction: Visual Rolling based on Tilt (Simple visual feedback)
+            Matrix.SetIdentityM(_modelMatrix, 0); // Reset generic rotation
+            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1); // Z-axis roll
+            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * 45f, 1, 0, 0); // X-axis pitch
             
-            // Visual Rolling based on Tilt
-             // Simple visual feedback
-            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * dt * 10f, 0, 0, 1); // Z-axis roll
-            Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * dt * 10f, 1, 0, 0); // X-axis pitch
-            
-            // ... (Rest of Swipe/Tap logic) ...
+            // Legacy Swipe/Tap logic
+            if (_inputState.IsSwipe)
+            {
+                 // Add extra rotation on top or handle turning
+                 // ...
+            }
             {
                 // ... Rotation logic ...
                 Matrix.RotateM(_modelMatrix, 0, _inputState.SwipeDelta.X * 0.5f, 0, 1, 0);

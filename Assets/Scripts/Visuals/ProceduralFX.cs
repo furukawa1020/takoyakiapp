@@ -12,6 +12,11 @@ namespace TakoyakiPhysics.Visuals
             obj.transform.localRotation = Quaternion.Euler(-90, 0, 0); // Upwards
 
             ParticleSystem ps = obj.AddComponent<ParticleSystem>();
+            
+            // Fix Pink Box
+            var renderer = obj.GetComponent<ParticleSystemRenderer>();
+            renderer.material = new Material(Shader.Find("Particles/Standard Unlit")); 
+            
             var main = ps.main;
             main.startLifetime = 1.5f;
             main.startSpeed = 0.5f;

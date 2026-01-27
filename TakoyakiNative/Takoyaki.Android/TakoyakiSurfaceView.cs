@@ -10,12 +10,16 @@ namespace Takoyaki.Android
     {
         private TakoyakiRenderer _renderer;
         private TakoyakiHaptics _haptics;
+        private TakoyakiAudio _audio;
 
         public TakoyakiSurfaceView(Context context) : base(context)
         {
             SetEGLContextClientVersion(3); // OpenGL ES 3.0
+            
             _haptics = new TakoyakiHaptics(context);
-            _renderer = new TakoyakiRenderer(_haptics);
+            _audio = new TakoyakiAudio(context);
+            
+            _renderer = new TakoyakiRenderer(_haptics, _audio);
             SetRenderer(_renderer);
             RenderMode = Rendermode.Continuously;
         }
@@ -253,10 +257,12 @@ namespace Takoyaki.Android
         }
 
         private TakoyakiHaptics _haptics;
+        private TakoyakiAudio _audio;
 
-        public TakoyakiRenderer(TakoyakiHaptics haptics)
+        public TakoyakiRenderer(TakoyakiHaptics haptics, TakoyakiAudio audio)
         {
             _haptics = haptics;
+            _audio = audio;
         }
         
         // ... (OnSurfaceCreated etc remain same)
@@ -270,7 +276,6 @@ namespace Takoyaki.Android
             // Interaction
             if (_inputState.IsSwipe)
             {
-                float strength = 4.0f;
                 // ... Rotation logic ...
                 Matrix.RotateM(_modelMatrix, 0, _inputState.SwipeDelta.X * 0.5f, 0, 1, 0);
                 
@@ -284,13 +289,17 @@ namespace Takoyaki.Android
             if (_inputState.IsTap)
             {
                 _physics.TriggerJiggle(2.0f);
-                _haptics.TriggerImpact(0.5f); // Thud
-                _inputState.IsTap = false; // Consume immediately
+                _haptics.TriggerImpact(0.5f);
+                _audio.PlayTap(); // Audio
+                _inputState.IsTap = false; 
             }
 
             _heatDelay.Update(dt, 180f);
             
-            // _inputState.ClearEvents(); // Done in HandleTouch/Logic sync usually
+            // Audio Sizzle
+            // We need to know if it's currently touching the hot pan
+            // Simplification: if not in air (no Y velocity check yet), assume touching pan
+            _audio.UpdateSizzle(_ball.CookLevel, true); 
         }
 
         // Cache for VBO updates

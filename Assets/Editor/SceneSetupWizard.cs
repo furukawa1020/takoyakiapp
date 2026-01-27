@@ -82,7 +82,24 @@ public class SceneSetupWizard : EditorWindow
         light.type = LightType.Directional;
         lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
 
-        Debug.Log("Takoyaki Scene Structure Created Successfully!");
+        // Material Setup
+        Material mat = new Material(Shader.Find("Takoyaki/TakoyakiCinematic"));
+        mat.SetTexture("_MainTex", ProceduralTextureGen.GenerateBatterTexture());
+        mat.SetTexture("_CookedTex", ProceduralTextureGen.GenerateCookedTexture());
+        mat.SetTexture("_BurntTex", ProceduralTextureGen.GenerateBurntTexture());
+        mat.SetTexture("_NoiseTex", ProceduralTextureGen.GenerateNoiseMap());
+        
+        // Settings for "Cinematic" Look
+        mat.SetFloat("_SSSIntensity", 0.5f);
+        mat.SetColor("_SSSColor", new Color(1f, 0.8f, 0.6f));
+        mat.SetFloat("_OilFresnel", 5.0f);
+        mat.SetFloat("_OilRoughness", 0.2f);
+        mat.SetFloat("_DisplacementStrength", 0.05f); // Visible displacement
+
+        MeshRenderer mr = tako.GetComponent<MeshRenderer>();
+        mr.sharedMaterial = mat;
+
+        Debug.Log("Takoyaki Scene Structure Created Successfully! (Procedural Textures Included)");
         Selection.activeGameObject = managers;
     }
 

@@ -24,7 +24,7 @@ namespace TakoyakiPhysics
         public event Action<GameState> OnStateChanged;
         
         // Reference to the active takoyaki logic
-        public TakoyakiController ActiveTakoyaki; 
+        public TakoyakiController[] ActiveTakoyakis; 
 
         private void Awake()
         {
@@ -42,15 +42,19 @@ namespace TakoyakiPhysics
         private void Start()
         {
             // Ideally find the Takoyaki in the scene if not set
-            if (ActiveTakoyaki == null) ActiveTakoyaki = FindObjectOfType<TakoyakiController>();
+            if (ActiveTakoyakis == null || ActiveTakoyakis.Length == 0) 
+                ActiveTakoyakis = FindObjectsOfType<TakoyakiController>();
             
-            if (ActiveTakoyaki != null)
+            if (ActiveTakoyakis != null)
             {
-                ActiveTakoyaki.OnPourComplete += () => ChangeState(GameState.Cooking);
-                ActiveTakoyaki.OnBurn += () => {
-                     // Maybe Game Over or just visual? 
-                     // For now, let's keep cooking but show fail UI later
-                };
+                foreach (var tako in ActiveTakoyakis)
+                {
+                    // For now, any one of them finishing pour triggers state? 
+                    // Or wait for all? Let's just listen to the first one for simplicity or aggregate.
+                    tako.OnPourComplete += () => {
+                         if (CurrentState != GameState.Cooking) ChangeState(GameState.Cooking);
+                    };
+                }
             }
 
             ChangeState(GameState.Title);
@@ -101,12 +105,20 @@ namespace TakoyakiPhysics
                         break;
                     case GameState.Result:
                         // Calculate Score
-                        if (Meta.ScoreManager.Instance != null && ActiveTakoyaki != null)
+                        // Calculate Score
+                        if (Meta.ScoreManager.Instance != null && ActiveTakoyakis != null)
                         {
-                            Meta.ScoreManager.Instance.CalculateScore(ActiveTakoyaki);
+                            Meta.ScoreManager.Instance.CalculateScore(ActiveTakoyakis);
                              // Update Result UI
                              float score = Meta.ScoreManager.Instance.TotalScore;
-                             string comment = Meta.CommentGenerator.GetComment(score, ActiveTakoyaki.CookLevel, ActiveTakoyaki.ShapeIntegrity);
+                             // Use average cook level for comment
+                             float avgCook = 0;
+                             float avgShape = 0;
+                             foreach(var t in ActiveTakoyakis) { avgCook += t.CookLevel; avgShape += t.ShapeIntegrity; }
+                             avgCook /= ActiveTakoyakis.Length;
+                             avgShape /= ActiveTakoyakis.Length;
+                             
+                             string comment = Meta.CommentGenerator.GetComment(score, avgCook, avgShape);
                              UI.UIManager.Instance.UpdateResultUI(score, comment);
                         }
                         UI.UIManager.Instance.ShowResult();

@@ -18,20 +18,54 @@ namespace TakoyakiPhysics.Meta
             if (Instance == null) Instance = this;
         }
 
-        public void CalculateScore(TakoyakiController takoyaki)
+        public void CalculateScore(TakoyakiController[] takoyakis)
         {
-            // 1. Shape: 1.0 is perfect sphere
-            ShapeScore = takoyaki.ShapeIntegrity;
+            if (takoyakis == null || takoyakis.Length == 0) return;
 
-            // 2. Cook: 1.0 is perfect, deviation reduces score
-            float cookDiff = Mathf.Abs(takoyaki.CookLevel - 1.0f);
-            CookScore = Mathf.Clamp01(1.0f - cookDiff);
+            float totalShape = 0f;
+            float totalCook = 0f;
+            float toppingBonus = 0f;
 
-            // 3. Turn logic would be accumulated during gameplay
-            // Placeholder
-            TurnScore = 0.8f; 
+            foreach (var tako in takoyakis)
+            {
+                // Shape
+                totalShape += tako.ShapeIntegrity;
+
+                // Cook Level (1.0 is perfect)
+                float cookDiff = Mathf.Abs(tako.CookLevel - 1.0f);
+                totalCook += Mathf.Clamp01(1.0f - cookDiff);
+
+                // Toppings
+                var toppings = tako.GetComponent<TakoyakiPhysics.Visuals.ToppingVisuals>();
+                if (toppings != null)
+                {
+                    if (toppings.HasOctopus) toppingBonus += 5f;
+                    if (toppings.HasGinger) toppingBonus += 2f;
+                    if (toppings.HasAonori) toppingBonus += 2f;
+                    if (toppings.HasBonito) toppingBonus += 3f;
+                    if (toppings.HasMayo) toppingBonus += 3f;
+                }
+            }
+
+            // Averages (0-1)
+            ShapeScore = totalShape / takoyakis.Length;
+            CookScore = totalCook / takoyakis.Length;
             
-            Debug.Log($"Score Calculated: {TotalScore:F1} (Shape:{ShapeScore:F2}, Cook:{CookScore:F2})");
+            // Base Score from Quality (0-100)
+            float qualityScore = (ShapeScore * 40f) + (CookScore * 60f);
+            
+            // Add Bonuses
+            TurnScore = toppingBonus; // Reuse this field for Bonus for now
+            
+            float rawScore = qualityScore + toppingBonus;
+            
+            // Cap at 100? Or go beyond for "S Rank"? Let's cap at 100 for simplicity or 120 for fun.
+            // Let's call it calculated.
+            
+            // Update internal state
+            // TotalScore property uses these.
+            
+            Debug.Log($"Score Calculated: {TotalScore:F1} (AvgShape:{ShapeScore:F2}, AvgCook:{CookScore:F2}, Bonus:{toppingBonus})");
         }
     }
 }

@@ -47,6 +47,11 @@ namespace TakoyakiPhysics.Game
         {
             ToppingVisuals visuals = tako.GetComponent<ToppingVisuals>();
             if (visuals == null) return;
+            
+            if (TakoyakiPhysics.Feedback.AudioManager.Instance != null)
+            {
+                TakoyakiPhysics.Feedback.AudioManager.Instance.PlayToppingSound();
+            }
 
             // Simple Logic for now: 
             // 1. If Raw and no Octopus -> Add Octopus

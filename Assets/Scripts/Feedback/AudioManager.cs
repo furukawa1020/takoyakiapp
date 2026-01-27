@@ -68,6 +68,24 @@ namespace TakoyakiPhysics.Feedback
              }
         }
     
+        public void PlayToppingSound()
+        {
+            // Procedural "Pop" / "Shake" sound
+            if (sfxSource != null)
+            {
+                // Create a temporary clip for a "Pop"
+                AudioClip clip = AudioClip.Create("Pop", 441, 1, 44100, false);
+                float[] data = new float[441]; // 0.01 sec very short
+                for (int i = 0; i < data.Length; i++)
+                {
+                    float t = (float)i / 44100f;
+                    data[i] = Mathf.Sin(2 * Mathf.PI * 800 * t) * (1f - (float)i/data.Length);
+                }
+                clip.SetData(data, 0);
+                sfxSource.PlayOneShot(clip, 0.5f);
+            }
+        }
+
         public void StopPouring() { }
     }
 }

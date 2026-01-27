@@ -5,6 +5,10 @@ namespace TakoyakiPhysics.Visuals
     public class ToppingVisuals : MonoBehaviour
     {
         public bool HasOctopus { get; private set; } = false;
+        public bool HasGinger { get; private set; } = false;
+        public bool HasAonori { get; private set; } = false;
+        public bool HasBonito { get; private set; } = false;
+        public bool HasMayo { get; private set; } = false;
         
         private GameObject _octopusLeg;
         private ParticleSystem _gingerFX;
@@ -78,7 +82,11 @@ namespace TakoyakiPhysics.Visuals
 
         public void AddGinger()
         {
-            if (_gingerFX != null) _gingerFX.Emit(20);
+            if (_gingerFX != null) 
+            {
+                _gingerFX.Emit(20);
+                HasGinger = true;
+            }
         }
 
         // --- AONORI ---
@@ -110,7 +118,11 @@ namespace TakoyakiPhysics.Visuals
 
         public void AddAonori()
         {
-             if (_aonoriFX != null) _aonoriFX.Emit(50);
+             if (_aonoriFX != null) 
+             {
+                 _aonoriFX.Emit(50);
+                 HasAonori = true;
+             }
         }
 
         // --- BONITO ---
@@ -161,6 +173,7 @@ namespace TakoyakiPhysics.Visuals
             {
                 _bonitoFX.Play();
                 _bonitoFX.Emit(30);
+                HasBonito = true;
             }
         }
 
@@ -203,6 +216,7 @@ namespace TakoyakiPhysics.Visuals
             if (_mayoLine != null)
             {
                 _mayoLine.enabled = true;
+                HasMayo = true;
             }
         }
     }

@@ -115,7 +115,31 @@ public class SceneSetupWizard : EditorWindow
         pointLightObj.transform.position = new Vector3(2, 3, -2);
 
         // Material Setup
-        Material mat = new Material(Shader.Find("Takoyaki/TakoyakiCinematic"));
+        // Fix for "Shader not found": Ensure asset database is aware
+        string shaderPath = "Assets/Scripts/Visuals/TakoyakiCinematic.shader";
+        AssetDatabase.ImportAsset(shaderPath, ImportAssetOptions.ForceUpdate);
+        
+        Shader takoShader = Shader.Find("Takoyaki/TakoyakiCinematic");
+        if (takoShader == null) 
+        {
+            takoShader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+        }
+        
+        if (takoShader == null) Debug.LogError("FATAL: Moving to Standard Shader. TakoyakiCinematic could not be compiled or loaded.");
+
+        // Create persistent material to debug easily
+        string matPath = "Assets/Materials/TakoyakiCinematic.mat";
+        Material mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+        if (mat == null)
+        {
+            mat = new Material(takoShader != null ? takoShader : Shader.Find("Standard"));
+            AssetDatabase.CreateAsset(mat, matPath);
+        }
+        else
+        {
+            mat.shader = takoShader != null ? takoShader : Shader.Find("Standard");
+        }
+        
         mat.SetTexture("_MainTex", ProceduralTextureGen.GenerateBatterTexture());
         mat.SetTexture("_CookedTex", ProceduralTextureGen.GenerateCookedTexture());
         mat.SetTexture("_BurntTex", ProceduralTextureGen.GenerateBurntTexture());

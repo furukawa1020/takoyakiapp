@@ -104,8 +104,17 @@ public class SceneSetupWizard : EditorWindow
 
         Debug.Log("Takoyaki Scene Structure Created Successfully! (Procedural Textures Included)");
         Selection.activeGameObject = managers;
+        
+        // Auto-Save the scene so it persists
+        string scenePath = "Assets/Scenes/Main.unity";
+        if (!System.IO.Directory.Exists("Assets/Scenes"))
+        {
+            System.IO.Directory.CreateDirectory("Assets/Scenes");
+        }
+        UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene(), scenePath);
+        Debug.Log($"Scene Auto-Saved to {scenePath}");
     }
-
+    
     private static T CreateManager<T>(GameObject parent) where T : Component
     {
         GameObject obj = new GameObject(typeof(T).Name);

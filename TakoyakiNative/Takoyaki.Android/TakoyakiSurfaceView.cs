@@ -88,8 +88,10 @@ namespace Takoyaki.Android
             GLES30.GlUniform1i(uCooked, 1);
             GLES30.GlUniform1i(uBurnt, 2);
             GLES30.GlUniform1i(uNoise, 3);
+            // Generate & Upload Textures
             LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
-            LoadTexture(1, Takoyaki.Core.ProceduralTexture.GenerateCooked(512));
+            _cookedTex = Takoyaki.Core.ProceduralTexture.GenerateCooked(512); // Keep ref
+            LoadTexture(1, _cookedTex);
             LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
             LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
 
@@ -181,6 +183,25 @@ namespace Takoyaki.Android
             GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, tex.Width, tex.Height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, buffer);
             GLES30.GlGenerateMipmap(GLES30.GlTexture2d);
         }
+
+        private Takoyaki.Core.ProceduralTexture _cookedTex;
+        private int _cookedTexUnit = 1;
+
+        // ... (LoadTexture logic)
+
+        public void ApplyTopping()
+        {
+            // Simple state sequence: Sauce -> Mayo -> Aonori
+            if (_toppingStage == 0) _cookedTex.DrawSauce();
+            else if (_toppingStage == 1) _cookedTex.DrawMayo();
+            else if (_toppingStage == 2) _cookedTex.DrawAonori();
+            
+            _toppingStage++;
+            
+            // Re-upload
+            LoadTexture(_cookedTexUnit, _cookedTex);
+        }
+        private int _toppingStage = 0;
 
         public void OnSurfaceChanged(IGL10? gl, int width, int height)
         {
@@ -288,9 +309,18 @@ namespace Takoyaki.Android
             
             if (_inputState.IsTap)
             {
-                _physics.TriggerJiggle(2.0f);
-                _haptics.TriggerImpact(0.5f);
-                _audio.PlayTap(); // Audio
+                if (_ball.CookLevel > 0.8f) // Cooked enough?
+                {
+                    ApplyTopping();
+                    _haptics.TriggerImpact(0.2f); // Light tap for toppings
+                    _audio.PlayTap();
+                }
+                else
+                {
+                    _physics.TriggerJiggle(2.0f);
+                    _haptics.TriggerImpact(0.5f);
+                    _audio.PlayTap(); // Jiggle Sound
+                }
                 _inputState.IsTap = false; 
             }
 

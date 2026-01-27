@@ -16,16 +16,100 @@ namespace Takoyaki.Core
             Pixels = new byte[size * size * 4];
         }
 
-        public void SetPixel(int x, int y, Vector4 color)
+        // ... (Existing Noise methods)
+
+        // --- Toppings ---
+
+        public void DrawSauce()
         {
-            // Clamp 0..1
-            color = Vector4.Clamp(color, Vector4.Zero, Vector4.One);
+            // Dark brown, glossy coverage
+            // Not uniform, should drip/pool
+            Vector4 sauceColor = new Vector4(0.15f, 0.05f, 0.02f, 1f);
+            ApplyLayer(sauceColor, 0.6f, NoiseType.Blobby);
+        }
+
+        public void DrawMayo()
+        {
+            // White lines
+            // Simple ZigZag pattern for prototype
+            Vector4 mayoColor = new Vector4(0.95f, 0.95f, 0.9f, 1f);
             
+            for (int y = 0; y < Height; y++)
+            {
+                float nx = (float)y / Height * 10f; // Frequency
+                float center = 0.5f + (float)Math.Sin(nx) * 0.3f; // Sine wave path
+                int cx = (int)(center * Width);
+                
+                // Draw thick line
+                for (int x = cx - 10; x <= cx + 10; x++)
+                {
+                    if (x >= 0 && x < Width)
+                    {
+                        // Soft edge
+                        float dist = Math.Abs(x - cx);
+                        float alpha = 1.0f - (dist / 10.0f);
+                        BlendPixel(x, y, mayoColor, alpha);
+                    }
+                }
+            }
+        }
+
+        public void DrawAonori()
+        {
+            // Green speckles
+            Vector4 aonoriColor = new Vector4(0.1f, 0.4f, 0.1f, 1f);
+            float seed = (float)(new Random().NextDouble() * 100);
+
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    float n = PerlinNoise.Noise(x * 0.5f + seed, y * 0.5f + seed);
+                    if (n > 0.8f) // Sparse
+                    {
+                        BlendPixel(x, y, aonoriColor, 1.0f);
+                    }
+                }
+            }
+        }
+
+        private enum NoiseType { Blobby }
+
+        private void ApplyLayer(Vector4 color, float coverage, NoiseType type)
+        {
+            float seed = (float)(new Random().NextDouble() * 100);
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    float nx = (float)x / Width * 5.0f;
+                    float ny = (float)y / Height * 5.0f;
+                    float n = PerlinNoise.Noise(nx + seed, ny + seed);
+                    
+                    if (n > (1.0f - coverage))
+                    {
+                        BlendPixel(x, y, color, 0.9f);
+                    }
+                }
+            }
+        }
+
+        private void BlendPixel(int x, int y, Vector4 color, float alpha)
+        {
             int idx = (y * Width + x) * 4;
-            Pixels[idx] = (byte)(color.X * 255);
-            Pixels[idx + 1] = (byte)(color.Y * 255);
-            Pixels[idx + 2] = (byte)(color.Z * 255);
-            Pixels[idx + 3] = (byte)(color.W * 255);
+            Vector4 current = new Vector4(
+                Pixels[idx] / 255.0f,
+                Pixels[idx+1] / 255.0f,
+                Pixels[idx+2] / 255.0f,
+                1.0f
+            );
+
+            Vector4 blended = Vector4.Lerp(current, color, alpha);
+            
+            Pixels[idx] = (byte)(blended.X * 255);
+            Pixels[idx+1] = (byte)(blended.Y * 255);
+            Pixels[idx+2] = (byte)(blended.Z * 255);
+            // Alpha kept 255 usually
         }
 
         // --- Generations ---

@@ -12,9 +12,24 @@ namespace TakoyakiPhysics.Visuals
                 // Ensure material exists (clone)
                 Material mat = r.material; 
                 
-                // transform checks to avoid overriding if already assigned in editor?
-                // For this prototype, we ALWAYS generate to be safe and "Code First"
-                
+                // Force Assign Shader if it's not correct
+                if (!mat.shader.name.Contains("Takoyaki"))
+                {
+                    Shader s = Shader.Find("Takoyaki/TakoyakiCinematic");
+                    if (s != null) 
+                    {
+                        mat.shader = s;
+                        Debug.Log("[RuntimeTextureSetup] Force assigned TakoyakiCinematic shader.");
+                    }
+                    else
+                    {
+                        Debug.LogError("[RuntimeTextureSetup] Critical Error: 'Takoyaki/TakoyakiCinematic' Shader not found!");
+                        // Fallback to Standard to see something at least
+                        mat.shader = Shader.Find("Standard");
+                        mat.color = Color.yellow; 
+                    }
+                }
+
                 if (mat.shader.name.Contains("Takoyaki"))
                 {
                     mat.SetTexture("_MainTex", ProceduralTextureGen.GenerateBatterTexture());
@@ -23,10 +38,11 @@ namespace TakoyakiPhysics.Visuals
                     mat.SetTexture("_NoiseTex", ProceduralTextureGen.GenerateNoiseMap());
                     
                     // Defaults if not set
-                    if (mat.GetFloat("_OilFresnel") == 0) mat.SetFloat("_OilFresnel", 5.0f);
-                    if (mat.GetFloat("_DisplacementStrength") == 0) mat.SetFloat("_DisplacementStrength", 0.05f);
+                    mat.SetFloat("_OilFresnel", 5.0f);
+                    mat.SetFloat("_DisplacementStrength", 0.05f);
+                    mat.SetFloat("_CookLevel", 0.0f); // Ensure it starts raw
                     
-                    Debug.Log("[RuntimeTextureSetup] Procedural Textures Generated and Assigned.");
+                    Debug.Log("[RuntimeTextureSetup] Procedural Textures Generated and Assigned Successfully.");
                 }
             }
         }

@@ -338,6 +338,25 @@ namespace Takoyaki.Android
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1); // Z-axis roll
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * 45f, 1, 0, 0); // X-axis pitch
             
+            // State Machine Update
+            _stateMachine.Update(_inputState, dt);
+
+            // Audio & Haptics based on State
+            if (_stateMachine.CurrentState is Takoyaki.Core.StateRaw)
+            {
+                // Pouring Sound logic (Placeholder until Audio supported properly)
+                if (_ball.BatterLevel > 0.01f && _ball.BatterLevel < 1.0f)
+                {
+                    // _audio.PlayPour(); 
+                }
+            }
+            else
+            {
+                // Cooking
+                _heatDelay.Update(dt, 180f);
+                _audio.UpdateSizzle(_ball.CookLevel, true); 
+            }
+            
             // Legacy Swipe/Tap logic
             if (_inputState.IsSwipe)
             {
@@ -372,12 +391,7 @@ namespace Takoyaki.Android
                 _inputState.IsTap = false; 
             }
 
-            _heatDelay.Update(dt, 180f);
-            
-            // Audio Sizzle
-            // We need to know if it's currently touching the hot pan
-            // Simplification: if not in air (no Y velocity check yet), assume touching pan
-            _audio.UpdateSizzle(_ball.CookLevel, true); 
+            // _heatDelay.Update and Audio removed here, handled in StateMachine block above. 
         }
 
         // Cache for VBO updates

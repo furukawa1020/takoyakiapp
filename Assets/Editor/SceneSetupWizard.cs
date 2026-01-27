@@ -206,6 +206,7 @@ public class SceneSetupWizard : EditorWindow
 
         // Camera Update
         GameObject camObj = new GameObject("Main Camera");
+        camObj.tag = "MainCamera";
         camObj.transform.SetParent(world.transform);
         camObj.transform.position = new Vector3(0, 8.5f, -6.0f); 
         camObj.transform.LookAt(Vector3.zero);

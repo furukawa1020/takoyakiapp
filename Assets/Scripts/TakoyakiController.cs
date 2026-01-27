@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TakoyakiPhysics
 {
+    [RequireComponent(typeof(Rigidbody))]
     public class TakoyakiController : MonoBehaviour
     {
         [Header("Status")]

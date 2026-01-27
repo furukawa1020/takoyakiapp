@@ -65,7 +65,10 @@ public class SceneSetupWizard : EditorWindow
         tako.AddComponent<ParticleController>();
         tako.AddComponent<RuntimeTextureSetup>();
         
+        // Ensure Rigidbody exists
         Rigidbody rb = tako.GetComponent<Rigidbody>();
+        if (rb == null) rb = tako.AddComponent<Rigidbody>();
+        
         rb.mass = 0.1f; // Light dough
         ctrl.Rb = rb;
         ctrl.MeshRenderer = tako.GetComponent<Renderer>();

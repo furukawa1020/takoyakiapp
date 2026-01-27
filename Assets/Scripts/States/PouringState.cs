@@ -32,6 +32,7 @@ namespace TakoyakiPhysics.States
             if (Controller.BatterAmount >= 1.0f)
             {
                 Controller.BatterAmount = 1.0f;
+                Controller.NotifyPourComplete();
                 // Auto transition to Cooking for this prototype
                 Controller.TransitionToState(new CookingState(Controller));
             }

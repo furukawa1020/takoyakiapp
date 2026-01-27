@@ -45,6 +45,10 @@ namespace TakoyakiPhysics
             Debug.Log($"Takoyaki State: {newState.GetType().Name}");
         }
 
+        public void NotifyPourComplete() => OnPourComplete?.Invoke();
+        public void NotifyBurn() => OnBurn?.Invoke();
+        public void NotifyCookedPerfect() => OnCookedPerfect?.Invoke();
+
         // Helper to apply forces based on InputManager
         public void ApplyGravityTilt()
         {

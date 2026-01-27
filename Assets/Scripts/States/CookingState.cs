@@ -47,6 +47,7 @@ namespace TakoyakiPhysics.States
             if (Controller.CookLevel > 1.8f) // Burnt threshold
             {
                 Debug.Log("Burnt!");
+                Controller.NotifyBurn();
                 AudioManager.Instance.StopSizzle();
             }
         }

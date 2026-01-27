@@ -9,6 +9,20 @@ namespace TakoyakiPhysics.Visuals
         public ParticleSystem oilSplatterParticles;
         public ParticleSystem smokeParticles;
 
+        private void Start()
+        {
+            // Auto-generate if missing
+            if (steamParticles == null)
+            {
+                steamParticles = ProceduralFX.CreateSteamFX(transform);
+            }
+            if (oilSplatterParticles == null)
+            {
+                oilSplatterParticles = ProceduralFX.CreateOilSplatterFX(transform);
+            }
+            // Smoke uses same system but black
+        }
+
         public void PlaySteam(bool isPlaying)
         {
             if (steamParticles == null) return;

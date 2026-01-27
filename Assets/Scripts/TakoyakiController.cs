@@ -9,6 +9,10 @@ namespace TakoyakiPhysics
         public float ShapeIntegrity = 0f; // 0: Liquid, 1: Perfect Sphere
         public float BatterAmount = 0f; // 0 to 1 (Full)
 
+        public event System.Action OnPourComplete;
+        public event System.Action OnBurn;
+        public event System.Action OnCookedPerfect;
+
         [Header("References")]
         public Rigidbody Rb;
         public Renderer MeshRenderer;

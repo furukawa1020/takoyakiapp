@@ -51,13 +51,16 @@ namespace Takoyaki.Android
 
         private long _lastTimeNs;
 
+        // Cache for VBO updates
+        private float[] _meshData;
+
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
             GLES30.GlEnable(GLES30.GlDepthTest);
             GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
             // 1. Init Core Logic
-            _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); // 2000 dummy vert count
+            _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
             _physics = new Takoyaki.Core.SoftBodySolver(_ball);
             _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
 
@@ -68,26 +71,25 @@ namespace Takoyaki.Android
             _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
             _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
 
-            // Texture Uniforms
-            int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
+            // Texture Uniforms - (Logic preserved, simplified for brevity in this replace, assume previous lines exist)
+            // ... (Textures setup previously) ...
+            // Re-asserting texture setup to ensure no code loss
+             int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
             int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
             int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
             int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
-
             GLES30.GlUniform1i(uBatter, 0);
             GLES30.GlUniform1i(uCooked, 1);
             GLES30.GlUniform1i(uBurnt, 2);
             GLES30.GlUniform1i(uNoise, 3);
-
-            // Generate & Upload Textures
             LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
             LoadTexture(1, Takoyaki.Core.ProceduralTexture.GenerateCooked(512));
             LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
             LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
 
             // 3. Generate Mesh & Buffers
-            var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); // High res
-            float[] meshData = mesh.ToInterleavedArray();
+            var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); 
+            _meshData = mesh.ToInterleavedArray(); // Store in field
             short[] indices = mesh.Indices;
             _indexCount = indices.Length;
 
@@ -105,36 +107,53 @@ namespace Takoyaki.Android
 
             // Upload VBO
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
-            // C# Float[] -> Byte size
-            int bytes = meshData.Length * 4;
-            GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, java.nio.FloatBuffer.Wrap(meshData), GLES30.GlStaticDraw);
+            int bytes = _meshData.Length * 4;
+            // Use DynamicDraw for frequent updates
+            GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, java.nio.FloatBuffer.Wrap(_meshData), GLES30.GlDynamicDraw);
 
-            // Attributes (Interleaved: Pos(3), Norm(3), UV(2) = Stride 8 floats)
+            // Attributes
             int stride = 8 * 4;
-            
-            // Pos
             GLES30.GlEnableVertexAttribArray(0);
             GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, stride, 0);
-            
-            // Norm
             GLES30.GlEnableVertexAttribArray(1);
             GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, stride, 3 * 4);
-            
-            // UV
             GLES30.GlEnableVertexAttribArray(2);
             GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, stride, 6 * 4);
 
-            // Upload IBO
             GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
             GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, java.nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
 
-            // Unbind
             GLES30.GlBindVertexArray(0);
-
-            // View Matrix (LookAt)
             Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
-            
             _lastTimeNs = System.nanoTime();
+        }
+
+        private void UpdateMeshVBO()
+        {
+            if (_ball.DeformedVertices == null || _meshData == null) return;
+
+            var simVerts = _ball.DeformedVertices;
+            // Update Positions (Stride 0, 1, 2)
+            // Stride is 8 floats
+            int vCount = simVerts.Length; // Vector3 array
+            // Safety check
+            if (vCount * 8 > _meshData.Length) vCount = _meshData.Length / 8;
+
+            for (int i = 0; i < vCount; i++)
+            {
+                _meshData[i * 8 + 0] = simVerts[i].X;
+                _meshData[i * 8 + 1] = simVerts[i].Y;
+                _meshData[i * 8 + 2] = simVerts[i].Z;
+                // Ideally recalc normals here too
+            }
+
+            // Upload to GPU
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
+            // Re-upload whole buffer (easiest logic, though SubData is better for bandwidth)
+            // Or use GlBufferSubData if we want.
+            // java.nio.FloatBuffer wrap is cheap.
+            GLES30.GlBufferSubData(GLES30.GlArrayBuffer, 0, _meshData.Length * 4, java.nio.FloatBuffer.Wrap(_meshData));
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
         }
 
         private void LoadTexture(int unit, Takoyaki.Core.ProceduralTexture tex)
@@ -257,17 +276,48 @@ namespace Takoyaki.Android
             _inputState.ClearEvents();
         }
 
+        // Cache for VBO updates
+        private float[] _vboData; 
+
         private void UpdateMeshVBO()
         {
-            // Copy pure C# physics verts to GL buffer
-            // In a real optimized app, use mapped buffers or pointer arithmetic
+            if (_ball.DeformedVertices == null) return;
+            if (_vboData == null)
+            {
+                 // Create cache if missing (should match initial mesh size)
+                 // Stride = 8
+                 _vboData = new float[_ball.DeformedVertices.Length * 8];
+                 // Copy initial UVs/Normals from somewhere? 
+                 // For now, we assume _vboData was populated initially or we just partial update.
+                 // Actually, efficient way is to MapBuffer or just BufferSubData for Positions.
+                 // However, we interleaved.
+                 // Let's rely on the fact that we created the VBO with specific size.
+            }
+
+            // Update Positions in the Interleaved Array
+            // We need the original Mesh data to preserve UVs/Normals if we re-upload everything.
+            // OR we use glBufferSubData for specific strides (not possible easily with interleaved without multiple calls).
             
-            // Re-interleave data
-            // Foreach Vertex: Pos(from Physics), Norm(Recalc?), UV(Static)
-            // Just updating Pos for Jiggle demo
+            // Re-uploading the whole interleaved buffer is easiest for prototype, 
+            // provided we have the master array.
             
-            // Note: GL SubData logic omitted for brevity in this step, assume static mesh for now unless we implement full re-interleave
-            // To make it jiggle, we need to map _ball.DeformedVertices back to the float[] buffer
+            // Let's assume we keep the master interleaved array in memory.
+            // In a real app, we'd store `_meshData` as a field.
+            
+            // Retrieving vertices from Physics
+            var verts = _ball.DeformedVertices;
+            
+            // We need to write these into the _meshData (which we need to promote to class field) at stride offsets.
+            // stride = 8. Pos is at offset 0, 1, 2.
+            
+            // To make this work, I need to promote `meshData` variable from OnSurfaceCreated to a class field `_meshData`.
+            // Let's do that via a separate or broader edit, but for now I'll fix it by assuming _meshData is available or re-creating logic.
+            
+            // ERROR: _meshData isn't a field yet. I must fix that first.
+            // I will use this block to implement the logic assuming _meshData exists, 
+            // and I will add the field in the class definition in the same file if possible or next step.
+            
+            // Actually, I'll rewrite the class to include _meshData field.
         }
     }
 }

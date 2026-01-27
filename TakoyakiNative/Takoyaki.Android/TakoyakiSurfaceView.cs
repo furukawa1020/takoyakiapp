@@ -21,7 +21,7 @@ namespace Takoyaki.Android
         public override bool OnTouchEvent(MotionEvent? e)
         {
             if (e == null) return false;
-            // TODO: Pass touch to Core InputState
+            _renderer.HandleTouch(e);
             return true;
         }
     }
@@ -164,6 +164,39 @@ namespace Takoyaki.Android
             Matrix.FrustumM(_projectionMatrix, 0, -ratio, ratio, -1, 1, 2, 10);
         }
 
+        // Input
+        private Takoyaki.Core.InputState _inputState = new Takoyaki.Core.InputState();
+        private float _lastX, _lastY;
+
+        public void HandleTouch(MotionEvent e)
+        {
+            float x = e.GetX();
+            float y = e.GetY();
+
+            if (e.Action == MotionEventActions.Down)
+            {
+                _inputState.IsTap = true;
+                _inputState.TapPosition = new System.Numerics.Vector2(x, y);
+                _lastX = x; _lastY = y;
+            }
+            else if (e.Action == MotionEventActions.Move)
+            {
+                float dx = x - _lastX;
+                float dy = y - _lastY;
+                if (Math.Abs(dx) > 5f || Math.Abs(dy) > 5f)
+                {
+                    _inputState.IsSwipe = true;
+                    _inputState.SwipeDelta = new System.Numerics.Vector2(dx, dy);
+                }
+                _lastX = x; _lastY = y;
+            }
+            else if (e.Action == MotionEventActions.Up)
+            {
+                _inputState.IsTap = false;
+                _inputState.IsSwipe = false;
+            }
+        }
+
         public void OnDrawFrame(IGL10? gl)
         {
             // Time Delta
@@ -171,12 +204,8 @@ namespace Takoyaki.Android
             float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
             _lastTimeNs = now;
 
-            // 1. Update Core
-            // In a real app, do this on a separate thread or fixed timestep
-            
-            // Rotate the ball model
-            Matrix.SetIdentityM(_modelMatrix, 0);
-            Matrix.RotateM(_modelMatrix, 0, (float)(System.nanoTime() / 1e8), 0, 1, 0); // Spin demo
+            // 1. Update Core Simulation
+            UpdateLogic(dt);
 
             // 2. Render
             GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
@@ -184,18 +213,61 @@ namespace Takoyaki.Android
             GLES30.GlUseProgram(_program);
             GLES30.GlBindVertexArray(_vao);
 
+            // Update Dynamic VBO (Physics Jiggle)
+            UpdateMeshVBO();
+
             // Calc MVP
-            Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); // VM
-            Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0); // PVM
+            Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 
+            Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0); 
 
             GLES30.GlUniformMatrix4fv(_uMVPMatrixHandle, 1, false, _mvpMatrix, 0);
             GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);
 
-            // Set uniforms (Dummy values for now)
-            // GLES30.GlUniform1f(...) for CookLevel, etc.
+            // Update Shader Props
+            int uCook = GLES30.GlGetUniformLocation(_program, "uCookLevel");
+            GLES30.GlUniform1f(uCook, _ball.CookLevel);
 
             GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
             GLES30.GlBindVertexArray(0);
+        }
+
+        private void UpdateLogic(float dt)
+        {
+            // Physics
+            _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(0, -9.8f, 0));
+            
+            // Interaction: Rotate ball based on Swipe
+            if (_inputState.IsSwipe)
+            {
+                float strength = 4.0f;
+                System.Numerics.Vector3 torque = new System.Numerics.Vector3(_inputState.SwipeDelta.Y, _inputState.SwipeDelta.X, 0) * strength * dt;
+                
+                // Pure Math Logic for Rotation (simplified quaternion integration)
+                 // This would usually be in the Physics engine, keeping it simple here for the demo loop
+                _physics.TriggerJiggle(2.0f); // Jiggle on touch
+                
+                // Update Ball Rotation (Shim logic)
+                Matrix.RotateM(_modelMatrix, 0, _inputState.SwipeDelta.X * 0.5f, 0, 1, 0);
+            }
+
+            // Cooking
+            _heatDelay.Update(dt, 180f); // Pan is hot!
+
+            // Reset Input
+            _inputState.ClearEvents();
+        }
+
+        private void UpdateMeshVBO()
+        {
+            // Copy pure C# physics verts to GL buffer
+            // In a real optimized app, use mapped buffers or pointer arithmetic
+            
+            // Re-interleave data
+            // Foreach Vertex: Pos(from Physics), Norm(Recalc?), UV(Static)
+            // Just updating Pos for Jiggle demo
+            
+            // Note: GL SubData logic omitted for brevity in this step, assume static mesh for now unless we implement full re-interleave
+            // To make it jiggle, we need to map _ball.DeformedVertices back to the float[] buffer
         }
     }
 }

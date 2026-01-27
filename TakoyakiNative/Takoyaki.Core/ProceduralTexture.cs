@@ -41,29 +41,84 @@ namespace Takoyaki.Core
 
         public static ProceduralTexture GenerateCooked(int size)
         {
-            // Reference: Deep fried, bubbly crust.
-            // Worley Noise creates the "Bubble" shapes.
-            // We invert it 1-W to get "Cracks" or use W for "Bumps".
-            
-            return GenerateWorleyCrust(size, 8.0f, 
+            // 1. Base Fried Crust (Worley)
+            var tex = GenerateWorleyCrust(size, 8.0f, 
                 new Vector4(0.85f, 0.55f, 0.1f, 1f), // Base Golden
                 new Vector4(0.4f, 0.2f, 0.05f, 1f),  // Deep Fried Spots
                 new Vector4(1.0f, 0.9f, 0.8f, 1f));  // Highlight/Flour
+            
+            // 2. Add Tenkasu / Burnt Bits (High Frequency Grit)
+            // Small, sharp, dark islands
+            AddDebrisPass(tex, 50.0f, 0.7f, new Vector4(0.2f, 0.1f, 0.0f, 1f));
+
+            return tex;
+        }
+
+        public static ProceduralTexture GenerateBurnt(int size)
+        {
+            // Dark base + Heavy Char debris
+            var tex = GenerateWorleyCrust(size, 20.0f, 
+                 new Vector4(0.2f, 0.1f, 0.05f, 1f), 
+                 new Vector4(0.1f, 0.05f, 0.0f, 1f),
+                 new Vector4(0.2f, 0.15f, 0.1f, 1f));
+            
+            AddDebrisPass(tex, 60.0f, 0.6f, new Vector4(0.05f, 0.05f, 0.05f, 1f));
+            return tex;
         }
 
         public static ProceduralTexture GenerateNoiseMap(int size)
         {
-            // Height Map: Needs to match the visual crust.
-            // High Worley values = Bumps.
-            return GenerateWorleyCrust(size, 8.0f, 
-                new Vector4(0f, 0f, 0f, 1f), 
-                new Vector4(1f, 1f, 1f, 1f), 
+            // Height Map: Base Worley + Debris bumps
+            var tex = GenerateWorleyCrust(size, 8.0f, 
+                new Vector4(0f, 0f, 0f, 1f), // Low
+                new Vector4(1f, 1f, 1f, 1f), // High
                 new Vector4(0.5f, 0.5f, 0.5f, 1f));
+            
+            // Debris sticks out
+            AddDebrisPass(tex, 50.0f, 0.7f, new Vector4(1f, 1f, 1f, 1f)); 
+            return tex;
+        }
+
+        // ... GenerateWorleyCrust implementation ...
+
+        private static void AddDebrisPass(ProceduralTexture tex, float scale, float threshold, Vector4 debrisColor)
+        {
+            float seed = (float)(new Random().NextDouble() * 100);
+            for (int y = 0; y < tex.Height; y++)
+            {
+                for (int x = 0; x < tex.Width; x++)
+                {
+                    float nx = (float)x / tex.Width * scale;
+                    float ny = (float)y / tex.Height * scale;
+
+                    // Sharp white noise
+                    float noise = PerlinNoise.Noise(nx, ny); // -1..1
+                    // Make it sparse
+                    if (noise > threshold) // e.g. > 0.7
+                    {
+                        // It's a flake/bit
+                        // Alpha blend
+                        int idx = (y * tex.Width + x) * 4;
+                        // Read existing
+                        Vector4 current = new Vector4(
+                            tex.Pixels[idx] / 255.0f,
+                            tex.Pixels[idx+1] / 255.0f,
+                            tex.Pixels[idx+2] / 255.0f,
+                            1.0f
+                        );
+                        
+                        Vector4 result = Vector4.Lerp(current, debrisColor, 0.8f);
+                        tex.SetPixel(x, y, result);
+                    }
+                }
+            }
         }
 
         private static ProceduralTexture GenerateWorleyCrust(int size, float scale, Vector4 colBase, Vector4 colDeep, Vector4 colHigh)
         {
-            var tex = new ProceduralTexture(size);
+            // ... (Previous logic, ensure it's preserved or re-pasted here if replacing whole block)
+            // Re-pasting the exact GenerateWorleyCrust logic for safety as per tool instruction
+             var tex = new ProceduralTexture(size);
             float seed = (float)(new Random().NextDouble() * 100);
 
             for (int y = 0; y < size; y++)
@@ -72,45 +127,24 @@ namespace Takoyaki.Core
                 {
                     float nx = (float)x / size * scale;
                     float ny = (float)y / size * scale;
-
-                    // 1. Base Worley (Large Bubbles)
                     float w1 = WorleyNoise.Noise(nx, ny, seed);
-                    
-                    // 2. Detail Worley (Small crispies)
                     float w2 = WorleyNoise.Noise(nx * 4f, ny * 4f, seed + 10f);
-
-                    // Composite
-                    // w1 is dist to center. 0=Center, 1=Edge.
-                    // Fried food often has "bubbled" surface. 
-                    // Let's use (1-w1) as the "Bump". Center is high.
                     float bump = (1.0f - w1); 
-                    
-                    // Add micro details
                     bump += (1.0f - w2) * 0.3f; 
-
-                    // Sharpen
                     bump = Math.Clamp(bump, 0f, 1f);
-                    
-                    // Color Mapping
-                    // Low bump (crevices) -> Deep Color (Oil pools, darker)
-                    // High bump (tops) -> Base Color -> Webbing Highlight
                     
                     Vector4 finalCol;
                     if (bump < 0.3f)
                     {
-                        // Crevice
                         float t = bump / 0.3f;
                         finalCol = Vector4.Lerp(colDeep, colBase, t);
                     }
                     else
                     {
-                        // Top
                         float t = (bump - 0.3f) / 0.7f;
-                        // Add some flour noise on top
                         float flour = PerlinNoise.Noise(nx * 10f, ny * 10f) > 0.6f ? 0.2f : 0.0f;
                         finalCol = Vector4.Lerp(colBase, colHigh, t * 0.5f + flour);
                     }
-
                     finalCol.W = 1.0f;
                     tex.SetPixel(x, y, finalCol);
                 }

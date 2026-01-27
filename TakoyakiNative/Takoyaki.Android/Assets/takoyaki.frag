@@ -40,41 +40,86 @@ void main() {
     float burntMask = smoothstep(1.5, 2.5, uCookLevel + height);
     albedo = mix(albedo, colBurnt, burntMask);
 
-    // 2. Lighting (PBR-ish)
-    vec3 norm = normalize(vNormal);
-    vec3 lightDir = normalize(uLightPos - vFragPos);
-    vec3 viewDir = normalize(uViewPos - vFragPos);
-    vec3 halfDir = normalize(lightDir + viewDir);
+    // PBR CONSTANTS
+    float roughness = 0.3; // Oil is smooth
+    float metallic = 0.0; // Food is dielectric
+    float ao = 1.0; 
 
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * albedo;
+    // Adjust Roughness based on Cooking (Raw is matte, Cooked is Oily, Burnt is matte/dry)
+    // Raw (Wet batter) -> 0.4
+    // Cooked (Oily) -> 0.2
+    // Burnt (Charred) -> 0.8
+    if (uCookLevel < 1.0) roughness = mix(0.4, 0.2, uCookLevel);
+    else roughness = mix(0.2, 0.8, uCookLevel - 1.0);
 
-    // 3. Specular / Oil (Fresnel)
-    float specStr = 0.5;
-    // Oil effect: High gloss, sharper highlight
-    float roughness = 0.3; 
+    // Height affects roughness (Crevices are wetter/oilier)
+    roughness = max(0.1, roughness - height * 0.2);
+
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(uViewPos - vFragPos);
+    vec3 L = normalize(uLightPos - vFragPos);
+    vec3 H = normalize(V + L);
+
+    // F0 for dielectric (food/oil) is usually 0.04
+    vec3 F0 = vec3(0.04); 
     
-    float NdotH = max(dot(norm, halfDir), 0.0);
-    float spec = pow(NdotH, 16.0); // Shininess
-
-    // Fresnel (Schlick)
-    float F0 = 0.04; // Dielectric
-    float cosTheta = max(dot(halfDir, viewDir), 0.0);
-    float fresnel = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    // COOK-TORRANCE BRDF
     
-    vec3 specular = vec3(1.0) * spec * (specStr + fresnel * uOilFresnel);
+    // 1. Normal Distribution (GGX)
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    float nom = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = 3.141592 * denom * denom;
+    float NDF = nom / denom;
 
-    // 4. Subsurface Scattering (Fake SSS)
-    // Wrap lighting
-    float wrap = 0.5;
-    float sssDiff = max(0.0, (dot(norm, lightDir) + wrap) / (1.0 + wrap));
-    vec3 sssColor = vec3(1.0, 0.4, 0.2) * 0.4; // Internal glow color
-    vec3 lighting = diffuse + sssColor * (1.0 - t2) * 0.5; // SSS decreases as it burns
+    // 2. Geometry (Smith)
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+    
+    float ggx1 = NdotV / (NdotV * (1.0 - k) + k);
+    float ggx2 = NdotL / (NdotL * (1.0 - k) + k);
+    float G = ggx1 * ggx2;
 
-    vec3 finalColor = lighting + specular;
+    // 3. Fresnel (Schlick)
+    vec3 F = F0 + (1.0 - F0) * pow(clamp(1.0 - max(dot(H, V), 0.0), 0.0, 1.0), 5.0);
 
-    // Gamma correct
-    finalColor = pow(finalColor, vec3(1.0/2.2));
+    // Specular contribution
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * NdotV * NdotL + 0.0001;
+    vec3 specular = numerator / denominator;
 
-    FragColor = vec4(finalColor, 1.0);
+    // Diffuse contribution (Conservation of Energy)
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    // Light Radiance (Sun)
+    vec3 radiance = vec3(2.5); // High intensity light
+    
+    // Final Lo
+    float theta = NdotL;
+    vec3 Lo = (kD * albedo / 3.141592 + specular) * radiance * theta;
+
+    // Ambient (IBL fake)
+    vec3 ambient = vec3(0.05) * albedo * ao;
+    
+    // SUBSURFACE SCATTERING (Approximated)
+    // Add a reddish transmission for thin parts
+    float sssMask = 1.0 - height; // Thin parts
+    vec3 sssColor = vec3(1.0, 0.3, 0.1);
+    vec3 sss = sssColor * sssMask * 0.2 * (1.0 - t2); // Disappears when burnt
+    
+    vec3 color = ambient + Lo + sss;
+
+    // Tone Mapping (Reinhard)
+    color = color / (color + vec3(1.0));
+    
+    // Gamma
+    color = pow(color, vec3(1.0/2.2));
+
+    FragColor = vec4(color, 1.0);
 }

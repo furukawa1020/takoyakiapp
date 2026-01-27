@@ -7,10 +7,11 @@ namespace TakoyakiPhysics.Visuals
     public class TakoyakiSoftBody : MonoBehaviour
     {
         [Header("Mass-Spring Settings")]
-        [SerializeField] private float intensity = 1f;
-        [SerializeField] private float mass = 1f;
-        [SerializeField] private float stiffness = 5f; // Spring constant
-        [SerializeField] private float damping = 0.75f;
+        [Header("Mass-Spring Settings")]
+        [SerializeField] private float intensity = 1.2f; // Increased
+        [SerializeField] private float mass = 0.8f; // Lighter -> More reactive
+        [SerializeField] private float stiffness = 3.5f; // Looser springs
+        [SerializeField] private float damping = 0.4f; // Less damping -> More oscillation
         
         [Header("External Forces")]
         [SerializeField] private float gravityInfluence = 1f; // How much internal gravity affects shape (Sagging)
@@ -160,6 +161,16 @@ namespace TakoyakiPhysics.Visuals
              {
                  // Add random variation for organic feel
                  _physicsVertices[i].Velocity += forceVector * Random.Range(0.8f, 1.2f) / mass;
+             }
+        }
+
+        public void TriggerJiggle(float strength)
+        {
+             // Apply a radial outward force or random noise to everything
+             for (int i = 0; i < _physicsVertices.Length; i++)
+             {
+                 Vector3 dir = (_physicsVertices[i].Position - transform.position).normalized;
+                 _physicsVertices[i].Velocity += dir * strength * Random.Range(0.5f, 1.5f);
              }
         }
     }

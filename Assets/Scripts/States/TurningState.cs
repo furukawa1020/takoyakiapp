@@ -14,12 +14,19 @@ namespace TakoyakiPhysics.States
         {
             base.Enter();
             _timer = 0f;
-            Debug.Log("Attempting Turn...");
             
-            // Check for valid turn gesture (Velocity/Torque)
-            // For prototype, we assume success and animate
-            
-            Controller.ShapeIntegrity += 0.2f; // Improve shape on turn
+            // DRAMATIC TURN: Jump up!
+            if (Controller.Rb != null)
+            {
+                Controller.Rb.AddForce(Vector3.up * 4.0f, ForceMode.Impulse); 
+                Controller.Rb.AddTorque(Vector3.right * 50f, ForceMode.Impulse); // Initial spin kick
+            }
+
+            // Trigger Jiggle
+            var sb = Controller.GetComponent<TakoyakiPhysics.Visuals.TakoyakiSoftBody>();
+            if (sb != null) sb.TriggerJiggle(2.0f);
+
+            Controller.ShapeIntegrity += 0.2f; 
             if (Controller.ShapeIntegrity > 1.0f) Controller.ShapeIntegrity = 1.0f;
         }
 

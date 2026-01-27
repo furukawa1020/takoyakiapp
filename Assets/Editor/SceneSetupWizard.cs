@@ -67,17 +67,39 @@ public class SceneSetupWizard : EditorWindow
         // 3. Create Game World
         GameObject world = new GameObject("--- WORLD ---");
         
-        // Pan (Static)
-        GameObject pan = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        pan.name = "TakoyakiPan";
+        // Pan (Procedural Realism)
+        GameObject pan = new GameObject("TakoyakiPan");
         pan.transform.SetParent(world.transform);
-        pan.transform.localScale = Vector3.one * 0.5f;
+        pan.transform.position = Vector3.zero;
+        
+        MeshFilter mf = pan.AddComponent<MeshFilter>();
+        MeshRenderer panMr = pan.AddComponent<MeshRenderer>();
+        MeshCollider mc = pan.AddComponent<MeshCollider>();
+        
+        // Generate Mesh
+        Mesh panMesh = ProceduralPanMesh.Generate();
+        mf.mesh = panMesh;
+        mc.sharedMesh = panMesh; // Concave collider matches visual
+        
+        // Material for Pan (Iron)
+        string ironShaderPath = "Assets/Scripts/Visuals/IronPan.shader";
+        AssetDatabase.ImportAsset(ironShaderPath, ImportAssetOptions.ForceUpdate);
+        
+        Shader ironShader = AssetDatabase.LoadAssetAtPath<Shader>(ironShaderPath);
+        if (ironShader == null) ironShader = Shader.Find("Takoyaki/IronPan");
+        
+        Material panMat = new Material(ironShader != null ? ironShader : Shader.Find("Standard"));
+        if (ironShader == null) panMat.color = Color.black; // Fallback
+        
+        panMr.sharedMaterial = panMat;
 
         // Takoyaki (The Player/Object)
         GameObject tako = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         tako.name = "Takoyaki_Player";
         tako.transform.SetParent(world.transform);
-        tako.transform.position = new Vector3(0, 0.5f, 0);
+        // Position slightly above the pit
+        tako.transform.position = new Vector3(0, 0.4f, 0); 
+        tako.transform.localScale = Vector3.one * 0.8f; // Fit in the hole (Radius 0.6)
 
         TakoyakiController ctrl = tako.AddComponent<TakoyakiController>();
         tako.AddComponent<TakoyakiVisuals>();
@@ -90,14 +112,18 @@ public class SceneSetupWizard : EditorWindow
         Rigidbody rb = tako.GetComponent<Rigidbody>();
         if (rb == null) rb = tako.AddComponent<Rigidbody>();
         
-        rb.mass = 0.1f; // Light dough
+        rb.mass = 0.5f; // Heavier feel for rolling
+        rb.linearDamping = 0.5f;
+        rb.angularDamping = 0.5f;
+        
         ctrl.Rb = rb;
         ctrl.MeshRenderer = tako.GetComponent<Renderer>();
 
         // Camera
         GameObject camObj = new GameObject("Main Camera");
         camObj.transform.SetParent(world.transform);
-        camObj.transform.position = new Vector3(0, 5, -5);
+        // Angle to see the pit depth
+        camObj.transform.position = new Vector3(0, 3.5f, -2.5f); 
         camObj.transform.LookAt(Vector3.zero);
         Camera cam = camObj.AddComponent<Camera>();
         camObj.AddComponent<AudioListener>();
@@ -107,20 +133,20 @@ public class SceneSetupWizard : EditorWindow
         lightObj.transform.SetParent(world.transform);
         Light light = lightObj.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.intensity = 1.0f;
+        light.intensity = 1.2f;
         light.color = new Color(1.0f, 0.95f, 0.9f); // Warm sunlight
-        lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
+        lightObj.transform.rotation = Quaternion.Euler(60, -30, 0);
 
         GameObject pointLightObj = new GameObject("Point Light (Warmth)");
         pointLightObj.transform.SetParent(world.transform);
         Light pointLight = pointLightObj.AddComponent<Light>();
         pointLight.type = LightType.Point;
-        pointLight.intensity = 2.0f;
+        pointLight.intensity = 3.0f;
         pointLight.range = 10.0f;
-        pointLight.color = new Color(1.0f, 0.6f, 0.4f); // Orange glow
-        pointLightObj.transform.position = new Vector3(2, 3, -2);
+        pointLight.color = new Color(1.0f, 0.6f, 0.3f); // Orange glow inside pan
+        pointLightObj.transform.position = new Vector3(0, 2, 0);
 
-        // Material Setup
+        // Material Setup for TAKOYAKI
         // Fix for "Shader not found": Ensure asset database is aware
         string shaderPath = "Assets/Scripts/Visuals/TakoyakiCinematic.shader";
         AssetDatabase.ImportAsset(shaderPath, ImportAssetOptions.ForceUpdate);
@@ -161,7 +187,7 @@ public class SceneSetupWizard : EditorWindow
         MeshRenderer mr = tako.GetComponent<MeshRenderer>();
         mr.sharedMaterial = mat;
 
-        Debug.Log("Takoyaki Scene Structure Created Successfully! (Procedural Textures Included)");
+        Debug.Log("Takoyaki Scene Structure Created Successfully! (Procedural Pan & Textures Included)");
         Selection.activeGameObject = managers;
         
         // Auto-Save the scene so it persists

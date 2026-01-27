@@ -45,23 +45,28 @@ namespace TakoyakiPhysics.Visuals
 
         private void UpdateSpringPhysics()
         {
-            // This is a very basic simulation.
-            // In a real scenario, we might use a Mass-Spring system or just a shader.
-            // Using a simple Uniform shake for now based on velocity change.
+            // Improved "Organic" Jiggle using Perlin Noise + Velocity
             
+            float time = Time.time * 5.0f;
             Vector3 acceleration = InputManager.Instance != null ? InputManager.Instance.CurrentAcceleration : Vector3.zero;
             
             for (int i = 0; i < _displacedVertices.Length; i++)
             {
-                // Displacement from rest
+                // 1. Spring Force (Return to rest)
                 Vector3 displacement = _displacedVertices[i] - _originalVertices[i];
-                
-                // Spring force back to original
                 Vector3 force = -elasticity * displacement;
                 
-                // Add external acceleration (shake) - simplified
-                force += -acceleration * impactForce * 0.01f;
+                // 2. Input Force (Shake/Tilt)
+                // We project the acceleration onto the vertex normal to make it puff out/in
+                // or just apply raw direction.
+                force += -acceleration * impactForce * 0.002f;
 
+                // 3. Perlin Noise for "Boiling/Sizzling" effect
+                // Using vertex position as scale for noise
+                float noise = Mathf.PerlinNoise(_originalVertices[i].x * 10f + time, _originalVertices[i].z * 10f + time) - 0.5f;
+                force += _originalMesh.normals[i] * noise * 0.05f * impactForce;
+
+                // Integrate
                 _vertexVelocities[i] += force;
                 _vertexVelocities[i] *= (1.0f - damping);
                 _displacedVertices[i] += _vertexVelocities[i];

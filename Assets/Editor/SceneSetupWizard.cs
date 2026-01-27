@@ -48,6 +48,11 @@ public class SceneSetupWizard : EditorWindow
         canvas.AddComponent<CanvasScaler>();
         canvas.AddComponent<GraphicRaycaster>();
         
+        // Make Title transparent blue
+        GameObject titlePanel = CreatePanel(canvas, "TitlePanel", new Color(0, 0, 1, 0.1f));
+        GameObject hudPanel = CreatePanel(canvas, "GameHUD", Color.clear);
+        GameObject resultPanel = CreatePanel(canvas, "ResultPanel", new Color(0, 1, 0, 0.3f));
+        
         // Add "Tap to Start" Hint
         GameObject startTextObj = new GameObject("StartText");
         startTextObj.transform.SetParent(titlePanel.transform, false);
@@ -185,7 +190,11 @@ public class SceneSetupWizard : EditorWindow
                 tako.AddComponent<RuntimeTextureSetup>();
                 tako.AddComponent<ToppingVisuals>();
                 
-                Rigidbody rb = tako.AddComponent<Rigidbody>();
+                // Rigidbody is added by RequireComponent on TakoyakiController!
+                // So we GET it instead of ADDing it to avoid error.
+                Rigidbody rb = tako.GetComponent<Rigidbody>();
+                if (rb == null) rb = tako.AddComponent<Rigidbody>(); // Fallback
+                
                 rb.mass = 0.5f;
                 rb.linearDamping = 0.5f;
                 rb.angularDamping = 0.5f;

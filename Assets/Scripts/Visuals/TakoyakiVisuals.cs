@@ -22,6 +22,11 @@ namespace TakoyakiPhysics.Visuals
 
         private void Update()
         {
+            // Lazy Init for safety
+            if (_renderer == null) _renderer = GetComponent<Renderer>();
+            if (_controller == null) _controller = GetComponent<TakoyakiController>();
+            if (_propBlock == null) _propBlock = new MaterialPropertyBlock();
+            
             if (_controller == null || _renderer == null) return;
 
             // Update shader properties based on controller state

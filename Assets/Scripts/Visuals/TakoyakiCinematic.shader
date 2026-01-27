@@ -3,20 +3,20 @@ Shader "Takoyaki/TakoyakiCinematic"
     Properties
     {
         [Header(Base Textures)]
-        _MainTex ("Raw Batter (Albedo)", 2D) = "white" {}
-        _CookedTex ("Cooked (Albedo)", 2D) = "white" {}
-        _BurntTex ("Burnt (Albedo)", 2D) = "black" {}
+        _MainTex ("Raw Batter", 2D) = "white" {}
+        _CookedTex ("Cooked", 2D) = "white" {}
+        _BurntTex ("Burnt", 2D) = "black" {}
         _BumpMap ("Normal Map", 2D) = "bump" {}
 
         [Header(Cooking State)]
-        _CookLevel ("Cook Level (0-2)", Range(0, 2)) = 0.0
-        _BatterAmount ("Batter Amount (0-1)", Range(0, 1)) = 1.0
+        _CookLevel ("Cook Level", Range(0, 2)) = 0.0
+        _BatterAmount ("Batter Amount", Range(0, 1)) = 1.0
         
         [Header(Subsurface Scattering)]
         _SSSColor ("SSS Color", Color) = (1, 0.8, 0.6, 1)
         _SSSIntensity ("SSS Intensity", Range(0, 1)) = 0.5
 
-        [Header(Oil & Glaze)]
+        [Header(Oil and Glaze)]
         _OilColor ("Oil Color", Color) = (1, 1, 1, 1)
         _OilRoughness ("Oil Roughness", Range(0, 1)) = 0.1
         _OilFresnel ("Oil Fresnel Power", Range(0.1, 10)) = 5.0

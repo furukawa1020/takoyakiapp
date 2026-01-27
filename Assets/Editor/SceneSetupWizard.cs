@@ -12,6 +12,12 @@ public class SceneSetupWizard : EditorWindow
     [MenuItem("Takoyaki/Setup/Create Game Scene")]
     public static void CreateGameScene()
     {
+        if (Application.isPlaying)
+        {
+            EditorUtility.DisplayDialog("Error", "Cannot setup scene while Game is Playing. Please stop play mode first.", "OK");
+            return;
+        }
+
         // 0. Clean up existing scene (prevent duplication)
         GameObject[] roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
         foreach (var r in roots)

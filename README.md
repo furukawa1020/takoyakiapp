@@ -1,5 +1,7 @@
 # One Ball Soul Takoyaki - Unity Project Guide
 
+![Takoyaki Cinematic Render](takoyaki_render.png)
+
 ## Overview
 This project is designed with a "Code-First" approach. Most of the logic is decoupled from the Unity Editor, but there are a few setup steps required to connect the visual assets.
 

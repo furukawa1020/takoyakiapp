@@ -36,7 +36,7 @@ namespace TakoyakiPhysics.Visuals
             Renderer r = _octopusLeg.GetComponent<Renderer>();
             r.material = new Material(Shader.Find("Standard"));
             r.material.color = new Color(0.8f, 0.1f, 0.1f); 
-            r.material.smoothness = 0.7f; 
+            r.material.SetFloat("_Glossiness", 0.7f); 
             
             _octopusLeg.SetActive(false); 
         }

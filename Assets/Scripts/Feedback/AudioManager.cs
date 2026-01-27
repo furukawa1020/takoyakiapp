@@ -73,18 +73,35 @@ namespace TakoyakiPhysics.Feedback
             // Procedural "Pop" / "Shake" sound
             if (sfxSource != null)
             {
-                // Create a temporary clip for a "Pop"
-                AudioClip clip = AudioClip.Create("Pop", 441, 1, 44100, false);
-                float[] data = new float[441]; // 0.01 sec very short
-                for (int i = 0; i < data.Length; i++)
+                // Create a temporary clip for a "Pop" (or reuse if cached)
+                // For performance, ideally this is cached, but for procedural variation we can tweak params.
+                // Simple: pitch shift on same source.
+                
+                sfxSource.pitch = Random.Range(0.8f, 1.2f); // Organic variation
+                
+                // Re-creating clip every time is bad for GC. 
+                // Let's create one cached clip in Start if possible, or just play a simple noise if we don't have one.
+                // For this demo, let's assume we use the generated one but with pitch variation.
+                
+                if (generatedPopClip == null)
                 {
-                    float t = (float)i / 44100f;
-                    data[i] = Mathf.Sin(2 * Mathf.PI * 800 * t) * (1f - (float)i/data.Length);
+                    generatedPopClip = AudioClip.Create("Pop", 441, 1, 44100, false);
+                    float[] data = new float[441]; 
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        float t = (float)i / 44100f;
+                        // Frequency sweep for "Pop"
+                        float freq = Mathf.Lerp(800, 100, (float)i/data.Length);
+                        data[i] = Mathf.Sin(2 * Mathf.PI * freq * t) * (1f - (float)i/data.Length);
+                    }
+                    generatedPopClip.SetData(data, 0);
                 }
-                clip.SetData(data, 0);
-                sfxSource.PlayOneShot(clip, 0.5f);
+                
+                sfxSource.PlayOneShot(generatedPopClip, 0.6f);
             }
         }
+
+        private AudioClip generatedPopClip;
 
         public void StopPouring() { }
     }

@@ -49,9 +49,33 @@ namespace TakoyakiPhysics.Visuals
         {
             if (_octopusLeg != null)
             {
+                 // Check if already active to avoid restart? No, allow spamming for fun? 
+                 // Logic prevents adding if HasOctopus is true usually using ToppingManager logic.
                 _octopusLeg.SetActive(true);
                 HasOctopus = true;
+                StartCoroutine(AnimatePopIn(_octopusLeg.transform));
             }
+        }
+
+        private System.Collections.IEnumerator AnimatePopIn(Transform target)
+        {
+            Vector3 finalScale = target.localScale;
+            target.localScale = Vector3.zero;
+            
+            float duration = 0.2f;
+            float elapsed = 0f;
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                // Elastic ease out
+                float curve = Mathf.Sin(-13 * (t + 1) * Mathf.PI * 0.5f) * Mathf.Pow(2, -10 * t) + 1;
+                
+                target.localScale = finalScale * curve;
+                yield return null;
+            }
+            target.localScale = finalScale;
         }
 
         // --- GINGER ---

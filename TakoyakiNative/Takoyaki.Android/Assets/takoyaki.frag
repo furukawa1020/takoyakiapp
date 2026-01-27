@@ -25,13 +25,20 @@ void main() {
 
     vec3 albedo = colRaw;
     
-    // Blend Raw -> Cooked
-    float t1 = smoothstep(0.0, 1.0, uCookLevel);
-    albedo = mix(albedo, colCooked, t1);
+    // Get Height/Displacement value for realistic blending
+    // "Crispy" parts (high values) cook first
+    float height = texture(uNoiseMap, vTexCoord).r;
+
+    // Height-Based Blend: Raw -> Cooked
+    // Instead of global fade, we use the height map to control the transition frontier.
+    float cookedEdge = uCookLevel * 1.2; // Move the edge
+    float cookedMask = smoothstep(cookedEdge - 0.2, cookedEdge + 0.2, height + uCookLevel * 0.5);
+    albedo = mix(albedo, colCooked, cookedMask);
     
-    // Blend Cooked -> Burnt
-    float t2 = smoothstep(1.0, 2.0, uCookLevel);
-    albedo = mix(albedo, colBurnt, t2);
+    // Height-Based Blend: Cooked -> Burnt
+    // Burnt also starts at high points
+    float burntMask = smoothstep(1.5, 2.5, uCookLevel + height);
+    albedo = mix(albedo, colBurnt, burntMask);
 
     // 2. Lighting (PBR-ish)
     vec3 norm = normalize(vNormal);

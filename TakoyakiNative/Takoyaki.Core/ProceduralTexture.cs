@@ -32,27 +32,43 @@ namespace Takoyaki.Core
 
         public static ProceduralTexture GenerateBatter(int size)
         {
-            return GenerateFractal(size, 12.0f, new Vector4(1.0f, 0.95f, 0.7f, 1f), new Vector4(0.92f, 0.8f, 0.5f, 1f), 4);
+            // Creamy, slightly uneven batter with domain warping for flow
+            return GenerateAdvancedNoise(size, 8.0f, 
+                new Vector4(0.98f, 0.92f, 0.75f, 1f), // Raw Batter (Yellow-White)
+                new Vector4(0.92f, 0.85f, 0.6f, 1f),  // Shadows
+                0.5f, 0.05f); // Soft warping
         }
 
         public static ProceduralTexture GenerateCooked(int size)
         {
-            // Deep Golden Brown
-            return GenerateFractal(size, 20.0f, new Vector4(0.9f, 0.6f, 0.1f, 1f), new Vector4(0.5f, 0.25f, 0.05f, 1f), 5);
+            // Golden Brown with high contrast "Crispy" spots
+            // Reference: https://imgur.com/takoyaki_render.png
+            // Needs to look like fried dough, not just brown noise
+            return GenerateAdvancedNoise(size, 15.0f, 
+                new Vector4(0.85f, 0.55f, 0.1f, 1f), // Golden
+                new Vector4(0.5f, 0.25f, 0.05f, 1f), // Deep Fried
+                2.0f, 0.3f); // Strong warping for "fried" texture
         }
         
         public static ProceduralTexture GenerateBurnt(int size)
         {
-            return GenerateFractal(size, 25.0f, new Vector4(0.2f, 0.15f, 0.1f, 1f), new Vector4(0.0f, 0.0f, 0.0f, 1f), 4);
-        }
-        
-         public static ProceduralTexture GenerateNoiseMap(int size)
-        {
-            // Scalar for displacement
-            return GenerateFractal(size, 15.0f, new Vector4(0f, 0f, 0f, 1f), new Vector4(1f, 1f, 1f, 1f), 4);
+            // Carbonized, sharp details
+            return GenerateAdvancedNoise(size, 30.0f, 
+                new Vector4(0.2f, 0.1f, 0.05f, 1f), // Dark Brown
+                new Vector4(0.05f, 0.05f, 0.05f, 1f), // Black Char
+                0.0f, 0.5f); // High grit
         }
 
-        private static ProceduralTexture GenerateFractal(int size, float scale, Vector4 colA, Vector4 colB, int octaves)
+        // Generates the Height/displacement map
+        public static ProceduralTexture GenerateNoiseMap(int size)
+        {
+            return GenerateAdvancedNoise(size, 12.0f, 
+                new Vector4(0f, 0f, 0f, 1f), 
+                new Vector4(1f, 1f, 1f, 1f), 
+                1.0f, 0.2f); 
+        }
+
+        private static ProceduralTexture GenerateAdvancedNoise(int size, float scale, Vector4 colA, Vector4 colB, float warpStrength, float gritAmount)
         {
             var tex = new ProceduralTexture(size);
             float seed = (float)(new Random().NextDouble() * 100);
@@ -61,29 +77,30 @@ namespace Takoyaki.Core
             {
                 for (int x = 0; x < size; x++)
                 {
-                    float sample = 0;
-                    float amplitude = 1;
-                    float frequency = 1;
-                    float totalAmp = 0;
+                    // 1. Domain Warping (f(p + f(p)))
+                    float nx = (float)x / size * scale;
+                    float ny = (float)y / size * scale;
 
-                    for (int i = 0; i < octaves; i++)
-                    {
-                        float nx = seed + (float)x / size * scale * frequency;
-                        float ny = seed + (float)y / size * scale * frequency;
-                        // Map 0..1 roughly
-                        float p = PerlinNoise.Noise(nx, ny) * 0.5f + 0.5f; 
-                        sample += p * amplitude;
-                        totalAmp += amplitude;
-                        amplitude *= 0.5f;
-                        frequency *= 2.0f;
-                    }
-                    sample /= totalAmp;
+                    float qx = PerlinNoise.Noise(nx + seed, ny + seed);
+                    float qy = PerlinNoise.Noise(nx + 5.2f + seed, ny + 1.3f + seed);
 
-                    // Non-linear mapping for contrast
-                    float t = sample * sample * (3 - 2 * sample); // Smoothstep
+                    float rx = nx + warpStrength * qx;
+                    float ry = ny + warpStrength * qy;
+
+                    float n = PerlinNoise.Noise(rx, ry); // Base Organic Noise
+
+                    // 2. Add "Grit" (High frequency detail for crispiness/tenkasu)
+                    float grit = PerlinNoise.Noise(nx * 10f, ny * 10f);
+                    n += grit * gritAmount;
+
+                    // Normalize roughly -1..1 -> 0..1
+                    n = n * 0.5f + 0.5f;
                     
-                    Vector4 finalCol = Vector4.Lerp(colA, colB, t);
-                    finalCol.W = 1.0f;
+                    // Contrast Curve (Sharpen details)
+                    n = n * n * (3 - 2 * n); 
+
+                    Vector4 finalCol = Vector4.Lerp(colA, colB, Math.Clamp(n, 0f, 1f));
+                    finalCol.W = 1.0f; // Alpha
                     tex.SetPixel(x, y, finalCol);
                 }
             }

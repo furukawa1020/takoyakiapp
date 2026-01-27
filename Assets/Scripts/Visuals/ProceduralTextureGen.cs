@@ -6,25 +6,29 @@ namespace TakoyakiPhysics.Visuals
     {
         public static Texture2D GenerateBatterTexture()
         {
-            return GenerateNoiseTexture(256, 5.0f, new Color(1.0f, 0.95f, 0.8f), new Color(0.9f, 0.85f, 0.7f)); // Creamy white
+            // Pale, slight creamy, wet look
+            return GenerateFractalNoiseTexture(256, 8.0f, new Color(0.95f, 0.92f, 0.85f), new Color(0.9f, 0.88f, 0.8f), 2); 
         }
 
         public static Texture2D GenerateCookedTexture()
         {
-            return GenerateNoiseTexture(256, 8.0f, new Color(0.8f, 0.5f, 0.2f), new Color(0.6f, 0.3f, 0.1f)); // Golden Brown
+            // Uneven Golden Brown with some darker spots
+            return GenerateFractalNoiseTexture(256, 12.0f, new Color(0.85f, 0.6f, 0.2f), new Color(0.6f, 0.3f, 0.05f), 4); 
         }
 
         public static Texture2D GenerateBurntTexture()
         {
-            return GenerateNoiseTexture(256, 12.0f, new Color(0.2f, 0.1f, 0.1f), Color.black); // Charred
+            // Charred black/dark brown
+            return GenerateFractalNoiseTexture(256, 15.0f, new Color(0.15f, 0.1f, 0.05f), Color.black, 3);
         }
 
         public static Texture2D GenerateNoiseMap()
         {
-            return GenerateNoiseTexture(256, 10.0f, Color.black, Color.white); // Height map
+            // Detailed height map
+            return GenerateFractalNoiseTexture(256, 10.0f, Color.black, Color.white, 3);
         }
 
-        private static Texture2D GenerateNoiseTexture(int size, float scale, Color colorA, Color colorB)
+        private static Texture2D GenerateFractalNoiseTexture(int size, float scale, Color colorA, Color colorB, int octaves)
         {
             Texture2D tex = new Texture2D(size, size);
             Color[] pixels = new Color[size * size];
@@ -33,10 +37,29 @@ namespace TakoyakiPhysics.Visuals
             {
                 for (int x = 0; x < size; x++)
                 {
-                    float xCoord = (float)x / size * scale;
-                    float yCoord = (float)y / size * scale;
-                    float sample = Mathf.PerlinNoise(xCoord, yCoord);
-                    pixels[y * size + x] = Color.Lerp(colorA, colorB, sample);
+                    float sample = 0;
+                    float amplitude = 1;
+                    float frequency = 1;
+                    float totalAmplitude = 0;
+
+                    for (int i = 0; i < octaves; i++)
+                    {
+                        float xCoord = (float)x / size * scale * frequency;
+                        float yCoord = (float)y / size * scale * frequency;
+                        sample += Mathf.PerlinNoise(xCoord, yCoord) * amplitude;
+                        
+                        totalAmplitude += amplitude;
+                        amplitude *= 0.5f;
+                        frequency *= 2.0f;
+                    }
+                    
+                    sample /= totalAmplitude; // Normalize 0..1
+                    
+                    // Add some random high-freq noise for flour grain
+                    float grain = Random.Range(-0.02f, 0.02f);
+                    sample += grain;
+
+                    pixels[y * size + x] = Color.Lerp(colorA, colorB, Mathf.Clamp01(sample));
                 }
             }
 

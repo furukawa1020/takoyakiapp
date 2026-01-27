@@ -215,3 +215,5 @@ namespace TakoyakiPhysics.Visuals
             _mayoLine.SetPositions(positions);
             _mayoLine.enabled = false;
         }
+    }
+}

@@ -292,6 +292,9 @@ namespace Takoyaki.Android
             // Update Shader Props
             int uCook = GLES30.GlGetUniformLocation(_program, "uCookLevel");
             GLES30.GlUniform1f(uCook, _ball.CookLevel);
+            
+            int uBatterLvl = GLES30.GlGetUniformLocation(_program, "uBatterLevel");
+            GLES30.GlUniform1f(uBatterLvl, _ball.BatterLevel);
 
             GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
             GLES30.GlBindVertexArray(0);

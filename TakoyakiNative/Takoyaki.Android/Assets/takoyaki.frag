@@ -1,10 +1,10 @@
-// Existing content... assume I need to read vert first.
-// I will switch to reading vert first.
+#version 300 es
 precision mediump float;
 
 in vec3 vFragPos;
 in vec3 vNormal;
 in vec2 vTexCoord;
+in vec3 vLocalPos;
 
 uniform sampler2D uBatterTex;
 uniform sampler2D uCookedTex;
@@ -14,11 +14,20 @@ uniform vec3 uLightPos;
 uniform vec3 uViewPos;
 
 uniform float uCookLevel; // 0.0 to 2.0
+uniform float uBatterLevel; // 0.0 to 1.0
 uniform float uOilFresnel;
 
 out vec4 FragColor;
 
 void main() {
+    // 0. Pouring/Filling Visualization
+    // Sphere is radius ~1.0 (Y: -1 to 1)
+    // Map BatterLevel 0..1 to Height -1..1
+    float fillHeight = -1.0 + (uBatterLevel * 2.1); // 2.1 to ensure full coverage
+    if (uBatterLevel < 0.99 && vLocalPos.y > fillHeight) {
+        discard;
+    }
+
     // 1. Texture Blending (Multi-layer cooking)
     vec3 colRaw = texture(uBatterTex, vTexCoord).rgb;
     vec3 colCooked = texture(uCookedTex, vTexCoord).rgb;

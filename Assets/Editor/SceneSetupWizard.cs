@@ -101,7 +101,18 @@ public class SceneSetupWizard : EditorWindow
         lightObj.transform.SetParent(world.transform);
         Light light = lightObj.AddComponent<Light>();
         light.type = LightType.Directional;
+        light.intensity = 1.0f;
+        light.color = new Color(1.0f, 0.95f, 0.9f); // Warm sunlight
         lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
+
+        GameObject pointLightObj = new GameObject("Point Light (Warmth)");
+        pointLightObj.transform.SetParent(world.transform);
+        Light pointLight = pointLightObj.AddComponent<Light>();
+        pointLight.type = LightType.Point;
+        pointLight.intensity = 2.0f;
+        pointLight.range = 10.0f;
+        pointLight.color = new Color(1.0f, 0.6f, 0.4f); // Orange glow
+        pointLightObj.transform.position = new Vector3(2, 3, -2);
 
         // Material Setup
         Material mat = new Material(Shader.Find("Takoyaki/TakoyakiCinematic"));

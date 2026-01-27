@@ -69,7 +69,6 @@ namespace Takoyaki.Android
         private Takoyaki.Core.SoftBodySolver _physics;
         private Takoyaki.Core.HeatSimulation _heatDelay;
         private Takoyaki.Core.TakoyakiStateMachine _stateMachine;
-        private Takoyaki.Core.TakoyakiStateMachine _stateMachine;
 
         private long _lastTimeNs;
 
@@ -88,7 +87,6 @@ namespace Takoyaki.Android
             _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
             _physics = new Takoyaki.Core.SoftBodySolver(_ball);
             _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
-            _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball);
             _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball);
 
             // Particles

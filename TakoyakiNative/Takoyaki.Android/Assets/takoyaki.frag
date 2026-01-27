@@ -1,4 +1,5 @@
-#version 300 es
+// Existing content... assume I need to read vert first.
+// I will switch to reading vert first.
 precision mediump float;
 
 in vec3 vFragPos;

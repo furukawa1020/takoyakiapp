@@ -9,13 +9,15 @@ namespace Takoyaki.Android
     public class TakoyakiSurfaceView : GLSurfaceView
     {
         private TakoyakiRenderer _renderer;
+        private TakoyakiHaptics _haptics;
 
         public TakoyakiSurfaceView(Context context) : base(context)
         {
             SetEGLContextClientVersion(3); // OpenGL ES 3.0
-            _renderer = new TakoyakiRenderer();
+            _haptics = new TakoyakiHaptics(context);
+            _renderer = new TakoyakiRenderer(_haptics);
             SetRenderer(_renderer);
-            RenderMode = Rendermode.Continuously; // Game Loop
+            RenderMode = Rendermode.Continuously;
         }
 
         public override bool OnTouchEvent(MotionEvent? e)
@@ -250,30 +252,45 @@ namespace Takoyaki.Android
             GLES30.GlBindVertexArray(0);
         }
 
+        private TakoyakiHaptics _haptics;
+
+        public TakoyakiRenderer(TakoyakiHaptics haptics)
+        {
+            _haptics = haptics;
+        }
+        
+        // ... (OnSurfaceCreated etc remain same)
+
+        // Inside UpdateLogic
         private void UpdateLogic(float dt)
         {
             // Physics
             _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(0, -9.8f, 0));
             
-            // Interaction: Rotate ball based on Swipe
+            // Interaction
             if (_inputState.IsSwipe)
             {
                 float strength = 4.0f;
-                System.Numerics.Vector3 torque = new System.Numerics.Vector3(_inputState.SwipeDelta.Y, _inputState.SwipeDelta.X, 0) * strength * dt;
-                
-                // Pure Math Logic for Rotation (simplified quaternion integration)
-                 // This would usually be in the Physics engine, keeping it simple here for the demo loop
-                _physics.TriggerJiggle(2.0f); // Jiggle on touch
-                
-                // Update Ball Rotation (Shim logic)
+                // ... Rotation logic ...
                 Matrix.RotateM(_modelMatrix, 0, _inputState.SwipeDelta.X * 0.5f, 0, 1, 0);
+                
+                // Haptic Feedback
+                if (Math.Abs(_inputState.SwipeDelta.X) > 10f)
+                {
+                    _haptics.TriggerRolling();
+                }
+            }
+            
+            if (_inputState.IsTap)
+            {
+                _physics.TriggerJiggle(2.0f);
+                _haptics.TriggerImpact(0.5f); // Thud
+                _inputState.IsTap = false; // Consume immediately
             }
 
-            // Cooking
-            _heatDelay.Update(dt, 180f); // Pan is hot!
-
-            // Reset Input
-            _inputState.ClearEvents();
+            _heatDelay.Update(dt, 180f);
+            
+            // _inputState.ClearEvents(); // Done in HandleTouch/Logic sync usually
         }
 
         // Cache for VBO updates

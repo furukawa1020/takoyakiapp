@@ -98,82 +98,89 @@ namespace Takoyaki.Android
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
-            GLES30.GlEnable(GLES30.GlDepthTest);
-            GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-            // 1. Init Core Logic
-            _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
-            _physics = new Takoyaki.Core.SoftBodySolver(_ball);
-            _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
-            _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
-            
-            _stateMachine.OnFinished = (score) => OnGameFinished?.Invoke(score);
-
-            // Particles
-            _steam = new SteamParticles(global::Android.App.Application.Context);
-
-            // 2. Load Shaders
-            _program = ShaderHelper.LoadProgram(global::Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
-            GLES30.GlUseProgram(_program);
-
-            _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
-            _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
-
-            // Texture Uniforms
-             int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
-            int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
-            int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
-            int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
-            GLES30.GlUniform1i(uBatter, 0);
-            GLES30.GlUniform1i(uCooked, 1);
-            GLES30.GlUniform1i(uBurnt, 2);
-            GLES30.GlUniform1i(uNoise, 3);
-            // Generate & Upload Textures
-            LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
-            _cookedTex = Takoyaki.Core.ProceduralTexture.GenerateCooked(512); // Keep ref
-            LoadTexture(1, _cookedTex);
-            LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
-            LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
-
-            // 3. Generate Mesh & Buffers
-            var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); 
-            _meshData = mesh.ToInterleavedArray(); // Store in field
-            short[] indices = mesh.Indices;
-            _indexCount = indices.Length;
-
-            // Generate VAO
-            int[] vaos = new int[1];
-            GLES30.GlGenVertexArrays(1, vaos, 0);
-            _vao = vaos[0];
-            GLES30.GlBindVertexArray(_vao);
-
-            // Generate VBO
-            int[] buffers = new int[2];
-            GLES30.GlGenBuffers(2, buffers, 0);
-            _vbo = buffers[0];
-            _ibo = buffers[1];
-
-            // Upload VBO
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
-            int bytes = _meshData.Length * 4;
-            // Use DynamicDraw for frequent updates
-            GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, Java.Nio.FloatBuffer.Wrap(_meshData), GLES30.GlDynamicDraw);
-
-            // Attributes
-            int stride = 8 * 4;
-            GLES30.GlEnableVertexAttribArray(0);
-            GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, stride, 0);
-            GLES30.GlEnableVertexAttribArray(1);
-            GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, stride, 3 * 4);
-            GLES30.GlEnableVertexAttribArray(2);
-            GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, stride, 6 * 4);
-
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
-            GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, Java.Nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
-
-            GLES30.GlBindVertexArray(0);
-            Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
-            _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
+            try
+            {
+                GLES30.GlEnable(GLES30.GlDepthTest);
+                GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    
+                // 1. Init Core Logic
+                _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
+                _physics = new Takoyaki.Core.SoftBodySolver(_ball);
+                _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
+                _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
+                
+                _stateMachine.OnFinished = (score) => OnGameFinished?.Invoke(score);
+    
+                // Particles
+                _steam = new SteamParticles(global::Android.App.Application.Context);
+    
+                // 2. Load Shaders
+                _program = ShaderHelper.LoadProgram(global::Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
+                GLES30.GlUseProgram(_program);
+    
+                _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
+                _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
+    
+                // Texture Uniforms
+                 int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
+                int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
+                int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
+                int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
+                GLES30.GlUniform1i(uBatter, 0);
+                GLES30.GlUniform1i(uCooked, 1);
+                GLES30.GlUniform1i(uBurnt, 2);
+                GLES30.GlUniform1i(uNoise, 3);
+                // Generate & Upload Textures
+                LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
+                _cookedTex = Takoyaki.Core.ProceduralTexture.GenerateCooked(512); // Keep ref
+                LoadTexture(1, _cookedTex);
+                LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
+                LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
+    
+                // 3. Generate Mesh & Buffers
+                var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); 
+                _meshData = mesh.ToInterleavedArray(); // Store in field
+                short[] indices = mesh.Indices;
+                _indexCount = indices.Length;
+    
+                // Generate VAO
+                int[] vaos = new int[1];
+                GLES30.GlGenVertexArrays(1, vaos, 0);
+                _vao = vaos[0];
+                GLES30.GlBindVertexArray(_vao);
+    
+                // Generate VBO
+                int[] buffers = new int[2];
+                GLES30.GlGenBuffers(2, buffers, 0);
+                _vbo = buffers[0];
+                _ibo = buffers[1];
+    
+                // Upload VBO
+                GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
+                int bytes = _meshData.Length * 4;
+                // Use DynamicDraw for frequent updates
+                GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, Java.Nio.FloatBuffer.Wrap(_meshData), GLES30.GlDynamicDraw);
+    
+                // Attributes
+                int stride = 8 * 4;
+                GLES30.GlEnableVertexAttribArray(0);
+                GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, stride, 0);
+                GLES30.GlEnableVertexAttribArray(1);
+                GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, stride, 3 * 4);
+                GLES30.GlEnableVertexAttribArray(2);
+                GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, stride, 6 * 4);
+    
+                GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
+                GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, Java.Nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
+    
+                GLES30.GlBindVertexArray(0);
+                Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
+                _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
+            }
+            catch (System.Exception ex)
+            {
+                 global::Android.Util.Log.Error("TakoyakiCrash", $"CRASH IN ONSURFACECREATED: {ex}");
+            }
         }
 
         private void UpdateMeshVBO()

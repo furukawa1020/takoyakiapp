@@ -201,6 +201,8 @@ namespace Takoyaki.Android
                 GLES30.GlUniform1i(uCooked, 1);
                 GLES30.GlUniform1i(uBurnt, 2);
                 GLES30.GlUniform1i(uNoise, 3);
+                
+                _uTimeHandle = GLES30.GlGetUniformLocation(_program, "uTime");
 
                  // Generate & Upload Textures
                 LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(64));
@@ -372,6 +374,8 @@ namespace Takoyaki.Android
 
         private Takoyaki.Core.ProceduralTexture _cookedTex;
         private int _cookedTexUnit = 1;
+        private int _uTimeHandle;
+        private float _totalTime;
 
         // ... (LoadTexture logic)
 
@@ -488,6 +492,7 @@ namespace Takoyaki.Android
                 long now = Java.Lang.JavaSystem.NanoTime();
                 float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
                 _lastTimeNs = now;
+                _totalTime += dt;
     
                 // 1. Update Core Simulation
                 if (_ball == null || _physics == null || _stateMachine == null) return;
@@ -539,6 +544,8 @@ namespace Takoyaki.Android
                 
                 int uBatterLvl = GLES30.GlGetUniformLocation(_program, "uBatterLevel");
                 GLES30.GlUniform1f(uBatterLvl, _ball.BatterLevel);
+                
+                GLES30.GlUniform1f(_uTimeHandle, _totalTime);
 
                 // Lighting & View
                 int uLight = GLES30.GlGetUniformLocation(_program, "uLightPos");

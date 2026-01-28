@@ -8,6 +8,7 @@ using AndroidX.AppCompat.App;
 namespace Takoyaki.Android
 {
     [Activity(Label = "@string/app_name", 
+              Name = "com.hatake.takoyaki.soul.MainActivity",
               MainLauncher = true, 
               Theme = "@style/Theme.AppCompat.NoActionBar",
               ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize,

@@ -247,6 +247,7 @@ namespace Takoyaki.Android
         private void UpdateLogic(float dt)
         {
             _totalTime += dt;
+            Input.Update(dt); // 🚀 Essential: Sync sensors to InputState
 
             // 1. Shake to apply topping
             float accelMag = _inputState.Acceleration.Length();

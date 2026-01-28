@@ -62,7 +62,8 @@ namespace Takoyaki.Core
                 // High-performance Rust path (Kalman + PID)
                 currentMag = tako_update(_rustEngine, angularVelocity.X, angularVelocity.Y, angularVelocity.Z, dt, TARGET_GYRO_MAG);
                 MasteryLevel = tako_get_mastery(_rustEngine);
-                // Use a simplified error for C# harmony calculation when Rust handles the core
+                
+                // For the HUD Analyzer, we use the residual error to show activity
                 pidOutput = TARGET_GYRO_MAG - currentMag; 
             }
             else

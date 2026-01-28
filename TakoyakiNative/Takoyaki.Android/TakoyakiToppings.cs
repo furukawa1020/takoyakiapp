@@ -59,7 +59,7 @@ namespace Takoyaki.Android
             
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
-            GLES30.GlDisable(GLES30.GlCullFace); // Double-Sided
+            GLES30.GlDisable(0x0B44); // GL_CULL_FACE Double-Sided
             
             if (_sauceMesh != null && _sauceMesh.Visible) RenderMesh(_sauceMesh, viewMatrix, projectionMatrix);
             if (_mayoMesh != null && _mayoMesh.Visible) RenderMesh(_mayoMesh, viewMatrix, projectionMatrix);
@@ -74,7 +74,7 @@ namespace Takoyaki.Android
                 if(m.Visible) RenderMesh(m, viewMatrix, projectionMatrix);
             }
             
-            GLES30.GlEnable(GLES30.GlCullFace);
+            GLES30.GlEnable(0x0B44); // GL_CULL_FACE
             GLES30.GlDisable(GLES30.GlBlend);
         }
         

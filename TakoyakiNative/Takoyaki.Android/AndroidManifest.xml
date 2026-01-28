@@ -8,5 +8,14 @@
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
     <application android:label="One Ball Soul" android:theme="@style/Theme.AppCompat.NoActionBar">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.hatake.takoyaki.soul.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

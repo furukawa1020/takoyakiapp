@@ -46,6 +46,11 @@ namespace Takoyaki.Android
             _renderer.SetEmulationThrust(true);
         }
 
+        public void CaptureScreenshot(Action<global::Android.Graphics.Bitmap> callback)
+        {
+            _pendingCaptureCallback = callback;
+        }
+
         public void ResetGame()
         {
             QueueEvent(new Java.Lang.Runnable(() => {
@@ -258,6 +263,70 @@ namespace Takoyaki.Android
             // java.nio.FloatBuffer wrap is cheap.
             GLES30.GlBufferSubData(GLES30.GlArrayBuffer, 0, _meshData.Length * 4, Java.Nio.FloatBuffer.Wrap(_meshData));
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
+
+            // Screenshot Capture Handling
+            if (_pendingCaptureCallback != null)
+            {
+                var callback = _pendingCaptureCallback;
+                _pendingCaptureCallback = null; // Clear first to avoid re-entry
+
+                int w = _renderer.Width;
+                int h = _renderer.Height;
+                int[] pixels = new int[w * h];
+                int[] pixelsReversed = new int[w * h];
+                
+                var buf = java.nio.IntBuffer.Wrap(pixels);
+                buf.Position(0);
+                
+                // Read pixels (RGBA)
+                GLES30.GlReadPixels(0, 0, w, h, GLES30.GlRgba, GLES30.GlUnsignedByte, buf);
+
+                // Fix upside down (OpenGL origin is bottom-left)
+                for (int i = 0; i < h; i++)
+                {
+                    for (int j = 0; j < w; j++)
+                    {
+                        pixelsReversed[(h - i - 1) * w + j] = pixels[i * w + j];
+                    }
+                }
+                
+                // Convert ABGR to ARGB if needed? Or Bitmap.CreateBitmap handles int[] as ARGB.
+                // GlReadPixels returns RGBA but Bitmap expects ARGB usually, 
+                // BUT Android IntBuffer read might need channel swap.
+                // It's safer to use Bitmap.Config.Argb8888 
+                // Let's optimize: Just create Bitmap and set pixels.
+                // Actually GlReadPixels gives format: R G B A. 
+                // Android Color is A R G B.
+                // We need to swap R and B channel? No, usually handled. 
+                // Let's try simple copy first.
+                
+                // Simplified manual swap just in case (R G B A -> A R G B)
+                // Actually for int[], format is usually 0xAARRGGBB
+                // GlUnsignedByte reads byte by byte: R, G, B, A memory.
+                // Little Endian machine reads int as: A B G R.
+                // So we likely have 0xAABBGGRR. Needs swap R and B.
+                
+                 for (int i = 0; i < pixelsReversed.Length; i++)
+                 {
+                     int p = pixelsReversed[i];
+                     // Input: 0xAABBGGRR (Little Endian read of R,G,B,A)
+                     // Target: 0xAARRGGBB
+                     int r = (p) & 0xFF;
+                     int g = (p >> 8) & 0xFF;
+                     int b = (p >> 16) & 0xFF;
+                     int a = (p >> 24) & 0xFF;
+                     pixelsReversed[i] = (a << 24) | (r << 16) | (g << 8) | b;
+                 }
+
+                // Create Bitmap on UI Thread (or just here and pass back)
+                // Bitmap creation must be managed carefully.
+                var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(w, h, global::Android.Graphics.Bitmap.Config.Argb8888);
+                bitmap.SetPixels(pixelsReversed, 0, w, 0, 0, w, h);
+
+                // Invoke callback on UI Thread
+                var handler = new Handler(Looper.MainLooper);
+                handler.Post(() => callback(bitmap));
+            }
         }
 
         // Emulation Controls (Public API for Debug Buttons)

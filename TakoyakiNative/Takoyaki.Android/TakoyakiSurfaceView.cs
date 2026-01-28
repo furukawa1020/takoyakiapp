@@ -107,6 +107,7 @@ namespace Takoyaki.Android
                 // 1. Init Core Logic
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 2 - Core Logic");
                 _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
+                _ball.BatterLevel = 1.0f; // Initialize as full for visualization
                 _physics = new Takoyaki.Core.SoftBodySolver(_ball);
                 _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
                 _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
@@ -360,6 +361,16 @@ namespace Takoyaki.Android
                 
                 int uBatterLvl = GLES30.GlGetUniformLocation(_program, "uBatterLevel");
                 GLES30.GlUniform1f(uBatterLvl, _ball.BatterLevel);
+
+                // Lighting & View
+                int uLight = GLES30.GlGetUniformLocation(_program, "uLightPos");
+                GLES30.GlUniform3f(uLight, 5.0f, 5.0f, 5.0f);
+
+                int uView = GLES30.GlGetUniformLocation(_program, "uViewPos");
+                GLES30.GlUniform3f(uView, 0.0f, 4.0f, 4.0f);
+
+                int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
+                GLES30.GlUniform1f(uFresnel, 1.0f);
     
                 GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
                 GLES30.GlBindVertexArray(0);

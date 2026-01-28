@@ -969,11 +969,11 @@ namespace Takoyaki.Android
             {
                 float t = (float)i / segments;
                 
-                // Wavy path on sphere surface
-                float angle = t * (float)System.Math.PI * 1.5f;
-                float x = (float)System.Math.Cos(angle) * 0.6f;
-                float y = 0.5f + (float)System.Math.Sin(angle * 2) * 0.2f;
-                float z = (float)System.Math.Sin(angle) * 0.6f;
+                // Wavy path on FRONT of sphere surface (positive Z)
+                float angle = t * (float)System.Math.PI * 1.2f - 0.3f; // Offset to center on front
+                float x = (float)System.Math.Sin(angle) * 0.5f;
+                float y = 0.2f + (float)System.Math.Cos(angle * 1.5f) * 0.4f;
+                float z = 0.6f + (float)System.Math.Cos(angle) * 0.3f; // Always positive Z (front)
                 
                 // Create circle around path point
                 for (int j = 0; j < 6; j++)

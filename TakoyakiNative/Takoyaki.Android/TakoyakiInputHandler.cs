@@ -33,6 +33,7 @@ namespace Takoyaki.Android
             // Sync Sensor to InputState
             _inputState.Tilt = _sensor.CurrentTilt;
             _inputState.Acceleration = _sensor.CurrentAcceleration;
+            _inputState.AngularVelocity = _sensor.CurrentGyroVelo;
 
             // Apply Emulation Overrides (Keyboard/DPad)
             if (Math.Abs(EmuTiltX) > 0.01f) _inputState.Tilt.X = EmuTiltX;

@@ -14,6 +14,9 @@ namespace Takoyaki.Core
         // Instantaneous acceleration (for Shake detection)
         public Vector3 Acceleration; 
         
+        // Gyroscope data (Angular Velocity)
+        public Vector3 AngularVelocity;
+        
         // User Actions
         public bool IsTap;
         public Vector2 TapPosition; // Screen normalized 0..1

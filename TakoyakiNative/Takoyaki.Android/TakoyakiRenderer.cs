@@ -13,6 +13,7 @@ namespace Takoyaki.Android
         // --- Modules ---
         public TakoyakiAssets Assets { get; } = new TakoyakiAssets();
         public TakoyakiInputHandler Input { get; }
+        private readonly TakoyakiShapingLogic _shaping = new TakoyakiShapingLogic();
         private readonly TakoyakiHaptics _haptics;
         private readonly TakoyakiAudio _audio;
         private readonly TakoyakiSensor _sensor;
@@ -156,6 +157,7 @@ namespace Takoyaki.Android
 
             // 1. Update Input & Logic
             Input.Update(dt);
+            _shaping.Update(dt, _inputState.AngularVelocity);
             UpdateLogic(dt);
 
             // 2. Render
@@ -178,7 +180,10 @@ namespace Takoyaki.Android
             // Set PBR Uniforms
             GLES30.GlUniform3f(_uLightPosHandle, 5.0f, 10.0f, 5.0f);
             GLES30.GlUniform3f(_uViewPosHandle, 0.0f, 0.0f, 6.0f);
-            GLES30.GlUniform1f(_uDisplacementHandle, TakoyakiConstants.BALL_DISPLACEMENT_STRENGTH);
+            
+            // Dynamic Shaping: Displacement strength is reduced as shaping progresses
+            float currentDisplacement = TakoyakiConstants.BALL_DISPLACEMENT_STRENGTH * _shaping.ShapingProgress;
+            GLES30.GlUniform1f(_uDisplacementHandle, currentDisplacement);
             GLES30.GlUniform4f(_uToppingColorHandle, 0, 0, 0, 0); // Disable special topping mode for main ball
 
 

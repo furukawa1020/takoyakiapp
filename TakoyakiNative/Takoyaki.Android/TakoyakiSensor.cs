@@ -14,6 +14,7 @@ namespace Takoyaki.Android
 
         public Vector2 CurrentTilt { get; private set; } // X, Y (-1 to 1)
         public Vector3 CurrentAcceleration { get; private set; }
+        public Vector3 CurrentGyroVelo { get; private set; }
 
         // Simple Low-pass filter
         private float[] _gravity = new float[3];
@@ -32,7 +33,8 @@ namespace Takoyaki.Android
             if (_accelerometer != null)
                 _sensorManager.RegisterListener(this, _accelerometer, SensorDelay.Game);
             
-            // Gyro unused for now, simpler to use Accel for tilt
+            if (_gyroscope != null)
+                _sensorManager.RegisterListener(this, _gyroscope, SensorDelay.Game);
         }
 
         public void Stop()
@@ -48,6 +50,11 @@ namespace Takoyaki.Android
         public void OnSensorChanged(SensorEvent? e)
         {
             if (e == null) return;
+
+            if (e.Sensor.Type == SensorType.Gyroscope)
+            {
+                CurrentGyroVelo = new Vector3(e.Values[0], e.Values[1], e.Values[2]);
+            }
 
             if (e.Sensor.Type == SensorType.Accelerometer)
             {

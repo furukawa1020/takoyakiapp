@@ -30,6 +30,22 @@ namespace Takoyaki.Android
             RenderMode = Rendermode.Continuously;
         }
 
+        // Emulation Controls (Public API)
+        public void EmulatePour(float duration)
+        {
+            _renderer.SetEmulationTilt(0.5f);
+        }
+
+        public void EmulateFlip()
+        {
+            _renderer.TriggerEmulationSwipe();
+        }
+
+        public void EmulateServe(float duration)
+        {
+            _renderer.SetEmulationThrust(true);
+        }
+
         public void ResetGame()
         {
             QueueEvent(new Java.Lang.Runnable(() => {

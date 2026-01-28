@@ -84,6 +84,40 @@ namespace Takoyaki.Android
                 _uiOverlay.AddView(centerLayout, centerParams);
                 rootLayout.AddView(_uiOverlay);
 
+                // 3. Debug Control Buttons (Top of screen)
+                var debugButtonLayout = new global::Android.Widget.LinearLayout(this);
+                debugButtonLayout.Orientation = global::Android.Widget.Orientation.Horizontal;
+                debugButtonLayout.SetGravity(GravityFlags.Center);
+                debugButtonLayout.SetBackgroundColor(global::Android.Graphics.Color.Argb(150, 0, 0, 0));
+                debugButtonLayout.SetPadding(10, 10, 10, 10);
+
+                var debugParams = new global::Android.Widget.FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+                debugParams.Gravity = GravityFlags.Top;
+
+                // Pour Button
+                var pourButton = new global::Android.Widget.Button(this);
+                pourButton.Text = "流し込む";
+                pourButton.SetTextColor(global::Android.Graphics.Color.White);
+                pourButton.Click += (s, e) => _surfaceView.EmulatePour(2.0f);
+                debugButtonLayout.AddView(pourButton);
+
+                // Flip Button
+                var flipButton = new global::Android.Widget.Button(this);
+                flipButton.Text = "ひっくり返す";
+                flipButton.SetTextColor(global::Android.Graphics.Color.White);
+                flipButton.Click += (s, e) => _surfaceView.EmulateFlip();
+                debugButtonLayout.AddView(flipButton);
+
+                // Serve Button
+                var serveButton = new global::Android.Widget.Button(this);
+                serveButton.Text = "サーブ";
+                serveButton.SetTextColor(global::Android.Graphics.Color.White);
+                serveButton.Click += (s, e) => _surfaceView.EmulateServe(1.0f);
+                debugButtonLayout.AddView(serveButton);
+
+                rootLayout.AddView(debugButtonLayout, debugParams);
+
                 SetContentView(rootLayout);
             }
             catch (System.Exception ex)

@@ -833,15 +833,16 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateSauceMesh()
         {
-            // Blob made of multiple small spheres - CENTERED at origin for dynamic positioning
-            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0, 0), 5);
+            // Blob on FRONT of ball (Z=1)
+            // Center at (0, 0.5, 0.9) to be clearly visible on top-front
+            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0.4f, 0.95f), 5);
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Will be set dynamically
-                Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 1.0f), // Dark brown
+                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh vertices are already positioned
+                Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 1.0f),
                 Visible = false
             };
             
@@ -851,21 +852,64 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateMayoMesh()
         {
-            // Tube along a wavy path - CENTERED at origin for dynamic positioning
+            // Tube path on FRONT surface
             var (vertices, indices) = GenerateTubeMesh();
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Will be set dynamically
-                Color = new System.Numerics.Vector4(1.0f, 0.95f, 0.8f, 1.0f), // Cream white
+                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh vertices are already positioned
+                Color = new System.Numerics.Vector4(1.0f, 0.95f, 0.8f, 1.0f),
                 Visible = false
             };
             
             UploadMeshToGPU(mesh);
             return mesh;
         }
+
+        // ... (Render3DToppings)
+        private void Render3DToppings()
+        {
+            GLES30.GlUseProgram(_program);
+            GLES30.GlEnable(GLES30.GlBlend);
+            GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
+            
+            // Disable culling for toppings
+            GLES30.GlDisable(0x0B44); // GL_CULL_FACE
+            
+            if (_takoMesh != null && _takoMesh.Visible) RenderToppingMesh(_takoMesh);
+            if (_sauceMesh != null && _sauceMesh.Visible) RenderToppingMesh(_sauceMesh);
+            if (_mayoMesh != null && _mayoMesh.Visible) RenderToppingMesh(_mayoMesh);
+            
+            foreach (var aonori in _aonoriMeshes)
+            {
+                if (aonori.Visible) RenderToppingMesh(aonori);
+            }
+            
+            foreach (var katsuobushi in _katsuobushiMeshes)
+            {
+                if (katsuobushi.Visible) RenderToppingMesh(katsuobushi);
+            }
+            
+            GLES30.GlEnable(0x0B44); // GL_CULL_FACE
+            GLES30.GlDisable(GLES30.GlBlend);
+        }
+        
+        private void RenderToppingMesh(ToppingMesh mesh)
+        {
+            float[] modelMatrix = new float[16];
+            Matrix.SetIdentityM(modelMatrix, 0);
+            Matrix.TranslateM(modelMatrix, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
+            Matrix.ScaleM(modelMatrix, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
+            
+            float[] mvpMatrix = new float[16];
+            float[] tempMatrix = new float[16];
+            Matrix.MultiplyMM(tempMatrix, 0, _viewMatrix, 0, modelMatrix, 0);
+            Matrix.MultiplyMM(mvpMatrix, 0, _projectionMatrix, 0, tempMatrix, 0);
+            
+            // ... (uniforms) ...
+
         
         private (float[], short[]) GenerateSmallSphere(float radius, int subdivisions)
         {

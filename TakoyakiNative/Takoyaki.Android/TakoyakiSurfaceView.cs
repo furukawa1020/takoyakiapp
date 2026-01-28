@@ -621,13 +621,14 @@ namespace Takoyaki.Android
                 _inputState.Acceleration.Z * _inputState.Acceleration.Z
             );
             
-            // Threshold: ~15 m/s² (strong shake, gravity is ~9.8)
-            if (accelMagnitude > 15.0f)
+            // Threshold: ~8 m/s² (easier shake, gravity is ~9.8)
+            if (accelMagnitude > 8.0f)
             {
                 // Cooldown to avoid spam (check if enough time passed)
                 long now = Java.Lang.JavaSystem.CurrentTimeMillis();
                 if (now - _lastShakeTime > 500) // 500ms cooldown
                 {
+                    global::Android.Util.Log.Debug("TakoyakiShake", $"SHAKE! Accel={accelMagnitude:F2} Stage={_toppingStage}");
                     ApplyTopping();
                     _haptics.TriggerImpact(1.0f); // Haptic feedback!
                     _lastShakeTime = now;

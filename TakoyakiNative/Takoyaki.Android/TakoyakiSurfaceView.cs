@@ -48,7 +48,8 @@ namespace Takoyaki.Android
 
         public void CaptureScreenshot(Action<global::Android.Graphics.Bitmap> callback)
         {
-            _pendingCaptureCallback = callback;
+            // _pendingCaptureCallback = callback; // OLD
+             _renderer.RequestCapture(callback);
         }
 
         public void ResetGame()
@@ -422,6 +423,11 @@ namespace Takoyaki.Android
         private float _emuTiltX = 0f;
         private float _emuTiltY = 0f;
         private bool _emuTrust = false;
+        
+        public void RequestCapture(Action<global::Android.Graphics.Bitmap> callback)
+        {
+            _pendingCaptureCallback = callback;
+        }
 
         public bool HandleKeyEvent(KeyEvent e)
         {

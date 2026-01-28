@@ -219,6 +219,16 @@ pub extern "C" fn tako_get_combo(e: *mut RhythmEngine) -> i32 {
 }
 
 #[no_mangle]
+pub extern "C" fn tako_get_phase(e: *mut RhythmEngine) -> i32 {
+    let e = unsafe { &*e }; e.game_phase as i32
+}
+
+#[no_mangle]
+pub extern "C" fn tako_get_batter(e: *mut RhythmEngine) -> f32 {
+    let e = unsafe { &*e }; e.batter_level
+}
+
+#[no_mangle]
 pub extern "C" fn tako_free(e: *mut RhythmEngine) {
     if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
 }

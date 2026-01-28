@@ -786,10 +786,6 @@ namespace Takoyaki.Android
             if (_stateMachine != null) _stateMachine.Reset();
         }
         
-            GLES30.GlEnable(GLES30.GlDepthTest);
-            GLES30.GlDisable(GLES30.GlBlend);
-        }
-        
         // ===== 3D TOPPING MESH SYSTEM =====
         
         private void Initialize3DToppings()

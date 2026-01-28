@@ -579,6 +579,7 @@ namespace Takoyaki.Android
                 _inputState.Tilt.Y * gScale // Y mapping to Z for 3D depth roll
             );
 
+            _heatDelay.Update(dt);
             _physics.Update(dt, System.Numerics.Vector3.Zero, gravity);
             
             // Interaction: Visual Rolling based on Tilt (Simple visual feedback)

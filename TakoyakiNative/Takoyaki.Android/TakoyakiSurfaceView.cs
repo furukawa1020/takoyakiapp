@@ -95,6 +95,7 @@ namespace Takoyaki.Android
         // Matrix Handles
         private int _uMVPMatrixHandle;
         private int _uModelMatrixHandle;
+        private int _uVPMatrixHandle;
         
         // Matrices
         private float[] _modelMatrix = new float[16];
@@ -181,6 +182,7 @@ namespace Takoyaki.Android
 
                 _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
                 _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
+                _uVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uVPMatrix");
                 
                 global::Android.Util.Log.Error("TakoyakiCrash", $"HANDLES: MVP={_uMVPMatrixHandle}, Model={_uModelMatrixHandle}");
                 
@@ -537,6 +539,11 @@ namespace Takoyaki.Android
     
                 GLES30.GlUniformMatrix4fv(_uMVPMatrixHandle, 1, false, _mvpMatrix, 0);
                 GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);
+
+                // VP Matrix for World Space Soft Body
+                float[] vpMatrix = new float[16];
+                Matrix.MultiplyMM(vpMatrix, 0, _projectionMatrix, 0, _viewMatrix, 0);
+                GLES30.GlUniformMatrix4fv(_uVPMatrixHandle, 1, false, vpMatrix, 0);
     
                 // Update Shader Props
                 int uCook = GLES30.GlGetUniformLocation(_program, "uCookLevel");

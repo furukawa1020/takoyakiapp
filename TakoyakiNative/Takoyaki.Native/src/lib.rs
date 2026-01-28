@@ -122,22 +122,46 @@ impl RhythmEngine {
             self.shaping_progress = (self.shaping_progress + dt * 0.02).min(1.0);
         }
 
-        // Automatic Phase Transitions
+        // Automatic Phase Transitions & Feature Logic
         match self.game_phase {
             GamePhase::Raw => {
-                self.batter_level = (self.batter_level + dt * 0.5).min(1.0);
+                // Rapidly fill batter (1 second total)
+                self.batter_level = (self.batter_level + dt * 1.0).min(1.0);
                 if self.batter_level >= 1.0 { self.game_phase = GamePhase::Cooking; }
             },
             GamePhase::Cooking => {
+                // Heat up while cooking
+                self.cook_level = (self.cook_level + dt * 0.15).min(2.0);
+                // Transition to turned when shaped enough
                 if self.shaping_progress < 0.5 { self.game_phase = GamePhase::Turned; }
             },
             GamePhase::Turned => {
-                if self.shaping_progress <= 0.0 { self.game_phase = GamePhase::Finished; }
+                // Continue heating
+                self.cook_level = (self.cook_level + dt * 0.12).min(2.0);
+                // Final finish when reaching perfect sphere
+                if self.shaping_progress <= 0.05 { 
+                    self.game_phase = GamePhase::Finished;
+                    self.calculate_score();
+                    self.result_ready = true;
+                }
             },
             GamePhase::Finished => {},
         }
 
         mag
+    }
+
+    fn calculate_score(&mut self) {
+        // Ideal: CookLevel near 1.0, ShapingProgress 0.0
+        let cook_err = (self.cook_level - 1.0).abs();
+        let cook_score = (100.0 - cook_err * 60.0).clamp(0.0, 100.0);
+        let shape_score = (1.0 - self.shaping_progress) * 40.0;
+        
+        let mut total = (cook_score + shape_score) as i32;
+        if self.cook_level < 0.6 { total -= 40; } // Penalty for raw
+        if self.cook_level > 1.6 { total -= 30; } // Penalty for burnt
+        
+        self.score = total.clamp(0, 100);
     }
 
     fn step_physics(&self, states: &mut [VertexState], params: &PhysicsParams, gravity: &Vec3, accel: &Vec3, dt: f32) {

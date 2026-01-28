@@ -127,12 +127,8 @@ namespace Takoyaki.Android
         // Initial topping application flag
         private bool _needsInitialToppings = true;
         
-        // 3D Topping System (Full Geometry)
-        private ToppingMesh? _takoMesh;
-        private ToppingMesh? _sauceMesh;
-        private ToppingMesh? _mayoMesh;
-        private List<ToppingMesh> _aonoriMeshes = new List<ToppingMesh>();
-        private List<ToppingMesh> _katsuobushiMeshes = new List<ToppingMesh>();
+        // 3D Topping System (Delegated)
+        private TakoyakiToppings _toppings;
         private float _animationTime = 0f;
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
@@ -251,6 +247,8 @@ namespace Takoyaki.Android
                 
                 // Initialize 3D Topping System
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 6 - 3D Toppings");
+                _toppings = new TakoyakiToppings();
+                _toppings.Initialize(_program);
                 Initialize3DToppings();
                 _needsInitialToppings = true; // Reset flag for initial topping application
             }
@@ -379,120 +377,20 @@ namespace Takoyaki.Android
 
         public void ApplyTopping()
         {
-            // Show 3D topping meshes
-            if (_toppingStage == 0)
+            if (_toppings != null)
             {
-                if (_sauceMesh != null) _sauceMesh.Visible = true;
-                global::Android.Util.Log.Debug("TakoyakiTopping", "Sauce (3D blob) applied!");
-            }
-            else if (_toppingStage == 1)
-            {
-                if (_mayoMesh != null) _mayoMesh.Visible = true;
-                global::Android.Util.Log.Debug("TakoyakiTopping", "Mayo (3D tube) applied!");
-            }
-            else if (_toppingStage == 2)
-            {
-                // Generate aonori as small leaf-shaped meshes
-                GenerateAonoriMeshes(12);
-                global::Android.Util.Log.Debug("TakoyakiTopping", $"Aonori (3D leaves) applied! {_aonoriMeshes.Count} pieces");
-            }
-            
-            _toppingStage++;
-        }
-        
-        private void GenerateAonoriMeshes(int count)
-        {
-            var random = new System.Random();
-            for (int i = 0; i < count; i++)
-            {
-                // Random position on sphere surface
-                float theta = (float)(random.NextDouble() * System.Math.PI * 2);
-                float phi = (float)(random.NextDouble() * System.Math.PI);
-                float radius = 1.01f; // Slightly above ball surface (tight fit)
+                _toppings.SetToppingVisible(_toppingStage);
                 
-                float x = radius * (float)System.Math.Sin(phi) * (float)System.Math.Cos(theta);
-                float y = radius * (float)System.Math.Sin(phi) * (float)System.Math.Sin(theta);
-                float z = radius * (float)System.Math.Cos(phi);
+                if (_toppingStage == 0) global::Android.Util.Log.Debug("TakoyakiTopping", "Sauce applied!");
+                else if (_toppingStage == 1) global::Android.Util.Log.Debug("TakoyakiTopping", "Mayo applied!");
+                else if (_toppingStage == 2) global::Android.Util.Log.Debug("TakoyakiTopping", "Aonori applied!");
+                else if (_toppingStage == 3) global::Android.Util.Log.Debug("TakoyakiTopping", "Katsuobushi applied!");
                 
-                // Create small leaf quad
-                var (vertices, indices) = GenerateLeafQuad(0.05f);
-                
-                // Bake rotation and translation into vertices
-                var normal = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(x, y, z));
-                var defaultNormal = new System.Numerics.Vector3(0, 0, 1); // Leaf created on XY plane facing Z
-                
-                var axis = System.Numerics.Vector3.Cross(defaultNormal, normal);
-                float dot = System.Numerics.Vector3.Dot(defaultNormal, normal);
-                float angle = (float)System.Math.Acos(dot);
-                
-                var rot = System.Numerics.Matrix4x4.Identity;
-                if (axis.LengthSquared() > 0.001f)
-                {
-                    rot = System.Numerics.Matrix4x4.CreateFromAxisAngle(System.Numerics.Vector3.Normalize(axis), angle);
-                }
-                else if (dot < -0.99f) // Opposite direction
-                {
-                    rot = System.Numerics.Matrix4x4.CreateFromAxisAngle(new System.Numerics.Vector3(1, 0, 0), (float)System.Math.PI);
-                }
-
-                // Transform vertices
-                for(int k=0; k<vertices.Length; k+=8)
-                {
-                    var v = new System.Numerics.Vector3(vertices[k], vertices[k+1], vertices[k+2]);
-                    v = System.Numerics.Vector3.Transform(v, rot);
-                    vertices[k] = v.X + x;
-                    vertices[k+1] = v.Y + y;
-                    vertices[k+2] = v.Z + z;
-                    
-                    // Transform Normal
-                    var n = new System.Numerics.Vector3(vertices[k+3], vertices[k+4], vertices[k+5]);
-                    n = System.Numerics.Vector3.TransformNormal(n, rot);
-                    vertices[k+3] = n.X;
-                    vertices[k+4] = n.Y;
-                    vertices[k+5] = n.Z;
-                }
-
-                var mesh = new ToppingMesh
-                {
-                    Vertices = vertices,
-                    Indices = indices,
-                    Position = new System.Numerics.Vector3(0, 0, 0), // Already applied to vertices
-                    Rotation = new System.Numerics.Vector3(0, 0, 0),
-                    Color = new System.Numerics.Vector4(0.1f, 0.4f, 0.1f, 1.0f), // Dark green
-                    Visible = true
-                };
-                
-                UploadMeshToGPU(mesh);
-                _aonoriMeshes.Add(mesh);
+                _toppingStage++;
             }
         }
         
-        private (float[], short[]) GenerateLeafQuad(float size)
-        {
-            // Simple Diamond Shape (prevents twisted ribbon look)
-            // Center is (0,0), lying flat on Z=0 plane (before rotation)
-            // But here we need to align it tangent to sphere surface at (x,y,z).
-            // Since we use look-at logic or random rotation, let's make it flat in XY plane.
-            
-            float width = size * 0.6f;
-            float height = size * 1.0f;
-            
-            float[] vertices = new float[]
-            {
-                // Position,              Normal,         UV
-                0,      -height, 0,       0, 0, 1,        0.5f, 0,    // Bottom
-                width,   0,      0,       0, 0, 1,        1,    0.5f, // Right
-                0,       height, 0,       0, 0, 1,        0.5f, 1,    // Top
-                -width,  0,      0,       0, 0, 1,        0,    0.5f  // Left
-            };
-            
-            short[] indices = new short[] { 
-                0, 1, 2,  // Right triangle
-                0, 2, 3   // Left triangle
-            };
-            
-            return (vertices, indices);
-        }
+
         private int _toppingStage = 0;
 
         private int _width;
@@ -837,357 +735,19 @@ namespace Takoyaki.Android
         
         private void Initialize3DToppings()
         {
-            global::Android.Util.Log.Debug("Takoyaki3D", "Initializing 3D toppings...");
-            
-            // Create all topping meshes
-            _takoMesh = CreateTakoMesh();
-            _sauceMesh = CreateSauceMesh();
-            _mayoMesh = CreateMayoMesh();
-            
-            // Aonori and Katsuobushi will be generated when applied
-            
-            global::Android.Util.Log.Debug("Takoyaki3D", "3D toppings initialized!");
-        }
-        
-        private ToppingMesh CreateTakoMesh()
-        {
-            // Small red sphere for octopus piece
-            var (vertices, indices) = GenerateSmallSphere(0.2f, 6);
-            
-            var mesh = new ToppingMesh
+            if (_toppings != null)
             {
-                Vertices = vertices,
-                Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Center of ball
-                Color = new System.Numerics.Vector4(0.8f, 0.2f, 0.2f, 0.8f), // Red, semi-transparent
-                Visible = false
-            };
-            
-            UploadMeshToGPU(mesh);
-            return mesh;
-        }
-        
-        private ToppingMesh CreateSauceMesh()
-        {
-            // Blob on FRONT of ball (Z=1)
-            // Center at (0, 0.5, 0.9) to be clearly visible on top-front
-            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0.4f, 0.95f), 5);
-            
-            var mesh = new ToppingMesh
-            {
-                Vertices = vertices,
-                Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh vertices are already positioned
-                Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 1.0f),
-                Visible = false
-            };
-            
-            UploadMeshToGPU(mesh);
-            return mesh;
-        }
-        
-        private ToppingMesh CreateMayoMesh()
-        {
-            // Tube path on FRONT surface
-            var (vertices, indices) = GenerateTubeMesh();
-            
-            var mesh = new ToppingMesh
-            {
-                Vertices = vertices,
-                Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh vertices are already positioned
-                Color = new System.Numerics.Vector4(1.0f, 0.95f, 0.8f, 1.0f),
-                Visible = false
-            };
-            
-            UploadMeshToGPU(mesh);
-            return mesh;
-        }
-
-
-
-        
-        private (float[], short[]) GenerateSmallSphere(float radius, int subdivisions)
-        {
-            var vertices = new List<float>();
-            var indices = new List<short>();
-            
-            // Simple UV sphere generation
-            for (int lat = 0; lat <= subdivisions; lat++)
-            {
-                float theta = lat * (float)System.Math.PI / subdivisions;
-                float sinTheta = (float)System.Math.Sin(theta);
-                float cosTheta = (float)System.Math.Cos(theta);
-                
-                for (int lon = 0; lon <= subdivisions; lon++)
-                {
-                    float phi = lon * 2 * (float)System.Math.PI / subdivisions;
-                    float sinPhi = (float)System.Math.Sin(phi);
-                    float cosPhi = (float)System.Math.Cos(phi);
-                    
-                    float x = cosPhi * sinTheta;
-                    float y = cosTheta;
-                    float z = sinPhi * sinTheta;
-                    
-                    // Position
-                    vertices.Add(x * radius);
-                    vertices.Add(y * radius);
-                    vertices.Add(z * radius);
-                    
-                    // Normal (same as position for sphere)
-                    vertices.Add(x);
-                    vertices.Add(y);
-                    vertices.Add(z);
-                    
-                    // UV (dummy)
-                    vertices.Add((float)lon / subdivisions);
-                    vertices.Add((float)lat / subdivisions);
-                }
+                _toppings.GenerateToppings();
             }
-            
-            // Generate indices
-            for (int lat = 0; lat < subdivisions; lat++)
-            {
-                for (int lon = 0; lon < subdivisions; lon++)
-                {
-                    short first = (short)(lat * (subdivisions + 1) + lon);
-                    short second = (short)(first + subdivisions + 1);
-                    
-                    indices.Add(first);
-                    indices.Add(second);
-                    indices.Add((short)(first + 1));
-                    
-                    indices.Add(second);
-                    indices.Add((short)(second + 1));
-                    indices.Add((short)(first + 1));
-                }
-            }
-            
-            return (vertices.ToArray(), indices.ToArray());
-        }
-        
-        private (float[], short[]) GenerateBlobMesh(System.Numerics.Vector3 center, int blobCount)
-        {
-            var allVertices = new List<float>();
-            var allIndices = new List<short>();
-            var random = new System.Random(42);
-            
-            for (int i = 0; i < blobCount; i++)
-            {
-                // Random offset for each blob
-                float offsetX = (float)(random.NextDouble() - 0.5) * 0.3f;
-                float offsetY = (float)(random.NextDouble() - 0.5) * 0.2f;
-                float offsetZ = (float)(random.NextDouble() - 0.5) * 0.3f;
-                float blobRadius = 0.15f + (float)random.NextDouble() * 0.1f;
-                
-                var (vertices, indices) = GenerateSmallSphere(blobRadius, 4);
-                
-                short vertexOffset = (short)(allVertices.Count / 8); // 8 floats per vertex
-                
-                // Offset vertices
-                for (int v = 0; v < vertices.Length; v += 8)
-                {
-                    allVertices.Add(vertices[v] + center.X + offsetX);
-                    allVertices.Add(vertices[v + 1] + center.Y + offsetY);
-                    allVertices.Add(vertices[v + 2] + center.Z + offsetZ);
-                    allVertices.Add(vertices[v + 3]); // Normal X
-                    allVertices.Add(vertices[v + 4]); // Normal Y
-                    allVertices.Add(vertices[v + 5]); // Normal Z
-                    allVertices.Add(vertices[v + 6]); // UV U
-                    allVertices.Add(vertices[v + 7]); // UV V
-                }
-                
-                // Offset indices
-                foreach (var idx in indices)
-                {
-                    allIndices.Add((short)(idx + vertexOffset));
-                }
-            }
-            
-            return (allVertices.ToArray(), allIndices.ToArray());
-        }
-        
-        private (float[], short[]) GenerateTubeMesh()
-        {
-            var vertices = new List<float>();
-            var indices = new List<short>();
-            
-            // Simple wavy path for mayo
-            int segments = 12;
-            float tubeRadius = 0.08f;
-            
-            for (int i = 0; i <= segments; i++)
-            {
-                float t = (float)i / segments;
-                
-                // Wavy path on FRONT of sphere surface (positive Z)
-                float angle = t * (float)System.Math.PI * 1.2f - 0.3f; // Offset to center on front
-                float x = (float)System.Math.Sin(angle) * 0.5f;
-                float y = 0.2f + (float)System.Math.Cos(angle * 1.5f) * 0.4f;
-                float z = 0.6f + (float)System.Math.Cos(angle) * 0.3f; // Always positive Z (front)
-                
-                // Create circle around path point
-                for (int j = 0; j < 6; j++)
-                {
-                    float circleAngle = j * 2 * (float)System.Math.PI / 6;
-                    float offsetX = (float)System.Math.Cos(circleAngle) * tubeRadius;
-                    float offsetY = (float)System.Math.Sin(circleAngle) * tubeRadius;
-                    
-                    vertices.Add(x + offsetX);
-                    vertices.Add(y + offsetY);
-                    vertices.Add(z);
-                    
-                    // Normal (approximate)
-                    vertices.Add(offsetX);
-                    vertices.Add(offsetY);
-                    vertices.Add(0);
-                    
-                    // UV
-                    vertices.Add(t);
-                    vertices.Add((float)j / 6);
-                }
-            }
-            
-            // Generate indices
-            for (int i = 0; i < segments; i++)
-            {
-                for (int j = 0; j < 6; j++)
-                {
-                    short current = (short)(i * 6 + j);
-                    short next = (short)(i * 6 + (j + 1) % 6);
-                    short currentNext = (short)((i + 1) * 6 + j);
-                    short nextNext = (short)((i + 1) * 6 + (j + 1) % 6);
-                    
-                    indices.Add(current);
-                    indices.Add(currentNext);
-                    indices.Add(next);
-                    
-                    indices.Add(next);
-                    indices.Add(currentNext);
-                    indices.Add(nextNext);
-                }
-            }
-            
-            return (vertices.ToArray(), indices.ToArray());
-        }
-        
-        private void UploadMeshToGPU(ToppingMesh mesh)
-        {
-            // Create VBO
-            int[] buffers = new int[2];
-            GLES30.GlGenBuffers(2, buffers, 0);
-            mesh.VBO = buffers[0];
-            mesh.IBO = buffers[1];
-            
-            // Upload vertices
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, mesh.VBO);
-            GLES30.GlBufferData(GLES30.GlArrayBuffer, mesh.Vertices.Length * 4, 
-                Java.Nio.FloatBuffer.Wrap(mesh.Vertices), GLES30.GlStaticDraw);
-            
-            // Upload indices
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, mesh.IBO);
-            GLES30.GlBufferData(GLES30.GlElementArrayBuffer, mesh.Indices.Length * 2, 
-                Java.Nio.ShortBuffer.Wrap(mesh.Indices), GLES30.GlStaticDraw);
-            
-            mesh.IndexCount = mesh.Indices.Length;
-            
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, 0);
         }
         
         private void Render3DToppings()
         {
-            // Use existing shader program (reuse ball shader)
-            GLES30.GlUseProgram(_program);
-            
-            // Enable blending for semi-transparent toppings
-            GLES30.GlEnable(GLES30.GlBlend);
-            GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
-            
-            // Disable culling for toppings to ensure visibility (especially leaves)
-            GLES30.GlDisable(0x0B44); // GL_CULL_FACE
-            
-            // Render each topping
-            if (_takoMesh != null && _takoMesh.Visible) RenderToppingMesh(_takoMesh);
-            if (_sauceMesh != null && _sauceMesh.Visible) RenderToppingMesh(_sauceMesh);
-            if (_mayoMesh != null && _mayoMesh.Visible) RenderToppingMesh(_mayoMesh);
-            
-            foreach (var aonori in _aonoriMeshes)
+            if (_toppings != null)
             {
-                if (aonori.Visible) RenderToppingMesh(aonori);
+                _toppings.Render(_viewMatrix, _projectionMatrix);
             }
-            
-            foreach (var katsuobushi in _katsuobushiMeshes)
-            {
-                if (katsuobushi.Visible) RenderToppingMesh(katsuobushi);
-            }
-            
-            GLES30.GlEnable(0x0B44); // GL_CULL_FACE // Re-enable culling
-            GLES30.GlDisable(GLES30.GlBlend);
-        }
-        
-        private void RenderToppingMesh(ToppingMesh mesh)
-        {
-            // Create model matrix with position, rotation, scale
-            float[] modelMatrix = new float[16];
-            Matrix.SetIdentityM(modelMatrix, 0);
-            
-            // 1. Translate to position
-            Matrix.TranslateM(modelMatrix, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
-            
-            // 2. Scale
-            Matrix.ScaleM(modelMatrix, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
-            
-            // MVP matrix
-            float[] mvpMatrix = new float[16];
-            float[] tempMatrix = new float[16];
-            Matrix.MultiplyMM(tempMatrix, 0, _viewMatrix, 0, modelMatrix, 0);
-            Matrix.MultiplyMM(mvpMatrix, 0, _projectionMatrix, 0, tempMatrix, 0);
-            
-            // Set uniforms
-            int uMVP = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
-            GLES30.GlUniformMatrix4fv(uMVP, 1, false, mvpMatrix, 0);
-            
-            int uModel = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
-            GLES30.GlUniformMatrix4fv(uModel, 1, false, modelMatrix, 0);
-            
-            int uColor = GLES30.GlGetUniformLocation(_program, "uToppingColor");
-            GLES30.GlUniform4f(uColor, mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
-            
-            // Bind VBO and set attributes
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, mesh.VBO);
-            GLES30.GlEnableVertexAttribArray(0); // Position
-            GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, 32, 0);
-            GLES30.GlEnableVertexAttribArray(1); // Normal
-            GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, 32, 12);
-            GLES30.GlEnableVertexAttribArray(2); // UV
-            GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, 32, 24);
-            
-            // Bind IBO and draw
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, mesh.IBO);
-            GLES30.GlDrawElements(GLES30.GlTriangles, mesh.IndexCount, GLES30.GlUnsignedShort, 0);
-            
-            // Cleanup
-            GLES30.GlDisableVertexAttribArray(0);
-            GLES30.GlDisableVertexAttribArray(1);
-            GLES30.GlDisableVertexAttribArray(2);
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, 0);
         }
     }
     
     // Helper class for 3D topping meshes
-    internal class ToppingMesh
-    {
-        public float[] Vertices { get; set; } = Array.Empty<float>();
-        public short[] Indices { get; set; } = Array.Empty<short>();
-        public int VBO { get; set; }
-        public int IBO { get; set; }
-        public System.Numerics.Vector3 Position { get; set; }
-        public System.Numerics.Vector3 Rotation { get; set; }
-        public System.Numerics.Vector3 Scale { get; set; } = new System.Numerics.Vector3(1, 1, 1);
-        public System.Numerics.Vector4 Color { get; set; }
-        public bool Visible { get; set; }
-        public int IndexCount { get; set; }
-    }
-}

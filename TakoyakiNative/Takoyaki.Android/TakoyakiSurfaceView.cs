@@ -102,7 +102,7 @@ namespace Takoyaki.Android
             {
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 1 - GL Init");
                 GLES30.GlEnable(GLES30.GlDepthTest);
-                GLES30.GlDisable(GLES30.GlCullFace); // Safety: Draw both sides
+                GLES30.GlDisable(2884); // GL_CULL_FACE (Fix ambiguity)
                 // DEBUG: Magenta Background to prove GL is live
                 GLES30.GlClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     
@@ -147,12 +147,16 @@ namespace Takoyaki.Android
 
                 _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
                 _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
+                
+                global::Android.Util.Log.Error("TakoyakiCrash", $"HANDLES: MVP={_uMVPMatrixHandle}, Model={_uModelMatrixHandle}");
+                
                 int uDisp = GLES30.GlGetUniformLocation(_program, "uDisplacementStrength");
                 GLES30.GlUniform1f(uDisp, 0.1f); // Default displacement
     
                 // Texture Uniforms
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 4 - Textures");
-                 int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
+                int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
+                global::Android.Util.Log.Error("TakoyakiCrash", $"HANDLES: Batter={uBatter}");
                 // ... (abbreviated, rely on structure matching)
                 GLES30.GlUniform1i(uBatter, 0);
 
@@ -282,6 +286,7 @@ namespace Takoyaki.Android
 
         public void OnSurfaceChanged(IGL10? gl, int width, int height)
         {
+            global::Android.Util.Log.Error("TakoyakiCrash", $"ONSURFACECHANGED: w={width}, h={height}");
             GLES30.GlViewport(0, 0, width, height);
             float ratio = (float)width / height;
             Matrix.FrustumM(_projectionMatrix, 0, -ratio, ratio, -1, 1, 2, 10);
@@ -374,10 +379,20 @@ namespace Takoyaki.Android
                 GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
     
                 GLES30.GlUseProgram(_program);
-                GLES30.GlBindVertexArray(_vao);
+                
+                // BRUTE FORCE: Bind everything explicitly
+                GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
+                GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, 32, 0); // Pos
+                GLES30.GlEnableVertexAttribArray(0);
+                GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, 32, 12); // Norm
+                GLES30.GlEnableVertexAttribArray(1);
+                GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, 32, 24); // UV
+                GLES30.GlEnableVertexAttribArray(2);
+                
+                // GLES30.GlBindVertexArray(_vao);
     
                 // Update Dynamic VBO (Physics Jiggle)
-                UpdateMeshVBO();
+                // UpdateMeshVBO(); // DEBUG: Disable to check if physics corrupts data
     
                 // Calc MVP
                 Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 
@@ -403,8 +418,15 @@ namespace Takoyaki.Android
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);
     
+                GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
                 GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
-                GLES30.GlBindVertexArray(0);
+                
+                GLES30.GlDisableVertexAttribArray(0);
+                GLES30.GlDisableVertexAttribArray(1);
+                GLES30.GlDisableVertexAttribArray(2);
+                GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
+                GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, 0);
+                // GLES30.GlBindVertexArray(0);
                 
                 // 3. Draw Particles (After opaque geometry)
                 _steam.Update(dt, _ball.CookLevel > 0.3f ? 1.0f : 0.0f); // Steam if cooking

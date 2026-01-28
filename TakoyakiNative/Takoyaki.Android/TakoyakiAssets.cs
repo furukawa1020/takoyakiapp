@@ -41,11 +41,8 @@ namespace Takoyaki.Android
             GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlRepeat);
             GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlRepeat);
 
-            // Access internal data (using private field access if necessary, or modifying Core to expose)
-            // Wait, ProceduralTexture has a public Data property? Let's check.
-            // Actually, let's assume it has public Width, Height, and byte[] Data.
-            
-            // GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, tex.Width, tex.Height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, Java.Nio.ByteBuffer.Wrap(tex.Data));
+            // Upload the pixel buffer directly to the GPU
+            GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, tex.Width, tex.Height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, Java.Nio.ByteBuffer.Wrap(tex.Pixels));
 
             return id;
         }

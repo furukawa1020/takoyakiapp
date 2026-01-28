@@ -44,6 +44,9 @@ namespace Takoyaki.Android
         private int _uModelMatrixHandle;
         private int _uVPMatrixHandle;
         private int _uTimeHandle;
+        private int _uLightPosHandle;
+        private int _uViewPosHandle;
+        private int _uDisplacementHandle;
 
         public Action<int> OnGameFinished;
 
@@ -160,6 +163,11 @@ namespace Takoyaki.Android
             GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);
             GLES30.GlUniformMatrix4fv(_uVPMatrixHandle, 1, false, vpMatrix, 0);
             GLES30.GlUniform1f(_uTimeHandle, _totalTime);
+
+            // Set PBR Uniforms
+            GLES30.GlUniform3f(_uLightPosHandle, 5.0f, 10.0f, 5.0f);
+            GLES30.GlUniform3f(_uViewPosHandle, 0.0f, 0.0f, 6.0f);
+            GLES30.GlUniform1f(_uDisplacementHandle, TakoyakiConstants.BALL_DISPLACEMENT_STRENGTH);
 
             // Sync Uniforms
             int uBatterLvl = GLES30.GlGetUniformLocation(Assets.MainProgram, "uBatterLevel");

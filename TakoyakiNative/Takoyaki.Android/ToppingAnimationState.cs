@@ -25,21 +25,32 @@ namespace Takoyaki.Android
         public void Update(float dt, float localHeat, float ballWobble)
         {
             // Dancing logic: High heat + random jitter
-            Vibrancy = Math.Max(Vibrancy, localHeat * 0.5f);
-            Vibrancy *= (1.0f - dt * 2.0f); // Dampen
+            // Katsuobushi (bonito flakes) are extremely sensitive to heat
+            Vibrancy = Math.Max(Vibrancy, localHeat * 0.8f);
+            Vibrancy *= (1.0f - dt * 1.5f); // Slightly slower dampening for more "lingering" dance
             
             float time = (float)(Java.Lang.JavaSystem.NanoTime() / 1_000_000_000.0) + _timeOffset;
             
-            // Random jitter for flakes
-            float jitter = (float)Math.Sin(time * 15.0f) * Vibrancy * 0.1f;
-            CurrentOffset.Y = jitter + (ballWobble * 0.1f); 
+            // MULTI-FREQUENCY NOISE (Fourier Approximation)
+            // This creates the unpredictable, organic movement of real bonito flakes
+            float wave1 = (float)Math.Sin(time * 12.0f);
+            float wave2 = (float)Math.Sin(time * 23.0f + 1.5f);
+            float wave3 = (float)Math.Sin(time * 7.0f * (1.0f + wave1 * 0.1f));
             
-            // Rotation "dance"
-            CurrentRotation.X = (float)Math.Sin(time * 8.0f) * Vibrancy * 5.0f;
-            CurrentRotation.Z = (float)Math.Cos(time * 6.0f) * Vibrancy * 5.0f;
+            float chaos = (wave1 * 0.5f + wave2 * 0.3f + wave3 * 0.2f);
+            
+            // Positioning (Bounce/jitter)
+            float bounce = Math.Abs(chaos) * Vibrancy * 0.15f;
+            CurrentOffset.Y = bounce + (ballWobble * 0.12f);
+            
+            // ROTATION "DANCE" (Chaotic flapping)
+            // Flakes should look like they are curling and uncurling
+            CurrentRotation.X = chaos * Vibrancy * 15.0f;
+            CurrentRotation.Z = (wave2 - wave1) * Vibrancy * 10.0f;
+            CurrentRotation.Y = wave3 * Vibrancy * 5.0f;
             
             // Heat causes shrinking/curling
-            HeatReaction = Math.Min(1.0f, HeatReaction + localHeat * dt * 0.1f);
+            HeatReaction = Math.Min(1.0f, HeatReaction + localHeat * dt * 0.25f);
         }
     }
 }

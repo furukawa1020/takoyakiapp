@@ -240,11 +240,6 @@ namespace Takoyaki.Android
                 GLES30.GlBindVertexArray(0);
                 Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
                 _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
-                
-                // SHAKE SHAKE MODE: Pre-apply toppings for instant visual appeal!
-                ApplyTopping(); // Sauce
-                ApplyTopping(); // Mayo
-                ApplyTopping(); // Aonori
             }
             catch (System.Exception ex)
             {

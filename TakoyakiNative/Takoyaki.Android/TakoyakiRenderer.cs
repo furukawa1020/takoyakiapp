@@ -27,6 +27,7 @@ namespace Takoyaki.Android
         private TakoyakiToppings _toppings;
         private TakoyakiVfxManager _vfx;
         private ShapingGuidance _guidance;
+        private MasterAura _aura;
         // --- Rendering State ---
         private float[] _modelMatrix = new float[16];
         private float[] _viewMatrix = new float[16];
@@ -138,6 +139,7 @@ namespace Takoyaki.Android
  
             _vfx = new TakoyakiVfxManager(global::Android.App.Application.Context);
             _guidance = new ShapingGuidance(global::Android.App.Application.Context);
+            _aura = new MasterAura(global::Android.App.Application.Context);
             
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
@@ -161,6 +163,12 @@ namespace Takoyaki.Android
             Input.Update(dt);
             _shaping.Update(dt, _inputState.AngularVelocity);
             _ball.ShapingQuality = 1.0f - _shaping.ShapingProgress;
+            
+            if (_shaping.TriggerHapticTick) {
+                _haptics.TriggerImpact(0.3f);
+                _shaping.TriggerHapticTick = false;
+            }
+
             UpdateLogic(dt);
 
             // 2. Render
@@ -204,6 +212,9 @@ namespace Takoyaki.Android
             GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
             GLES30.GlBindVertexArray(0);
 
+            // Render Aura (Behind ball)
+            _aura.Draw(vpMatrix, _modelMatrix, _shaping.MasteryLevel * 0.8f, _totalTime);
+
             // Render Toppings
             _toppings.RenderRecursive(vpMatrix, _modelMatrix, _totalTime);
  
@@ -212,7 +223,7 @@ namespace Takoyaki.Android
             _vfx.Draw(vpMatrix);
 
             // Render HUD
-            _guidance.Draw(_inputState.AngularVelocity.Length(), TakoyakiShapingLogic.TARGET_GYRO_MAG, _shaping.MasteryLevel, _shaping.RhythmPulse);
+            _guidance.Draw(_inputState.AngularVelocity.Length(), TakoyakiShapingLogic.TARGET_GYRO_MAG, _shaping.MasteryLevel, _shaping.RhythmPulse, _shaping.ComboCount);
         }
 
         private void UpdateLogic(float dt)

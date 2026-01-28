@@ -44,7 +44,7 @@ namespace Takoyaki.Android
             Matrix.OrthoM(_orthoMatrix, 0, -1, 1, -1, 1, -1, 1);
         }
 
-        public void Draw(float currentGyro, float targetGyro, float mastery, float pulse)
+        public void Draw(float currentGyro, float targetGyro, float mastery, float pulse, int combo)
         {
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
@@ -65,21 +65,26 @@ namespace Takoyaki.Android
             GLES30.GlBindVertexArray(_vao);
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 2. Draw Progress Bar (Mastery)
+            // 2. Target Zone (The "Sweet Spot")
+            float zoneCenter = targetGyro / (targetGyro * 1.5f);
+            float zoneHalfWidth = 0.05f;
+            GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 0.2f); // Faint white zone
+            // We reuse the same VBO but could use uniforms for custom quad math if needed
+            // For now, let's just draw the progress bar with a specific color at that spot
+            
+            // 3. Draw Progress Bar (Current Speed)
             GLES30.GlUniform1i(uType, 1);
-            // Color shifts from Red to Gold
             vec4 col = mastery > 0.8f ? new vec4(1, 0.9f, 0, 0.9f) : new vec4(0, 0.8f, 1.0f, 0.8f);
+            if (mastery > 0.95f && pulse > 0.8f) col = new vec4(1, 1, 1, 1.0f); // Flash on pulse
+            
             GLES30.GlUniform4f(uColor, col.X, col.Y, col.Z, col.W);
             GLES30.GlUniform1f(uProgress, currentGyro / (targetGyro * 1.5f));
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 3. Draw Rhythm Pulse Indicator (A dot or glow)
-            // Pulse guidance
-            float alpha = 0.3f + pulse * 0.4f;
-            GLES30.GlUniform1i(uType, 0);
-            GLES30.GlUniform4f(uColor, 1, 1, 1, alpha);
-            // Dynamic scale for pulse
-            // (We could use another VBO or just scale the matrix, let's keep it simple for now)
+            // 4. Combo Text Representation (Simple colored block for now)
+            if (combo > 0) {
+                // Future: Add font renderer
+            }
 
             GLES30.GlBindVertexArray(0);
             GLES30.GlEnable(GLES30.GlDepthTest);

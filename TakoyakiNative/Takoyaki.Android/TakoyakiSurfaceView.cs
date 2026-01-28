@@ -605,6 +605,15 @@ namespace Takoyaki.Android
                 Matrix.RotateM(_modelMatrix, 0, 180f, 1, 0, 0);
             }
 
+            // Interaction: Tap for Toppings
+            if (_inputState.IsTap)
+            {
+                 // Main Thread dispatch required for LoadTexture?
+                 // No, we are on GL Thread here in OnDrawFrame/UpdateLogic
+                 ApplyTopping();
+                 _inputState.IsTap = false; // Consume click
+            }
+
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1); // Z-axis roll
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.Y * 45f, 1, 0, 0); // X-axis pitch
             

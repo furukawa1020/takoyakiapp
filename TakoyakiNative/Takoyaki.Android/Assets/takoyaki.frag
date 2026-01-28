@@ -25,10 +25,9 @@ void main() {
     // Sphere is radius ~1.0 (Y: -1 to 1)
     // Map BatterLevel 0..1 to Height -1..1
     float fillHeight = -1.0 + (uBatterLevel * 2.1); // 2.1 to ensure full coverage
-    // TEMP: Disable discard to test rendering
-    // if (uBatterLevel < 0.99 && vVertexHeight > fillHeight) {
-    //     discard;
-    // }
+    if (uBatterLevel < 0.99 && vVertexHeight > fillHeight) {
+        discard;
+    }
 
     // 1. Texture Blending (Multi-layer cooking)
     vec3 colRaw = texture(uBatterTex, vTexCoord).rgb;
@@ -133,6 +132,5 @@ void main() {
     // Gamma
     color = pow(color, vec3(1.0/2.2));
 
-    // DEBUG: TEST IF GEOMETRY IS RENDERING
-    FragColor = vec4(1.0, 0.0, 0.0, 1.0); // SOLID RED
+    FragColor = vec4(color, 1.0);
 }

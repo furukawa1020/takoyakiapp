@@ -102,9 +102,8 @@ namespace Takoyaki.Android
             {
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 1 - GL Init");
                 GLES30.GlEnable(GLES30.GlDepthTest);
-                GLES30.GlDisable(2884); // GL_CULL_FACE (Fix ambiguity)
-                // DEBUG: Magenta Background to prove GL is live
-                GLES30.GlClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+                GLES30.GlDisable(2884); // GL_CULL_FACE
+                GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     
                 // 1. Init Core Logic
                 // 1. Mesh Generation (Must be first to init physics)
@@ -392,7 +391,7 @@ namespace Takoyaki.Android
                 // GLES30.GlBindVertexArray(_vao);
     
                 // Update Dynamic VBO (Physics Jiggle)
-                // UpdateMeshVBO(); // DEBUG: Disable to check if physics corrupts data
+                UpdateMeshVBO();
     
                 // Calc MVP
                 Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 

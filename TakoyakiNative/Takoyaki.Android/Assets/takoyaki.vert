@@ -11,7 +11,7 @@ uniform sampler2D uNoiseMapFix;
 out vec3 vFragPos;
 out vec3 vNormal;
 out vec2 vTexCoord;
-out vec3 vLocalPos;
+out float vVertexHeight;
 
 void main() {
     vTexCoord = aTexCoord;
@@ -22,7 +22,7 @@ void main() {
 
     // World Space Position
     vFragPos = vec3(uModelMatrix * vec4(displacedPos, 1.0));
-    vLocalPos = displacedPos; // Pass local pos for slicing
+    vVertexHeight = aPosition.y; // Pass original Y for blend logic
     
     // Simple Normal (Ideally recalculate bitangent for mapped normal, keeping simple for now)
     vNormal = mat3(transpose(inverse(uModelMatrix))) * aNormal;

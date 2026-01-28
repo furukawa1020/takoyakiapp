@@ -4,7 +4,7 @@ precision mediump float;
 in vec3 vFragPos;
 in vec3 vNormal;
 in vec2 vTexCoord;
-in vec3 vLocalPos;
+in float vVertexHeight;
 
 uniform sampler2D uBatterTex;
 uniform sampler2D uCookedTex;
@@ -132,6 +132,5 @@ void main() {
     // Gamma
     color = pow(color, vec3(1.0/2.2));
 
-    // DEBUG: Force Red
-    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    FragColor = vec4(color, 1.0);
 }

@@ -100,6 +100,7 @@ namespace Takoyaki.Android
         {
             try
             {
+                global::Android.Util.Log.Error("TakoyakiCrash", "STARTING ONSURFACECREATED");
                 GLES30.GlEnable(GLES30.GlDepthTest);
                 GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     

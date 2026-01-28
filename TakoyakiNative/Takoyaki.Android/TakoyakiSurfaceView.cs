@@ -121,6 +121,11 @@ namespace Takoyaki.Android
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 3 - Shaders");
                 _program = ShaderHelper.LoadProgram(global::Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
                 GLES30.GlUseProgram(_program);
+
+                _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
+                _uModelMatrixHandle = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
+                int uDisp = GLES30.GlGetUniformLocation(_program, "uDisplacementStrength");
+                GLES30.GlUniform1f(uDisp, 0.1f); // Default displacement
     
                 // Texture Uniforms
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 4 - Textures");

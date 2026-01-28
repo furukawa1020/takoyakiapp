@@ -69,7 +69,7 @@ namespace Takoyaki.Android
             GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_toppingProgram, "uTime"), time);
             
             // Toppings are double-sided and alpha blended
-            GLES30.GlDisable(GLES30.GlCullFace);
+            GLES30.GlDisable(2884); // GL_CULL_FACE
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
             
@@ -80,7 +80,7 @@ namespace Takoyaki.Android
             foreach(var m in _aonoriMeshes) if(m.Visible) RenderMeshEx(m, parentModel, 0.9f); // Matte
             foreach(var m in _katsuobushiMeshes) if(m.Visible) RenderMeshEx(m, parentModel, 0.8f);
 
-            GLES30.GlEnable(GLES30.GlCullFace);
+            GLES30.GlEnable(2884); // GL_CULL_FACE
         }
 
         private void RenderMeshEx(ToppingMesh mesh, float[] parentModel, float roughness)

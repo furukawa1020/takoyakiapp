@@ -179,7 +179,8 @@ namespace Takoyaki.Android
             _toppings.RenderRecursive(vpMatrix, _modelMatrix, _totalTime);
 
             // Render Steam
-            _steam.UpdateAndDraw(vpMatrix, _totalTime);
+            _steam.Update(dt, _ball.CookLevel > 0.5f ? (_ball.CookLevel - 0.5f) : 0.0f);
+            _steam.Draw(_mvpMatrix);
         }
 
         private void UpdateLogic(float dt)

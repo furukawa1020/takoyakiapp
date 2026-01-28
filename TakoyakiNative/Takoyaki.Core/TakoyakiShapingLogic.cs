@@ -6,48 +6,62 @@ namespace Takoyaki.Core
     public class TakoyakiShapingLogic
     {
         private PidController _pid;
-        public float ShapingProgress { get; private set; } = 1.0f; // 1.0 = Bumpy, 0.0 = Perfectly Round
-        public float MasteryLevel { get; private set; } = 0.0f; // 0..1 (How perfect the rhythm is)
-        public float RhythmPulse { get; private set; } = 0.0f; // 0..1 (Pulse for visual guidance)
+        public float ShapingProgress { get; private set; } = 1.0f; 
+        public float MasteryLevel { get; private set; } = 0.0f;
+        public float RhythmPulse { get; private set; } = 0.0f;
+        public int ComboCount { get; private set; } = 0;
+        public bool IsPerfect { get; private set; } = false;
+        public bool TriggerHapticTick { get; set; } = false; // Flag for renderer
         
-        // Settings for "The Rhythm of the Master"
-        public const float TARGET_GYRO_MAG = 6.0f; // Target rotation speed (rad/s)
-        private const float SHAPING_SPEED = 0.5f;
+        public const float TARGET_GYRO_MAG = 6.0f;
+        private const float SHAPING_SPEED = 0.4f;
         private float _pulseTimer = 0.0f;
+        private float _stabilityTimer = 0.0f;
 
         public TakoyakiShapingLogic()
         {
-            // Initial tuning for Pixel 8
-            _pid = new PidController(0.8f, 0.2f, 0.1f);
+            _pid = new PidController(1.2f, 0.3f, 0.15f); // Sharper tuning
         }
 
         public void Update(float dt, Vector3 angularVelocity)
         {
             float currentMag = angularVelocity.Length();
-            
-            // PID for "Mastery"
             float pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
             
-            // Rhythm Pulse (6 rad/s is ~1Hz)
-            _pulseTimer += dt * (TARGET_GYRO_MAG / 6.0f);
-            RhythmPulse = (float)Math.Sin(_pulseTimer * Math.PI * 2.0) * 0.5f + 0.5f;
+            _pulseTimer += dt * (TARGET_GYRO_MAG / (float)Math.PI); 
+            float lastPulse = RhythmPulse;
+            RhythmPulse = (float)Math.Abs(Math.Sin(_pulseTimer)); 
+
+            // Trigger haptic on the "beat" (peak of sine)
+            if (RhythmPulse > 0.9f && lastPulse <= 0.9f && currentMag > 1.0f) {
+                TriggerHapticTick = true;
+            }
 
             if (currentMag > 2.0f)
             {
-                // Harmony: how close we are to the perfect PID target
                 float harmony = Math.Clamp(1.0f - Math.Abs(pidOutput) / TARGET_GYRO_MAG, 0.0f, 1.0f);
-                
-                // Mastery grows if harmony is high
-                if (harmony > 0.8f) MasteryLevel = Math.Min(1.0f, MasteryLevel + dt * 0.4f);
-                else MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 0.3f);
+                IsPerfect = harmony > 0.85f;
 
-                // Shaping pressure: Master's touch is faster
-                float pressure = harmony * (1.0f + MasteryLevel); 
+                if (IsPerfect) {
+                    _stabilityTimer += dt;
+                    if (_stabilityTimer > 0.5f) {
+                        ComboCount++;
+                        _stabilityTimer = 0.0f;
+                    }
+                    MasteryLevel = Math.Min(1.0f, MasteryLevel + dt * 0.5f);
+                } else {
+                    _stabilityTimer = 0.0f;
+                    if (harmony < 0.5f) ComboCount = 0;
+                    MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 0.2f);
+                }
+
+                float pressure = harmony * (1.0f + MasteryLevel * 2.0f); 
                 ShapingProgress = Math.Max(0.0f, ShapingProgress - pressure * SHAPING_SPEED * dt);
             }
             else
             {
-                MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 0.5f);
+                ComboCount = 0;
+                MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 1.0f);
                 ShapingProgress = Math.Min(1.0f, ShapingProgress + dt * 0.05f);
             }
         }

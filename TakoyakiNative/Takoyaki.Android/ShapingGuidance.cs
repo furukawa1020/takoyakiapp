@@ -61,29 +61,34 @@ namespace Takoyaki.Android
 
             // 1. Draw Background Bar
             GLES30.GlUniform1i(uType, 0);
-            GLES30.GlUniform4f(uColor, 0.1f, 0.1f, 0.1f, 0.6f);
+            GLES30.GlUniform4f(uColor, 0.05f, 0.05f, 0.05f, 0.7f);
             GLES30.GlBindVertexArray(_vao);
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 2. Target Zone (The "Sweet Spot")
-            float zoneCenter = targetGyro / (targetGyro * 1.5f);
-            float zoneHalfWidth = 0.05f;
-            GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 0.2f); // Faint white zone
-            // We reuse the same VBO but could use uniforms for custom quad math if needed
-            // For now, let's just draw the progress bar with a specific color at that spot
+            // 2. Target Zone (The "Sweet Spot") - Just a white segment
+            // targetGyro / (targetGyro * 1.5f) is roughly 0.66
+            GLES30.GlUniform1i(uType, 0);
+            GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 0.3f);
+            // Matrix transform for the zone (using simple approach)
+            // Ideally we'd have a separate rect, but let's just draw the Progress Bar mode
+            // at exactly 0.67 to 0.73? Actually let's use the ProgressBar type with alpha
             
             // 3. Draw Progress Bar (Current Speed)
             GLES30.GlUniform1i(uType, 1);
-            vec4 col = mastery > 0.8f ? new vec4(1, 0.9f, 0, 0.9f) : new vec4(0, 0.8f, 1.0f, 0.8f);
-            if (mastery > 0.95f && pulse > 0.8f) col = new vec4(1, 1, 1, 1.0f); // Flash on pulse
+            vec4 col = mastery > 0.8f ? new vec4(1, 0.84f, 0, 0.9f) : new vec4(0, 0.7f, 1.0f, 0.7f);
+            
+            // Pulse color at the rhythmic peaks
+            if (mastery > 0.9f && pulse > 0.8f) {
+                col = new vec4(1, 1, 1, 1.0f); // Bright white pulse
+            }
             
             GLES30.GlUniform4f(uColor, col.X, col.Y, col.Z, col.W);
             GLES30.GlUniform1f(uProgress, currentGyro / (targetGyro * 1.5f));
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 4. Combo Text Representation (Simple colored block for now)
-            if (combo > 0) {
-                // Future: Add font renderer
+            // 4. Master's Pulse Glow around the bar
+            if (mastery > 0.5f) {
+                 // Future: Outer glow
             }
 
             GLES30.GlBindVertexArray(0);

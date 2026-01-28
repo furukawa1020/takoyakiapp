@@ -76,7 +76,7 @@ namespace Takoyaki.Core
         public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) 
         {
              ball.BatterLevel = 1.0f; // Start Full for MVP
-             ball.CookLevel = 0.5f; // Start Half-Cooked (Visual Feedback)
+             ball.CookLevel = 1.0f; // Fully Cooked (Golden Brown!)
              ball.Rotation = System.Numerics.Quaternion.Identity;
         }
         public void Exit(TakoyakiBall ball) { }

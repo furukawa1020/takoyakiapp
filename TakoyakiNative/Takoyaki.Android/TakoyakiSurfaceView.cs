@@ -120,6 +120,9 @@ namespace Takoyaki.Android
 
         // Screenshot
         private Action<global::Android.Graphics.Bitmap>? _pendingCaptureCallback;
+        
+        // Shake detection cooldown
+        private long _lastShakeTime = 0;
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
@@ -234,6 +237,11 @@ namespace Takoyaki.Android
                 GLES30.GlBindVertexArray(0);
                 Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
                 _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
+                
+                // SHAKE SHAKE MODE: Pre-apply toppings for instant visual appeal!
+                ApplyTopping(); // Sauce
+                ApplyTopping(); // Mayo
+                ApplyTopping(); // Aonori
             }
             catch (System.Exception ex)
             {
@@ -605,13 +613,25 @@ namespace Takoyaki.Android
                 Matrix.RotateM(_modelMatrix, 0, 180f, 1, 0, 0);
             }
 
-            // Interaction: Tap for Toppings
-            if (_inputState.IsTap)
+            // SHAKE SHAKE MODE: Shake to apply toppings!
+            // Detect shake via acceleration magnitude
+            float accelMagnitude = System.MathF.Sqrt(
+                _inputState.Acceleration.X * _inputState.Acceleration.X +
+                _inputState.Acceleration.Y * _inputState.Acceleration.Y +
+                _inputState.Acceleration.Z * _inputState.Acceleration.Z
+            );
+            
+            // Threshold: ~15 m/s² (strong shake, gravity is ~9.8)
+            if (accelMagnitude > 15.0f)
             {
-                 // Main Thread dispatch required for LoadTexture?
-                 // No, we are on GL Thread here in OnDrawFrame/UpdateLogic
-                 ApplyTopping();
-                 _inputState.IsTap = false; // Consume click
+                // Cooldown to avoid spam (check if enough time passed)
+                long now = Java.Lang.JavaSystem.CurrentTimeMillis();
+                if (now - _lastShakeTime > 500) // 500ms cooldown
+                {
+                    ApplyTopping();
+                    _haptics.TriggerTap(); // Haptic feedback!
+                    _lastShakeTime = now;
+                }
             }
 
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1); // Z-axis roll

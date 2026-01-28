@@ -29,59 +29,66 @@ namespace Takoyaki.Android
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+            try
+            {
+                // Hide System UI
+                Window!.DecorView!.SystemUiVisibility = (StatusBarVisibility)(
+                    SystemUiFlags.ImmersiveSticky | 
+                    SystemUiFlags.HideNavigation | 
+                    SystemUiFlags.Fullscreen);
 
-            // Hide System UI
-            Window!.DecorView!.SystemUiVisibility = (StatusBarVisibility)(
-                SystemUiFlags.ImmersiveSticky | 
-                SystemUiFlags.HideNavigation | 
-                SystemUiFlags.Fullscreen);
+                // Root Layout
+                var rootLayout = new global::Android.Widget.FrameLayout(this);
+                
+                // 1. Game View
+                _surfaceView = new TakoyakiSurfaceView(this);
+                _surfaceView.GameFinished += OnGameFinished;
+                rootLayout.AddView(_surfaceView);
 
-            // Root Layout
-            var rootLayout = new global::Android.Widget.FrameLayout(this);
-            
-            // 1. Game View
-            _surfaceView = new TakoyakiSurfaceView(this);
-            _surfaceView.GameFinished += OnGameFinished;
-            rootLayout.AddView(_surfaceView);
+                // 2. UI Overlay
+                _uiOverlay = new global::Android.Widget.RelativeLayout(this);
+                _uiOverlay.Visibility = ViewStates.Gone; // Hidden initially
+                _uiOverlay.SetBackgroundColor(global::Android.Graphics.Color.Argb(200, 0, 0, 0)); // Semi-transparent black
 
-            // 2. UI Overlay
-            _uiOverlay = new global::Android.Widget.RelativeLayout(this);
-            _uiOverlay.Visibility = ViewStates.Gone; // Hidden initially
-            _uiOverlay.SetBackgroundColor(global::Android.Graphics.Color.Argb(200, 0, 0, 0)); // Semi-transparent black
+                // Container for center content
+                var centerLayout = new global::Android.Widget.LinearLayout(this);
+                centerLayout.Orientation = global::Android.Widget.Orientation.Vertical;
+                centerLayout.SetGravity(GravityFlags.Center);
+                
+                var centerParams = new global::Android.Widget.RelativeLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
+                centerParams.AddRule(LayoutRules.CenterInParent);
+                
+                // Score Text
+                _scoreText = new global::Android.Widget.TextView(this);
+                _scoreText.TextSize = 48;
+                _scoreText.SetTextColor(global::Android.Graphics.Color.White);
+                _scoreText.Gravity = GravityFlags.Center;
+                centerLayout.AddView(_scoreText);
 
-            // Container for center content
-            var centerLayout = new global::Android.Widget.LinearLayout(this);
-            centerLayout.Orientation = global::Android.Widget.Orientation.Vertical;
-            centerLayout.SetGravity(GravityFlags.Center);
-            
-            var centerParams = new global::Android.Widget.RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent);
-            centerParams.AddRule(LayoutRules.CenterInParent);
-            
-            // Score Text
-            _scoreText = new global::Android.Widget.TextView(this);
-            _scoreText.TextSize = 48;
-            _scoreText.SetTextColor(global::Android.Graphics.Color.White);
-            _scoreText.Gravity = GravityFlags.Center;
-            centerLayout.AddView(_scoreText);
+                // Comment Text
+                _commentText = new global::Android.Widget.TextView(this);
+                _commentText.TextSize = 24;
+                _commentText.SetTextColor(global::Android.Graphics.Color.Yellow);
+                _commentText.Gravity = GravityFlags.Center;
+                centerLayout.AddView(_commentText);
 
-            // Comment Text
-            _commentText = new global::Android.Widget.TextView(this);
-            _commentText.TextSize = 24;
-            _commentText.SetTextColor(global::Android.Graphics.Color.Yellow);
-            _commentText.Gravity = GravityFlags.Center;
-            centerLayout.AddView(_commentText);
+                // Reset Button
+                _resetButton = new global::Android.Widget.Button(this);
+                _resetButton.Text = "焼く"; // "Grill Another"
+                _resetButton.Click += (s, e) => RestartGame();
+                centerLayout.AddView(_resetButton);
 
-            // Reset Button
-            _resetButton = new global::Android.Widget.Button(this);
-            _resetButton.Text = "焼く"; // "Grill Another"
-            _resetButton.Click += (s, e) => RestartGame();
-            centerLayout.AddView(_resetButton);
+                _uiOverlay.AddView(centerLayout, centerParams);
+                rootLayout.AddView(_uiOverlay);
 
-            _uiOverlay.AddView(centerLayout, centerParams);
-            rootLayout.AddView(_uiOverlay);
-
-            SetContentView(rootLayout);
+                SetContentView(rootLayout);
+            }
+            catch (System.Exception ex)
+            {
+                global::Android.Util.Log.Error("TakoyakiCrash", $"CRASH IN ONCREATE: {ex}");
+                throw;
+            }
         }
 
         private void OnGameFinished(int score)

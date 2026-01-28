@@ -415,7 +415,7 @@ namespace Takoyaki.Android
                 GLES30.GlUniform3f(uLight, 5.0f, 5.0f, 5.0f);
 
                 int uView = GLES30.GlGetUniformLocation(_program, "uViewPos");
-                GLES30.GlUniform3f(uView, 0.0f, 4.0f, 4.0f);
+                GLES30.GlUniform3f(uView, 0.0f, 2.0f, 5.0f);
 
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);

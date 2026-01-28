@@ -391,6 +391,7 @@ namespace Takoyaki.Android
                 UpdateLogic(dt);
     
                 // 2. Render
+                GLES30.GlClearColor(1.0f, 1.0f, 1.0f, 1.0f); // WHITE - to test if clear works
                 GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
     
                 GLES30.GlUseProgram(_program);

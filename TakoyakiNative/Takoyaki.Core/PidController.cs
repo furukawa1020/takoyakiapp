@@ -18,6 +18,10 @@ namespace Takoyaki.Core
             Kd = kd;
         }
 
+        public float P_Contribution { get; private set; }
+        public float I_Contribution { get; private set; }
+        public float D_Contribution { get; private set; }
+
         public float Update(float setPoint, float actualValue, float dt)
         {
             if (dt <= 0) return 0;
@@ -28,7 +32,11 @@ namespace Takoyaki.Core
 
             _lastError = error;
 
-            return (Kp * error) + (Ki * _integral) + (Kd * derivative);
+            P_Contribution = Kp * error;
+            I_Contribution = Ki * _integral;
+            D_Contribution = Kd * derivative;
+
+            return P_Contribution + I_Contribution + D_Contribution;
         }
 
         public void Reset()

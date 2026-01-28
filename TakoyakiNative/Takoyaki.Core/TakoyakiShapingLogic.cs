@@ -11,7 +11,11 @@ namespace Takoyaki.Core
         public float RhythmPulse { get; private set; } = 0.0f;
         public int ComboCount { get; private set; } = 0;
         public bool IsPerfect { get; private set; } = false;
-        public bool TriggerHapticTick { get; set; } = false; // Flag for renderer
+        public bool TriggerHapticTick { get; set; } = false; 
+
+        public float P_Term => _pid.P_Contribution;
+        public float I_Term => _pid.I_Contribution;
+        public float D_Term => _pid.D_Contribution;
         
         public const float TARGET_GYRO_MAG = 6.0f;
         private const float SHAPING_SPEED = 0.4f;

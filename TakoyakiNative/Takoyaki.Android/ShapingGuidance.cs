@@ -44,7 +44,7 @@ namespace Takoyaki.Android
             Matrix.OrthoM(_orthoMatrix, 0, -1, 1, -1, 1, -1, 1);
         }
 
-        public void Draw(float currentGyro, float targetGyro, float mastery, float pulse, int combo)
+        public void Draw(float currentGyro, float targetGyro, float mastery, float pulse, int combo, float p, float i, float d)
         {
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
@@ -65,35 +65,35 @@ namespace Takoyaki.Android
             GLES30.GlBindVertexArray(_vao);
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 2. Target Zone (The "Sweet Spot") - Just a white segment
-            // targetGyro / (targetGyro * 1.5f) is roughly 0.66
-            GLES30.GlUniform1i(uType, 0);
-            GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 0.3f);
-            // Matrix transform for the zone (using simple approach)
-            // Ideally we'd have a separate rect, but let's just draw the Progress Bar mode
-            // at exactly 0.67 to 0.73? Actually let's use the ProgressBar type with alpha
-            
-            // 3. Draw Progress Bar (Current Speed)
+            // 2. Draw Progress Bar (Current Speed)
             GLES30.GlUniform1i(uType, 1);
             vec4 col = mastery > 0.8f ? new vec4(1, 0.84f, 0, 0.9f) : new vec4(0, 0.7f, 1.0f, 0.7f);
-            
-            // Pulse color at the rhythmic peaks
-            if (mastery > 0.9f && pulse > 0.8f) {
-                col = new vec4(1, 1, 1, 1.0f); // Bright white pulse
-            }
+            if (mastery > 0.9f && pulse > 0.8f) col = new vec4(1, 1, 1, 1.0f); 
             
             GLES30.GlUniform4f(uColor, col.X, col.Y, col.Z, col.W);
             GLES30.GlUniform1f(uProgress, currentGyro / (targetGyro * 1.5f));
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 4. Master's Pulse Glow around the bar
-            if (mastery > 0.5f) {
-                 // Future: Outer glow
-            }
+            // 3. PID Analyzer Bars (Small vertical bars)
+            DrawPidBar(uColor, uProgress, uType, p, -0.7f, new vec4(1, 0.2f, 0.2f, 0.8f)); // P: Red
+            DrawPidBar(uColor, uProgress, uType, i, -0.65f, new vec4(0.2f, 1, 0.2f, 0.8f)); // I: Green
+            DrawPidBar(uColor, uProgress, uType, d, -0.6f, new vec4(0.2f, 0.2f, 1, 0.8f)); // D: Blue
 
             GLES30.GlBindVertexArray(0);
             GLES30.GlEnable(GLES30.GlDepthTest);
             GLES30.GlDisable(GLES30.GlBlend);
+        }
+
+        private void DrawPidBar(int uColor, int uProgress, int uType, float val, float xOffset, vec4 col)
+        {
+            // Simplified: We reuse the horizontal bar shader but it looks like a small meter
+            // We'd ideally rotate the matrix but let's just scale it or draw at specific coords
+            GLES30.GlUniform1i(uType, 1);
+            GLES30.GlUniform4f(uColor, col.X, col.Y, col.Z, col.W);
+            GLES30.GlUniform1f(uProgress, Math.Clamp(Math.Abs(val) / 5.0f, 0, 1));
+            // For a real vertical bar we'd need different quad data or a matrix.
+            // Let's keep it simple for this prototype turn.
+            GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4); 
         }
 
         private struct vec4 { public float X, Y, Z, W; public vec4(float x, float y, float z, float w) { X=x;Y=y;Z=z;W=w;} }

@@ -236,7 +236,12 @@ namespace Takoyaki.Android
 
             // Render HUD & Zen Glow
             _edgeGlow.Draw(_shaping.MasteryLevel);
-            _guidance.Draw(_inputState.AngularVelocity.Length(), TakoyakiShapingLogic.TARGET_GYRO_MAG, _shaping.MasteryLevel, _shaping.RhythmPulse, _shaping.ComboCount);
+            _guidance.Draw(_inputState.AngularVelocity.Length(), 
+                           TakoyakiShapingLogic.TARGET_GYRO_MAG, 
+                           _shaping.MasteryLevel, 
+                           _shaping.RhythmPulse, 
+                           _shaping.ComboCount,
+                           _shaping.P_Term, _shaping.I_Term, _shaping.D_Term);
         }
 
         private void UpdateLogic(float dt)

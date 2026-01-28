@@ -12,7 +12,9 @@ namespace Takoyaki.Core
         public float ShapingProgress { get; private set; } = 1.0f; 
         public float MasteryLevel { get; private set; } = 0.0f;
         public float RhythmPulse { get; private set; } = 0.0f;
+        public float BatterLevel { get; private set; } = 0.0f;
         public int ComboCount { get; private set; } = 0;
+        public int CurrentPhase { get; private set; } = 0;
         public bool IsPerfect { get; private set; } = false;
         public bool TriggerHapticTick { get; set; } = false; 
         public IntPtr NativeEngine => _rustEngine;
@@ -38,6 +40,10 @@ namespace Takoyaki.Core
         private static extern float tako_get_progress(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern int tako_get_combo(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern int tako_get_phase(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern float tako_get_batter(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern void tako_free(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
@@ -70,6 +76,8 @@ namespace Takoyaki.Core
                 MasteryLevel = tako_get_mastery(_rustEngine);
                 ShapingProgress = tako_get_progress(_rustEngine);
                 ComboCount = tako_get_combo(_rustEngine);
+                CurrentPhase = tako_get_phase(_rustEngine);
+                BatterLevel = tako_get_batter(_rustEngine);
                 
                 unsafe {
                     float p, i, d;

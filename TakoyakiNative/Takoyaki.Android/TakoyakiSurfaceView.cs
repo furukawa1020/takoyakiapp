@@ -408,20 +408,56 @@ namespace Takoyaki.Android
                 // Random position on sphere surface
                 float theta = (float)(random.NextDouble() * System.Math.PI * 2);
                 float phi = (float)(random.NextDouble() * System.Math.PI);
-                float radius = 1.05f; // Slightly above ball surface
+                float radius = 1.01f; // Slightly above ball surface (tight fit)
                 
                 float x = radius * (float)System.Math.Sin(phi) * (float)System.Math.Cos(theta);
                 float y = radius * (float)System.Math.Sin(phi) * (float)System.Math.Sin(theta);
                 float z = radius * (float)System.Math.Cos(phi);
                 
                 // Create small leaf quad
-                var (vertices, indices) = GenerateLeafQuad(0.05f); // Smaller, more natural size
+                var (vertices, indices) = GenerateLeafQuad(0.05f);
                 
+                // Bake rotation and translation into vertices
+                var normal = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(x, y, z));
+                var defaultNormal = new System.Numerics.Vector3(0, 0, 1); // Leaf created on XY plane facing Z
+                
+                var axis = System.Numerics.Vector3.Cross(defaultNormal, normal);
+                float dot = System.Numerics.Vector3.Dot(defaultNormal, normal);
+                float angle = (float)System.Math.Acos(dot);
+                
+                var rot = System.Numerics.Matrix4x4.Identity;
+                if (axis.LengthSquared() > 0.001f)
+                {
+                    rot = System.Numerics.Matrix4x4.CreateFromAxisAngle(System.Numerics.Vector3.Normalize(axis), angle);
+                }
+                else if (dot < -0.99f) // Opposite direction
+                {
+                    rot = System.Numerics.Matrix4x4.CreateFromAxisAngle(new System.Numerics.Vector3(1, 0, 0), (float)System.Math.PI);
+                }
+
+                // Transform vertices
+                for(int k=0; k<vertices.Length; k+=8)
+                {
+                    var v = new System.Numerics.Vector3(vertices[k], vertices[k+1], vertices[k+2]);
+                    v = System.Numerics.Vector3.Transform(v, rot);
+                    vertices[k] = v.X + x;
+                    vertices[k+1] = v.Y + y;
+                    vertices[k+2] = v.Z + z;
+                    
+                    // Transform Normal
+                    var n = new System.Numerics.Vector3(vertices[k+3], vertices[k+4], vertices[k+5]);
+                    n = System.Numerics.Vector3.TransformNormal(n, rot);
+                    vertices[k+3] = n.X;
+                    vertices[k+4] = n.Y;
+                    vertices[k+5] = n.Z;
+                }
+
                 var mesh = new ToppingMesh
                 {
                     Vertices = vertices,
                     Indices = indices,
-                    Position = new System.Numerics.Vector3(x, y, z),
+                    Position = new System.Numerics.Vector3(0, 0, 0), // Already applied to vertices
+                    Rotation = new System.Numerics.Vector3(0, 0, 0),
                     Color = new System.Numerics.Vector4(0.1f, 0.4f, 0.1f, 1.0f), // Dark green
                     Visible = true
                 };

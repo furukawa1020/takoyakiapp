@@ -126,16 +126,21 @@ namespace Takoyaki.Android
                  int uBatter = GLES30.GlGetUniformLocation(_program, "uBatterTex");
                 // ... (abbreviated, rely on structure matching)
                 GLES30.GlUniform1i(uBatter, 0);
+
+                int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
+                int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
+                int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
+
                 GLES30.GlUniform1i(uCooked, 1);
                 GLES30.GlUniform1i(uBurnt, 2);
                 GLES30.GlUniform1i(uNoise, 3);
 
                  // Generate & Upload Textures
-                LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(512));
-                _cookedTex = Takoyaki.Core.ProceduralTexture.GenerateCooked(512); 
+                LoadTexture(0, Takoyaki.Core.ProceduralTexture.GenerateBatter(64));
+                _cookedTex = Takoyaki.Core.ProceduralTexture.GenerateCooked(64); 
                 LoadTexture(1, _cookedTex);
-                LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(512));
-                LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(512));
+                LoadTexture(2, Takoyaki.Core.ProceduralTexture.GenerateBurnt(64));
+                LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(64));
     
                 // 3. Generate Mesh & Buffers
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 5 - Mesh");
@@ -172,12 +177,9 @@ namespace Takoyaki.Android
                 GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
                 GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, Java.Nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
                 
-                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 6 - Init Matrices");
                 GLES30.GlBindVertexArray(0);
                 Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
                 _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
-                
-                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: FINISHED");
             }
             catch (System.Exception ex)
             {

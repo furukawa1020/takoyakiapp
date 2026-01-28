@@ -47,6 +47,7 @@ namespace Takoyaki.Android
         private int _uLightPosHandle;
         private int _uViewPosHandle;
         private int _uDisplacementHandle;
+        private int _uToppingColorHandle;
 
         public Action<int> OnGameFinished;
 
@@ -100,6 +101,7 @@ namespace Takoyaki.Android
             _uLightPosHandle = GLES30.GlGetUniformLocation(program, "uLightPos");
             _uViewPosHandle = GLES30.GlGetUniformLocation(program, "uViewPos");
             _uDisplacementHandle = GLES30.GlGetUniformLocation(program, "uDisplacementStrength");
+            _uToppingColorHandle = GLES30.GlGetUniformLocation(program, "uToppingColor");
 
             // Explicitly map texture samplers to texture units
             GLES30.GlUniform1i(GLES30.GlGetUniformLocation(program, "uBatterTex"), 0);
@@ -177,6 +179,8 @@ namespace Takoyaki.Android
             GLES30.GlUniform3f(_uLightPosHandle, 5.0f, 10.0f, 5.0f);
             GLES30.GlUniform3f(_uViewPosHandle, 0.0f, 0.0f, 6.0f);
             GLES30.GlUniform1f(_uDisplacementHandle, TakoyakiConstants.BALL_DISPLACEMENT_STRENGTH);
+            GLES30.GlUniform4f(_uToppingColorHandle, 0, 0, 0, 0); // Disable special topping mode for main ball
+
 
             // Sync Uniforms
             int uBatterLvl = GLES30.GlGetUniformLocation(Assets.MainProgram, "uBatterLevel");

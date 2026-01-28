@@ -118,25 +118,27 @@ void main() {
     kD *= 1.0 - metallic;
 
     // Light Radiance (Sun)
-    vec3 radiance = vec3(2.5); // High intensity light
+    vec3 radiance = vec3(3.5); // Increased for better color punch
     
     // Final Lo
     float theta = NdotL;
     vec3 Lo = (kD * albedo / 3.141592 + specular) * radiance * theta;
 
     // Ambient (IBL fake)
-    vec3 ambient = vec3(0.05) * albedo * ao;
+    vec3 ambient = vec3(0.12) * albedo * ao; // Boosted ambient for softer shadows
     
     // SUBSURFACE SCATTERING (Approximated)
-    // Add a reddish transmission for thin parts
-    float sssMask = 1.0 - height; // Thin parts
-    vec3 sssColor = vec3(1.0, 0.3, 0.1);
-    vec3 sss = sssColor * sssMask * 0.2 * (1.0 - burntMask); // Disappears when burnt
+    vec3 sssColor = vec3(1.0, 0.4, 0.2); // More vibrant SSS
+    vec3 sss = sssColor * (1.0 - height) * 0.3 * (1.0 - burntMask);
     
     vec3 color = ambient + Lo + sss;
 
-    // Tone Mapping (Reinhard)
-    color = color / (color + vec3(1.0));
+    // SATURATION BOOST
+    float gray = dot(color, vec3(0.299, 0.587, 0.114));
+    color = mix(vec3(gray), color, 1.25); // 25% saturation boost
+
+    // Tone Mapping (Filmic Approximation)
+    color = color * (1.0 + color / vec3(4.0)) / (1.0 + color); 
     
     // Gamma
     color = pow(color, vec3(1.0/2.2));

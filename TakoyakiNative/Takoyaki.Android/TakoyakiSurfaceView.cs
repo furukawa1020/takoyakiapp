@@ -1087,7 +1087,7 @@ namespace Takoyaki.Android
             }
             
             // Disable culling for toppings to ensure visibility (especially leaves)
-            GLES30.GlDisable(GLES30.GlCullFace);
+            GLES30.GlDisable(0x0B44); // GL_CULL_FACE
             
             // Render each topping
             if (_takoMesh != null && _takoMesh.Visible) RenderToppingMesh(_takoMesh);
@@ -1104,7 +1104,7 @@ namespace Takoyaki.Android
                 if (katsuobushi.Visible) RenderToppingMesh(katsuobushi);
             }
             
-            GLES30.GlEnable(GLES30.GlCullFace); // Re-enable culling
+            GLES30.GlEnable(0x0B44); // GL_CULL_FACE // Re-enable culling
             GLES30.GlDisable(GLES30.GlBlend);
         }
         

@@ -79,11 +79,36 @@ impl RhythmEngine {
         self.i_term = 0.5 * self.integral;
         self.d_term = 0.2 * der;
         
-        let output = self.p_term + self.i_term + self.d_term;
-        let stability = 1.0 - (output.abs() / target).clamp(0.0, 1.0);
-        
-        if stability > 0.9 { self.mastery = (self.mastery + dt * 0.8).min(1.0); }
-        else { self.mastery = (self.mastery - dt * 0.4).max(0.0); }
+        if mag > 2.0 {
+            let harmony = (1.0 - (output.abs() / target)).clamp(0.0, 1.0);
+            let is_perfect = harmony > 0.85;
+
+            if is_perfect {
+                self.stability_timer += dt;
+                if self.stability_timer > 0.5 {
+                    self.combo_count += 1;
+                    self.stability_timer = 0.0;
+                }
+                self.mastery = (self.mastery + dt * 0.5).min(1.0);
+            } else {
+                self.stability_timer = 0.0;
+                if harmony < 0.5 { self.combo_count = 0; }
+                self.mastery = (self.mastery - dt * 0.2).max(0.0);
+            }
+
+            // Target roughly 20 seconds for full completion at perfect harmony
+            // 1.0 / 20.0 = 0.05 per second.
+            // We scale by mastery to reward skill.
+            let pressure = harmony * (1.0 + self.mastery * 1.5);
+            let shaping_speed = 0.05; 
+            self.shaping_progress = (self.shaping_progress - pressure * shaping_speed * dt).max(0.0);
+        } else {
+            self.combo_count = 0;
+            self.mastery = (self.mastery - dt * 1.0).max(0.0);
+            // Regrow bumps slightly if stagnant
+            self.shaping_progress = (self.shaping_progress + dt * 0.02).min(1.0);
+        }
+
         mag
     }
 

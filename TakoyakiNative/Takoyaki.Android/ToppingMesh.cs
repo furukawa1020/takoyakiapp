@@ -18,5 +18,7 @@ namespace Takoyaki.Android
         
         public bool Visible;
         public float[] RotationMatrix; // 4x4 matrix for orientation relative to the ball
+        
+        public ToppingAnimationState Animation = new ToppingAnimationState();
     }
 }

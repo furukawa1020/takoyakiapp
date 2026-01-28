@@ -25,7 +25,7 @@ void main() {
     // Sphere is radius ~1.0 (Y: -1 to 1)
     // Map BatterLevel 0..1 to Height -1..1
     float fillHeight = -1.0 + (uBatterLevel * 2.1); // 2.1 to ensure full coverage
-    if (uBatterLevel < 0.99 && vLocalPos.y > fillHeight) {
+    if (uBatterLevel < 0.99 && vVertexHeight > fillHeight) {
         discard;
     }
 

@@ -28,6 +28,7 @@ namespace Takoyaki.Android
         private TakoyakiVfxManager _vfx;
         private ShapingGuidance _guidance;
         private MasterAura _aura;
+        private ZenEdgeGlow _edgeGlow;
         // --- Rendering State ---
         private float[] _modelMatrix = new float[16];
         private float[] _viewMatrix = new float[16];
@@ -140,6 +141,7 @@ namespace Takoyaki.Android
             _vfx = new TakoyakiVfxManager(global::Android.App.Application.Context);
             _guidance = new ShapingGuidance(global::Android.App.Application.Context);
             _aura = new MasterAura(global::Android.App.Application.Context);
+            _edgeGlow = new ZenEdgeGlow(global::Android.App.Application.Context);
             
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
@@ -166,6 +168,7 @@ namespace Takoyaki.Android
             
             if (_shaping.TriggerHapticTick) {
                 _haptics.TriggerImpact(0.3f);
+                if (_shaping.MasteryLevel > 0.8f) _audio.PlayChime(); // Zen Chime
                 _shaping.TriggerHapticTick = false;
             }
 
@@ -174,12 +177,17 @@ namespace Takoyaki.Android
             // 2. Render
             GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
             
-            // Calculate MVP
+            // Camera Breathe: Scale projection based on Mastery Pulse
+            float breathe = 1.0f - (_shaping.RhythmPulse * _shaping.MasteryLevel * 0.05f);
+            float[] finalProjection = new float[16];
+            Matrix.ScaleM(finalProjection, 0, _projectionMatrix, 0, breathe, breathe, 1.0f);
+
+            // Calculate MVP with Breathing Projection
             Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0);
-            Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0);
+            Matrix.MultiplyMM(_mvpMatrix, 0, finalProjection, 0, _mvpMatrix, 0);
             
             float[] vpMatrix = new float[16];
-            Matrix.MultiplyMM(vpMatrix, 0, _projectionMatrix, 0, _viewMatrix, 0);
+            Matrix.MultiplyMM(vpMatrix, 0, finalProjection, 0, _viewMatrix, 0);
 
             // Bind Main Program
             GLES30.GlUseProgram(Assets.MainProgram);
@@ -192,10 +200,14 @@ namespace Takoyaki.Android
             GLES30.GlUniform3f(_uLightPosHandle, 5.0f, 10.0f, 5.0f);
             GLES30.GlUniform3f(_uViewPosHandle, 0.0f, 0.0f, 6.0f);
             
-            // Dynamic Shaping: Displacement strength is reduced as shaping progresses
+            // Dynamic Shaping & Glaze
             float currentDisplacement = TakoyakiConstants.BALL_DISPLACEMENT_STRENGTH * _shaping.ShapingProgress;
             GLES30.GlUniform1f(_uDisplacementHandle, currentDisplacement);
-            GLES30.GlUniform4f(_uToppingColorHandle, 0, 0, 0, 0); // Disable special topping mode for main ball
+            
+            int uSpecBoost = GLES30.GlGetUniformLocation(Assets.MainProgram, "uSpecularityBoost");
+            GLES30.GlUniform1f(uSpecBoost, _shaping.MasteryLevel * 2.0f); // Double specularity on mastery
+            
+            GLES30.GlUniform4f(_uToppingColorHandle, 0, 0, 0, 0); 
 
 
             // Sync Uniforms
@@ -222,7 +234,8 @@ namespace Takoyaki.Android
             _vfx.Update(dt, _ball.CookLevel, _shaping.MasteryLevel); // Use mastery for sparkles
             _vfx.Draw(vpMatrix);
 
-            // Render HUD
+            // Render HUD & Zen Glow
+            _edgeGlow.Draw(_shaping.MasteryLevel);
             _guidance.Draw(_inputState.AngularVelocity.Length(), TakoyakiShapingLogic.TARGET_GYRO_MAG, _shaping.MasteryLevel, _shaping.RhythmPulse, _shaping.ComboCount);
         }
 

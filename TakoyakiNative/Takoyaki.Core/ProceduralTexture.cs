@@ -116,20 +116,20 @@ namespace Takoyaki.Core
 
         public static ProceduralTexture GenerateBatter(int size)
         {
-            // Creamy, slightly uneven batter with domain warping for flow
+            // Richer, creamier raw batter
             return GenerateAdvancedNoise(size, 8.0f, 
-                new Vector4(0.98f, 0.92f, 0.75f, 1f), // Raw Batter (Yellow-White)
-                new Vector4(0.92f, 0.85f, 0.6f, 1f),  // Shadows
-                0.5f, 0.05f); // Soft warping
+                new Vector4(1.0f, 0.95f, 0.8f, 1f), // Creamy White-Yellow
+                new Vector4(0.95f, 0.85f, 0.65f, 1f),  // Deep Raw
+                0.5f, 0.05f);
         }
 
         public static ProceduralTexture GenerateCooked(int size)
         {
-            // 1. Base Fried Crust (Worley)
+            // Vivid Golden Brown crust
             var tex = GenerateWorleyCrust(size, 8.0f, 
-                new Vector4(0.85f, 0.55f, 0.1f, 1f), // Base Golden
-                new Vector4(0.4f, 0.2f, 0.05f, 1f),  // Deep Fried Spots
-                new Vector4(1.0f, 0.9f, 0.8f, 1f));  // Highlight/Flour
+                new Vector4(1.0f, 0.65f, 0.1f, 1f), // Golden Base
+                new Vector4(0.5f, 0.25f, 0.05f, 1f),  // Deep Brown/Oil
+                new Vector4(1.0f, 0.85f, 0.7f, 1f));  // Crispy Highlights
             
             // 2. Add Tenkasu / Burnt Bits (High Frequency Grit)
             // Small, sharp, dark islands
@@ -140,11 +140,11 @@ namespace Takoyaki.Core
 
         public static ProceduralTexture GenerateBurnt(int size)
         {
-            // Dark base + Heavy Char debris
+            // Darker, high-contrast burnt bits
             var tex = GenerateWorleyCrust(size, 20.0f, 
-                 new Vector4(0.2f, 0.1f, 0.05f, 1f), 
-                 new Vector4(0.1f, 0.05f, 0.0f, 1f),
-                 new Vector4(0.2f, 0.15f, 0.1f, 1f));
+                 new Vector4(0.25f, 0.12f, 0.05f, 1f), 
+                 new Vector4(0.12f, 0.06f, 0.0f, 1f),
+                 new Vector4(0.15f, 0.08f, 0.05f, 1f));
             
             AddDebrisPass(tex, 60.0f, 0.6f, new Vector4(0.05f, 0.05f, 0.05f, 1f));
             return tex;

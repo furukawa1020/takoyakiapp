@@ -52,14 +52,12 @@ void main() {
     float height = texture(uNoiseMapFix, vTexCoord).r;
 
     // Height-Based Blend: Raw -> Cooked
-    // Instead of global fade, we use the height map to control the transition frontier.
-    float cookedEdge = uCookLevel * 1.2; // Move the edge
-    float cookedMask = smoothstep(cookedEdge - 0.2, cookedEdge + 0.2, height + uCookLevel * 0.5);
+    // Corrected logic: Cooked parts appear as uCookLevel increases
+    float cookedMask = smoothstep(0.0, 0.4, uCookLevel + height * 0.2 - 0.2);
     albedo = mix(albedo, colCooked, cookedMask);
     
     // Height-Based Blend: Cooked -> Burnt
-    // Burnt also starts at high points
-    float burntMask = smoothstep(1.5, 2.5, uCookLevel + height);
+    float burntMask = smoothstep(1.3, 1.8, uCookLevel + height * 0.5);
     albedo = mix(albedo, colBurnt, burntMask);
 
     // PBR CONSTANTS

@@ -11,20 +11,25 @@ namespace Takoyaki.Android
             var rand = new Random(1234);
             for(int i=0; i<count; i++)
             {
-                float px = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.6f;
-                float py = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.6f;
+                float px = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.65f;
+                float py = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.65f;
                 float z2 = 1.05f*1.05f - px*px - py*py;
                 if (z2 < 0) continue;
                 float pz = (float)Math.Sqrt(z2);
                 
-                var (v, ind) = GenerateCurledFlake(0.15f + (float)rand.NextDouble() * 0.1f, (float)rand.NextDouble() * 2.0f);
+                // Randomize size and aspect ratio for each flake
+                float baseSize = 0.18f + (float)rand.NextDouble() * 0.12f;
+                float aspect = 0.8f + (float)rand.NextDouble() * 0.6f;
+                
+                var (v, ind) = GenerateHighDetailFlake(baseSize, aspect, (float)rand.NextDouble() * 10.0f);
                 var mesh = new ToppingMesh
                 {
                     Vertices = v,
                     Indices = ind,
                     Position = new System.Numerics.Vector3(px, py, pz),
                     Scale = new System.Numerics.Vector3(1, 1, 1),
-                    Color = new System.Numerics.Vector4(0.85f, 0.75f, 0.6f, 1.0f),
+                    // Pale tan color with translucency
+                    Color = new System.Numerics.Vector4(0.92f, 0.78f, 0.65f, 0.75f),
                     Visible = false,
                     RotationMatrix = ToppingUtils.CalculateRotationToNormal(new System.Numerics.Vector3(px, py, pz))
                 };
@@ -34,48 +39,66 @@ namespace Takoyaki.Android
             return meshes;
         }
 
-         private static (float[], short[]) GenerateCurledFlake(float size, float randomness)
-         {
-             var verts = new List<float>();
-             var inds = new List<short>();
-             int segs = 6;
-             float w = size * 0.6f;
-             
-             for(int i=0; i<=segs; i++)
-             {
-                 float t = (float)i/segs;
-                 float y = (t - 0.5f) * size * 2.0f;
-                 
-                 float x1 = -w;
-                 float x2 = w;
-                 
-                 float curl = (float)Math.Sin(t * Math.PI + randomness) * size * 0.5f;
-                 float twist = (float)Math.Cos(t * 2.0 + randomness) * 0.4f;
-                 
-                 float c = (float)Math.Cos(twist);
-                 float s = (float)Math.Sin(twist);
-                 
-                 float px1 = x1 * c; 
-                 float pz1 = x1 * s + curl;
-                 float px2 = x2 * c;
-                 float pz2 = x2 * s + curl;
-                 
-                 verts.Add(px1); verts.Add(y); verts.Add(pz1);
-                 verts.Add(0); verts.Add(0); verts.Add(1);
-                 verts.Add(0); verts.Add(t);
-                 
-                 verts.Add(px2); verts.Add(y); verts.Add(pz2);
-                 verts.Add(0); verts.Add(0); verts.Add(1);
-                 verts.Add(1); verts.Add(t);
-             }
-             
-             for(int i=0; i<segs; i++)
-             {
-                 short baseIdx = (short)(i*2);
-                 inds.Add(baseIdx); inds.Add((short)(baseIdx+2)); inds.Add((short)(baseIdx+1));
-                 inds.Add((short)(baseIdx+1)); inds.Add((short)(baseIdx+2)); inds.Add((short)(baseIdx+3));
-             }
-             return (verts.ToArray(), inds.ToArray());
-         }
+        private static (float[], short[]) GenerateHighDetailFlake(float size, float aspect, float seed)
+        {
+            var verts = new List<float>();
+            var inds = new List<short>();
+            int segsH = 10; // More segments for complex curl
+            int segsW = 3;  
+            float w = size * aspect;
+            float h = size;
+
+            var rand = new Random((int)(seed * 1000));
+
+            for(int i=0; i<=segsH; i++)
+            {
+                float th = (float)i/segsH;
+                float py = (th - 0.5f) * h * 2.0f;
+                
+                // Spiral/Curling logic
+                float curlFreq = 1.2f + (float)rand.NextDouble() * 0.5f;
+                float curlAmp = size * (0.4f + (float)rand.NextDouble() * 0.3f);
+                float curl = (float)Math.Sin(th * Math.PI * curlFreq + seed) * curlAmp;
+                
+                for(int j=0; j<=segsW; j++)
+                {
+                    float tw = (float)j/segsW;
+                    float px = (tw - 0.5f) * w * 2.0f;
+                    
+                    // Edge jitter for "torn" look
+                    float jitter = 0;
+                    if (i == 0 || i == segsH || j == 0 || j == segsW)
+                    {
+                        jitter = (float)(rand.NextDouble() - 0.5) * size * 0.15f;
+                    }
+
+                    float x = px + jitter;
+                    float y = py + jitter;
+                    float z = curl + (float)Math.Cos(tw * Math.PI + seed) * size * 0.2f;
+
+                    verts.Add(x); verts.Add(y); verts.Add(z);
+                    // Normal (Approximate up)
+                    verts.Add(0); verts.Add(0); verts.Add(1);
+                    // UV
+                    verts.Add(tw); verts.Add(th);
+                }
+            }
+            
+            for(int i=0; i<segsH; i++)
+            {
+                for(int j=0; j<segsW; j++)
+                {
+                    short b = (short)(i * (segsW + 1) + j);
+                    short p1 = b;
+                    short p2 = (short)(b + 1);
+                    short p3 = (short)(b + segsW + 1);
+                    short p4 = (short)(b + segsW + 2);
+                    
+                    inds.Add(p1); inds.Add(p3); inds.Add(p2);
+                    inds.Add(p2); inds.Add(p3); inds.Add(p4);
+                }
+            }
+            return (verts.ToArray(), inds.ToArray());
+        }
     }
 }

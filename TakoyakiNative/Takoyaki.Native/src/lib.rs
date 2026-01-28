@@ -186,6 +186,16 @@ pub extern "C" fn tako_get_mastery(e: *mut RhythmEngine) -> f32 {
 }
 
 #[no_mangle]
+pub extern "C" fn tako_get_progress(e: *mut RhythmEngine) -> f32 {
+    let e = unsafe { &*e }; e.shaping_progress
+}
+
+#[no_mangle]
+pub extern "C" fn tako_get_combo(e: *mut RhythmEngine) -> i32 {
+    let e = unsafe { &*e }; e.combo_count
+}
+
+#[no_mangle]
 pub extern "C" fn tako_free(e: *mut RhythmEngine) {
     if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
 }

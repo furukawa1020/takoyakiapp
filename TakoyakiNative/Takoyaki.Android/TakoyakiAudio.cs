@@ -65,6 +65,12 @@ namespace Takoyaki.Android
             else _toneGen.StartTone(Tone.CdmaConfirm, 300); // Longer confirmation
         }
 
+        public void PlayChime()
+        {
+            // High-pitched crystal-clear chime for mastery beat
+            _toneGen.StartTone(Tone.SupHighAck, 30); 
+        }
+
         public void UpdateSizzle(float cookLevel, bool isCooking)
         {
             if (_sizzleSoundId == 0) return;

@@ -17,7 +17,8 @@ uniform vec3 uViewPos;
 uniform float uCookLevel; // 0.0 to 2.0
 uniform float uBatterLevel; // 0.0 to 1.0
 uniform float uOilFresnel;
-uniform vec4 uToppingColor; // For rendering topping meshes with custom colors
+uniform vec4 uToppingColor; 
+uniform float uSpecularityBoost; // Zen Mastery: High combo shine
 
 out vec4 FragColor;
 
@@ -110,7 +111,7 @@ void main() {
     // Specular contribution
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * NdotV * NdotL + 0.0001;
-    vec3 specular = numerator / denominator;
+    vec3 specular = (numerator / denominator) * (1.0 + uSpecularityBoost);
 
     // Diffuse contribution (Conservation of Energy)
     vec3 kS = F;

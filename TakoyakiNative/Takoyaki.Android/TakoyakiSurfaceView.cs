@@ -434,6 +434,8 @@ namespace Takoyaki.Android
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);
     
+                global::Android.Util.Log.Error("TakoyakiRender", $"About to draw: IndexCount={_indexCount}");
+                
                 GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
                 GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
                 

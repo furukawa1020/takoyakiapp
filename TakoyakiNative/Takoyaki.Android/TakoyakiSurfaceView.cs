@@ -433,26 +433,26 @@ namespace Takoyaki.Android
         
         private (float[], short[]) GenerateLeafQuad(float size)
         {
-            // Elongated leaf shape (narrow ellipse approximation)
-            float width = size * 0.8f; // Wider for visibility
-            float height = size * 1.2f; // Tall
+            // Simple Diamond Shape (prevents twisted ribbon look)
+            // Center is (0,0), lying flat on Z=0 plane (before rotation)
+            // But here we need to align it tangent to sphere surface at (x,y,z).
+            // Since we use look-at logic or random rotation, let's make it flat in XY plane.
+            
+            float width = size * 0.6f;
+            float height = size * 1.0f;
             
             float[] vertices = new float[]
             {
                 // Position,              Normal,         UV
-                -width, -height, 0,       0, 0, 1,        0, 0,
-                 width, -height, 0,       0, 0, 1,        1, 0,
-                 width * 0.7f,  0, 0,     0, 0, 1,        1, 0.5f, // Taper towards tip
-                 width,  height, 0,       0, 0, 1,        1, 1,
-                -width,  height, 0,       0, 0, 1,        0, 1,
-                -width * 0.7f,  0, 0,     0, 0, 1,        0, 0.5f
+                0,      -height, 0,       0, 0, 1,        0.5f, 0,    // Bottom
+                width,   0,      0,       0, 0, 1,        1,    0.5f, // Right
+                0,       height, 0,       0, 0, 1,        0.5f, 1,    // Top
+                -width,  0,      0,       0, 0, 1,        0,    0.5f  // Left
             };
             
             short[] indices = new short[] { 
-                0, 1, 2,  // Bottom triangle
-                0, 2, 5,  // Middle left
-                2, 3, 4,  // Top triangle
-                2, 4, 5   // Middle right
+                0, 1, 2,  // Right triangle
+                0, 2, 3   // Left triangle
             };
             
             return (vertices, indices);

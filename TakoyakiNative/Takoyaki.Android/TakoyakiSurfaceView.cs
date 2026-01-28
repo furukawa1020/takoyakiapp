@@ -410,9 +410,11 @@ namespace Takoyaki.Android
                 // Update Dynamic VBO (Physics Jiggle)
                 UpdateMeshVBO();
     
-                // Calc MVP
-                Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 
-                Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0); 
+                // Calc MVP (Android Matrix.MultiplyMM: result = lhs * rhs)
+                // MVP = Projection * View * Model
+                float[] tempMatrix = new float[16];
+                Matrix.MultiplyMM(tempMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); // View * Model
+                Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, tempMatrix, 0); // Proj * (View * Model) 
     
                 GLES30.GlUniformMatrix4fv(_uMVPMatrixHandle, 1, false, _mvpMatrix, 0);
                 GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);

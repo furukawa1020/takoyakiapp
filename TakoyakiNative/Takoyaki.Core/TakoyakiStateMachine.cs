@@ -22,11 +22,11 @@ namespace Takoyaki.Core
 
     public class TakoyakiStateMachine
     {
-        private ITakoyakiState _currentState;
+        private ITakoyakiState _currentState = null!;
         private TakoyakiBall _ball;
         private ITakoyakiAudio _audio;
         
-        public Action<int> OnFinished;
+        public Action<int>? OnFinished;
 
         public TakoyakiStateMachine(TakoyakiBall ball, ITakoyakiAudio audio)
         {

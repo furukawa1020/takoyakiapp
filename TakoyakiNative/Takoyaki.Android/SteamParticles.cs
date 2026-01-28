@@ -22,7 +22,7 @@ namespace Takoyaki.Android
             public bool Active;
         }
 
-        public SteamParticles(Android.Content.Context context)
+        public SteamParticles(global::Android.Content.Context context)
         {
             _particles = new Particle[MAX_PARTICLES];
             _particleData = new float[MAX_PARTICLES * 4]; // 4 floats per particle

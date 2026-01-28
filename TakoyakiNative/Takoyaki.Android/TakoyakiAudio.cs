@@ -30,7 +30,7 @@ namespace Takoyaki.Android
                 .SetMaxStreams(5)
                 .Build();
             
-            _toneGen = new ToneGenerator(Stream.Music, 100);
+            _toneGen = new ToneGenerator(Android.Media.Stream.Music, 100);
 
             // Placeholder loads (would fail silently if files missing)
             // _dingSoundId = LoadSound(context, "ding.wav");

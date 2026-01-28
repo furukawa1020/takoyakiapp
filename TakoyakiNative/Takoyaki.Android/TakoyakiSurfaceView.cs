@@ -32,7 +32,7 @@ namespace Takoyaki.Android
 
         public void ResetGame()
         {
-            QueueEvent(new Runnable(() => {
+            QueueEvent(new Java.Lang.Runnable(() => {
                 _renderer.Reset();
             }));
         }
@@ -173,7 +173,7 @@ namespace Takoyaki.Android
 
             GLES30.GlBindVertexArray(0);
             Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
-            _lastTimeNs = System.nanoTime();
+            _lastTimeNs = Java.Lang.System.NanoTime();
         }
 
         private void UpdateMeshVBO()
@@ -200,7 +200,7 @@ namespace Takoyaki.Android
             // Re-upload whole buffer (easiest logic, though SubData is better for bandwidth)
             // Or use GlBufferSubData if we want.
             // java.nio.FloatBuffer wrap is cheap.
-            GLES30.GlBufferSubData(GLES30.GlArrayBuffer, 0, _meshData.Length * 4, java.nio.FloatBuffer.Wrap(_meshData));
+            GLES30.GlBufferSubData(GLES30.GlArrayBuffer, 0, _meshData.Length * 4, Java.Nio.FloatBuffer.Wrap(_meshData));
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
         }
 
@@ -219,7 +219,7 @@ namespace Takoyaki.Android
             GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlRepeat);
 
             // Upload
-            var buffer = java.nio.ByteBuffer.Wrap(tex.Pixels);
+            var buffer = Java.Nio.ByteBuffer.Wrap(tex.Pixels);
             GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, tex.Width, tex.Height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, buffer);
             GLES30.GlGenerateMipmap(GLES30.GlTexture2d);
         }
@@ -318,7 +318,7 @@ namespace Takoyaki.Android
         public void OnDrawFrame(IGL10? gl)
         {
             // Time Delta
-            long now = System.nanoTime();
+            long now = Java.Lang.System.NanoTime();
             float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
             _lastTimeNs = now;
 
@@ -471,49 +471,7 @@ namespace Takoyaki.Android
             // _heatDelay.Update and Audio removed here, handled in StateMachine block above. 
         }
 
-        // Cache for VBO updates
-        private float[] _vboData; 
 
-        private void UpdateMeshVBO()
-        {
-            if (_ball.DeformedVertices == null) return;
-            if (_vboData == null)
-            {
-                 // Create cache if missing (should match initial mesh size)
-                 // Stride = 8
-                 _vboData = new float[_ball.DeformedVertices.Length * 8];
-                 // Copy initial UVs/Normals from somewhere? 
-                 // For now, we assume _vboData was populated initially or we just partial update.
-                 // Actually, efficient way is to MapBuffer or just BufferSubData for Positions.
-                 // However, we interleaved.
-                 // Let's rely on the fact that we created the VBO with specific size.
-            }
-
-            // Update Positions in the Interleaved Array
-            // We need the original Mesh data to preserve UVs/Normals if we re-upload everything.
-            // OR we use glBufferSubData for specific strides (not possible easily with interleaved without multiple calls).
-            
-            // Re-uploading the whole interleaved buffer is easiest for prototype, 
-            // provided we have the master array.
-            
-            // Let's assume we keep the master interleaved array in memory.
-            // In a real app, we'd store `_meshData` as a field.
-            
-            // Retrieving vertices from Physics
-            var verts = _ball.DeformedVertices;
-            
-            // We need to write these into the _meshData (which we need to promote to class field) at stride offsets.
-            // stride = 8. Pos is at offset 0, 1, 2.
-            
-            // To make this work, I need to promote `meshData` variable from OnSurfaceCreated to a class field `_meshData`.
-            // Let's do that via a separate or broader edit, but for now I'll fix it by assuming _meshData is available or re-creating logic.
-            
-            // ERROR: _meshData isn't a field yet. I must fix that first.
-            // I will use this block to implement the logic assuming _meshData exists, 
-            // and I will add the field in the class definition in the same file if possible or next step.
-            
-            // Actually, I'll rewrite the class to include _meshData field.
-        }
 
         public void Reset()
         {

@@ -6,10 +6,10 @@ namespace Takoyaki.Core
 {
     public class ProceduralMesh
     {
-        public float[] Vertices; // x,y,z
-        public float[] Normals;  // x,y,z
-        public float[] UVs;      // u,v
-        public short[] Indices;
+        public float[] Vertices = Array.Empty<float>();
+        public float[] Normals = Array.Empty<float>();
+        public float[] UVs = Array.Empty<float>();
+        public short[] Indices = Array.Empty<short>();
         
         // Single array for Interleaved Buffer (Pos, Norm, UV)
         // Format: [Px, Py, Pz, Nx, Ny, Nz, U, V]

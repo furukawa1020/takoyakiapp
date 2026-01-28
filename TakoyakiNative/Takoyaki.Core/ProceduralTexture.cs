@@ -198,10 +198,47 @@ namespace Takoyaki.Core
             }
         }
 
+        public void SetPixel(int x, int y, Vector4 color)
+        {
+            if (x < 0 || x >= Width || y < 0 || y >= Height) return;
+            int idx = (y * Width + x) * 4;
+            Pixels[idx] = (byte)(color.X * 255);
+            Pixels[idx+1] = (byte)(color.Y * 255);
+            Pixels[idx+2] = (byte)(color.Z * 255);
+            Pixels[idx+3] = (byte)(color.W * 255);
+        }
+
+        public static ProceduralTexture GenerateAdvancedNoise(int size, float scale, Vector4 colBase, Vector4 colDeep, float warpScale, float warpStrength)
+        {
+             var tex = new ProceduralTexture(size);
+             float seed = (float)(new Random().NextDouble() * 100);
+             
+             for (int y = 0; y < size; y++)
+             {
+                 for (int x = 0; x < size; x++)
+                 {
+                     float nx = (float)x / size * scale;
+                     float ny = (float)y / size * scale;
+                     
+                     // Domain Warping
+                     float qx = PerlinNoise.Noise(nx + seed, ny + seed);
+                     float qy = PerlinNoise.Noise(nx + seed + 5.2f, ny + seed + 1.3f);
+                     
+                     float n = PerlinNoise.Noise(nx + warpStrength*qx, ny + warpStrength*qy);
+                     
+                     // Map -1..1 to 0..1
+                     float val = n * 0.5f + 0.5f;
+                     
+                     Vector4 finalCol = Vector4.Lerp(colDeep, colBase, val);
+                     tex.SetPixel(x, y, finalCol);
+                 }
+             }
+             return tex;
+        }
+
         private static ProceduralTexture GenerateWorleyCrust(int size, float scale, Vector4 colBase, Vector4 colDeep, Vector4 colHigh)
         {
-            // ... (Previous logic, ensure it's preserved or re-pasted here if replacing whole block)
-            // Re-pasting the exact GenerateWorleyCrust logic for safety as per tool instruction
+            // ... (Previous logic kept same, just ensuring method closes correctly)
              var tex = new ProceduralTexture(size);
             float seed = (float)(new Random().NextDouble() * 100);
 

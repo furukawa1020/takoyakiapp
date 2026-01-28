@@ -18,9 +18,7 @@ namespace Takoyaki.Android
         {
             // Load Shaders
             MainProgram = ShaderHelper.LoadProgram(context, "takoyaki.vert", "takoyaki.frag");
-            
-            // For now using the same for toppings, but ready to split later
-            ToppingProgram = MainProgram; 
+            ToppingProgram = ShaderHelper.LoadProgram(context, "topping.vert", "topping.frag"); 
 
             // Load Textures
             BatterTex = LoadProceduralTexture(ProceduralTexture.GenerateBatter(64));

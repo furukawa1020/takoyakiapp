@@ -5,41 +5,55 @@ in vec3 vFragPos;
 in vec3 vNormal;
 in vec2 vTexCoord;
 
+uniform vec4 uToppingColor;
 uniform vec3 uLightPos;
 uniform vec3 uViewPos;
-uniform vec4 uColor;
-uniform float uRoughness; // 0.0 (mirror) to 1.0 (matte)
 
 out vec4 FragColor;
 
+// Simple hash for noise
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+// Simple noise function for edge clipping
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
 void main() {
+    // 1. NOISE-BASED EDGE CLIPPING (The "Torn" look)
+    // We discard pixels based on noise, especially near the UV boundaries
+    float edgeMask = min(min(vTexCoord.x, 1.0 - vTexCoord.x), min(vTexCoord.y, 1.0 - vTexCoord.y));
+    float n = noise(vTexCoord * 20.0);
+    
+    // If we're near the edge, the noise threshold for discard increases
+    if (n > edgeMask * 4.0 + 0.2) {
+        discard;
+    }
+
+    // 2. SHADING
     vec3 N = normalize(vNormal);
-    vec3 V = normalize(uViewPos - vFragPos);
     vec3 L = normalize(uLightPos - vFragPos);
-    vec3 H = normalize(V + L);
+    vec3 V = normalize(uViewPos - vFragPos);
+    
+    // Half-Lambert for softer, more food-like lighting
+    float diff = pow(dot(N, L) * 0.5 + 0.5, 2.0);
+    
+    // Subsurface translucency (Fake)
+    float translucency = pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.2;
+    
+    vec3 color = uToppingColor.rgb * (0.4 + 0.6 * diff + translucency);
+    
+    // Add subtle color variation based on UV
+    color *= (0.9 + 0.2 * noise(vTexCoord * 5.0));
 
-    // 1. Diffuse (Oren-Nayar simplified or Lambert)
-    float diff = max(dot(N, L), 0.0);
-    vec3 diffuse = uColor.rgb * diff;
-
-    // 2. Specular (Glossy Highlights for Sauce/Mayo)
-    // Sharper highlights for lower roughness
-    float shininess = 128.0 * (1.0 - uRoughness);
-    float spec = pow(max(dot(N, H), 0.0), max(1.0, shininess));
-    vec3 specular = vec3(1.0) * spec * (1.0 - uRoughness); // Specular color is white
-
-    // 3. Ambient
-    vec3 ambient = uColor.rgb * 0.25;
-
-    // 4. Rim Lighting (Fresnel fake)
-    float rim = 1.0 - max(dot(V, N), 0.0);
-    rim = pow(rim, 3.0) * 0.2;
-    vec3 rimColor = vec3(rim);
-
-    vec3 finalColor = ambient + diffuse + specular + rimColor;
-
-    // Gamma correction
-    finalColor = pow(finalColor, vec3(1.0/2.2));
-
-    FragColor = vec4(finalColor, uColor.a);
+    FragColor = vec4(color, uToppingColor.a);
 }

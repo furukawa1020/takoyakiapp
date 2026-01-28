@@ -105,9 +105,30 @@ namespace Takoyaki.Android
                 GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     
                 // 1. Init Core Logic
-                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 2 - Core Logic");
-                _ball = new Takoyaki.Core.TakoyakiBall(0, 2000); 
-                _ball.BatterLevel = 1.0f; // Initialize as full for visualization
+                // 1. Mesh Generation (Must be first to init physics)
+                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 2 - Mesh Gen");
+                var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); 
+                _meshData = mesh.ToInterleavedArray();
+                short[] indices = mesh.Indices;
+                _indexCount = indices.Length;
+
+                // 2. Init Core Logic (Physics needs Vertices)
+                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 3 - Core Logic");
+                int vCount = mesh.Vertices.Length / 3;
+                _ball = new Takoyaki.Core.TakoyakiBall(0, vCount); 
+                _ball.BatterLevel = 1.0f; 
+                
+                // Copy initial mesh to ball physics state (Float[] -> Vector3[])
+                for(int i=0; i<vCount; i++)
+                {
+                    float x = mesh.Vertices[i*3+0];
+                    float y = mesh.Vertices[i*3+1];
+                    float z = mesh.Vertices[i*3+2];
+                    var vec = new System.Numerics.Vector3(x, y, z);
+                    _ball.BaseVertices[i] = vec;
+                    _ball.DeformedVertices[i] = vec;
+                }
+
                 _physics = new Takoyaki.Core.SoftBodySolver(_ball);
                 _heatDelay = new Takoyaki.Core.HeatSimulation(_ball);
                 _stateMachine = new Takoyaki.Core.TakoyakiStateMachine(_ball, _audio);
@@ -149,11 +170,8 @@ namespace Takoyaki.Android
                 LoadTexture(3, Takoyaki.Core.ProceduralTexture.GenerateNoiseMap(64));
     
                 // 3. Generate Mesh & Buffers
-                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 5 - Mesh");
-                var mesh = Takoyaki.Core.ProceduralMesh.GenerateSphere(64); 
-                _meshData = mesh.ToInterleavedArray();
-                short[] indices = mesh.Indices;
-                _indexCount = indices.Length;
+                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 5 - Buffers");
+                // Mesh generated earlier for Physics init
 
                 // VBOs
                 int[] vaos = new int[1];
@@ -265,6 +283,10 @@ namespace Takoyaki.Android
             GLES30.GlViewport(0, 0, width, height);
             float ratio = (float)width / height;
             Matrix.FrustumM(_projectionMatrix, 0, -ratio, ratio, -1, 1, 2, 10);
+            
+            // Camera Setup
+            // Eye: (0, 4, 4), Center: (0, 0, 0), Up: (0, 1, 0)
+            Matrix.SetLookAtM(_viewMatrix, 0, 0f, 4f, 4f, 0f, 0f, 0f, 0f, 1f, 0f);
         }
 
         // Input
@@ -342,6 +364,8 @@ namespace Takoyaki.Android
                 _lastTimeNs = now;
     
                 // 1. Update Core Simulation
+                if (_ball == null || _physics == null || _stateMachine == null) return;
+                
                 UpdateLogic(dt);
     
                 // 2. Render

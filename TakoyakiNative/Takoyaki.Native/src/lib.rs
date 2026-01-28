@@ -56,9 +56,12 @@ pub struct RhythmEngine {
     pub mastery: f32,
     pub shaping_progress: f32,
     pub batter_level: f32,
+    pub cook_level: f32,
     pub game_phase: GamePhase,
     pub combo_count: i32,
     pub stability_timer: f32,
+    pub score: i32,
+    pub result_ready: bool,
     pub p_term: f32,
     pub i_term: f32,
     pub d_term: f32,
@@ -69,8 +72,10 @@ impl RhythmEngine {
         Self {
             kf_x: KalmanFilter::new(0.0), kf_y: KalmanFilter::new(0.0), kf_z: KalmanFilter::new(0.0),
             last_error: 0.0, integral: 0.0, mastery: 0.0,
-            shaping_progress: 1.0, batter_level: 0.0, game_phase: GamePhase::Raw,
+            shaping_progress: 1.0, batter_level: 0.0, cook_level: 0.0,
+            game_phase: GamePhase::Raw,
             combo_count: 0, stability_timer: 0.0,
+            score: 0, result_ready: false,
             p_term: 0.0, i_term: 0.0, d_term: 0.0,
         }
     }

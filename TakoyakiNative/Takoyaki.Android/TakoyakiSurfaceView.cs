@@ -629,7 +629,7 @@ namespace Takoyaki.Android
                 if (now - _lastShakeTime > 500) // 500ms cooldown
                 {
                     ApplyTopping();
-                    _haptics.TriggerTap(); // Haptic feedback!
+                    _haptics.TriggerImpact(1.0f); // Haptic feedback!
                     _lastShakeTime = now;
                 }
             }

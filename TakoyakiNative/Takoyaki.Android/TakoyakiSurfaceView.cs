@@ -434,7 +434,7 @@ namespace Takoyaki.Android
         private (float[], short[]) GenerateLeafQuad(float size)
         {
             // Elongated leaf shape (narrow ellipse approximation)
-            float width = size * 0.4f; // Narrow
+            float width = size * 0.8f; // Wider for visibility
             float height = size * 1.2f; // Tall
             
             float[] vertices = new float[]

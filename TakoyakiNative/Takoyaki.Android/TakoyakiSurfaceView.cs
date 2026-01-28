@@ -126,6 +126,15 @@ namespace Takoyaki.Android
         
         // Initial topping application flag
         private bool _needsInitialToppings = true;
+        
+        // Topping System (3D Objects)
+        private int _billboardProgram;
+        private int _billboardVBO;
+        private int _sauceTexture;
+        private int _mayoTexture;
+        private bool _sauceVisible = false;
+        private bool _mayoVisible = false;
+        private List<System.Numerics.Vector3> _aonoriParticles = new List<System.Numerics.Vector3>();
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {

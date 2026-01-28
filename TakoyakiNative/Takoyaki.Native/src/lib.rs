@@ -39,6 +39,14 @@ impl KalmanFilter {
     }
 }
 
+#[repr(C)]
+pub enum GamePhase {
+    Raw = 0,
+    Cooking = 1,
+    Turned = 2,
+    Finished = 3,
+}
+
 pub struct RhythmEngine {
     kf_x: KalmanFilter,
     kf_y: KalmanFilter,
@@ -47,6 +55,8 @@ pub struct RhythmEngine {
     integral: f32,
     pub mastery: f32,
     pub shaping_progress: f32,
+    pub batter_level: f32,
+    pub game_phase: GamePhase,
     pub combo_count: i32,
     pub stability_timer: f32,
     pub p_term: f32,
@@ -59,7 +69,8 @@ impl RhythmEngine {
         Self {
             kf_x: KalmanFilter::new(0.0), kf_y: KalmanFilter::new(0.0), kf_z: KalmanFilter::new(0.0),
             last_error: 0.0, integral: 0.0, mastery: 0.0,
-            shaping_progress: 1.0, combo_count: 0, stability_timer: 0.0,
+            shaping_progress: 1.0, batter_level: 0.0, game_phase: GamePhase::Raw,
+            combo_count: 0, stability_timer: 0.0,
             p_term: 0.0, i_term: 0.0, d_term: 0.0,
         }
     }
@@ -97,16 +108,28 @@ impl RhythmEngine {
             }
 
             // Target roughly 20 seconds for full completion at perfect harmony
-            // 1.0 / 20.0 = 0.05 per second.
-            // We scale by mastery to reward skill.
             let pressure = harmony * (1.0 + self.mastery * 1.5);
             let shaping_speed = 0.05; 
             self.shaping_progress = (self.shaping_progress - pressure * shaping_speed * dt).max(0.0);
         } else {
             self.combo_count = 0;
             self.mastery = (self.mastery - dt * 1.0).max(0.0);
-            // Regrow bumps slightly if stagnant
             self.shaping_progress = (self.shaping_progress + dt * 0.02).min(1.0);
+        }
+
+        // Automatic Phase Transitions
+        match self.game_phase {
+            GamePhase::Raw => {
+                self.batter_level = (self.batter_level + dt * 0.5).min(1.0);
+                if self.batter_level >= 1.0 { self.game_phase = GamePhase::Cooking; }
+            },
+            GamePhase::Cooking => {
+                if self.shaping_progress < 0.5 { self.game_phase = GamePhase::Turned; }
+            },
+            GamePhase::Turned => {
+                if self.shaping_progress <= 0.0 { self.game_phase = GamePhase::Finished; }
+            },
+            GamePhase::Finished => {},
         }
 
         mag

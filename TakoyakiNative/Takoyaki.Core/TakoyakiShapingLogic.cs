@@ -18,9 +18,9 @@ namespace Takoyaki.Core
         public IntPtr NativeEngine => _rustEngine;
         public bool IsNativeEnabled => _useRust;
 
-        public float P_Term => _pid.P_Contribution;
-        public float I_Term => _pid.I_Contribution;
-        public float D_Term => _pid.D_Contribution;
+        public float P_Term { get; private set; }
+        public float I_Term { get; private set; }
+        public float D_Term { get; private set; }
         
         public const float TARGET_GYRO_MAG = 6.0f;
         private const float SHAPING_SPEED = 0.4f;
@@ -40,6 +40,8 @@ namespace Takoyaki.Core
         private unsafe static extern void tako_smooth_mesh(IntPtr engine, Vector3* vertices, Vector3* base_vertices, int count, float dt);
         [System.Runtime.InteropServices.DllImport("takores")]
         public unsafe static extern void tako_step_physics(IntPtr engine, void* states, int count, void* params_ptr, void* g, void* a, float dt);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private unsafe static extern void tako_get_pid_terms(IntPtr engine, float* p, float* i, float* d);
 
         public TakoyakiShapingLogic()
         {
@@ -63,6 +65,12 @@ namespace Takoyaki.Core
                 currentMag = tako_update(_rustEngine, angularVelocity.X, angularVelocity.Y, angularVelocity.Z, dt, TARGET_GYRO_MAG);
                 MasteryLevel = tako_get_mastery(_rustEngine);
                 
+                unsafe {
+                    float p, i, d;
+                    tako_get_pid_terms(_rustEngine, &p, &i, &d);
+                    P_Term = p; I_Term = i; D_Term = d;
+                }
+                
                 // For the HUD Analyzer, we use the residual error to show activity
                 pidOutput = TARGET_GYRO_MAG - currentMag; 
             }
@@ -71,6 +79,9 @@ namespace Takoyaki.Core
                 // Standard C# Path
                 currentMag = angularVelocity.Length();
                 pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
+                P_Term = _pid.P_Contribution;
+                I_Term = _pid.I_Contribution;
+                D_Term = _pid.D_Contribution;
             }
             
             _pulseTimer += dt * (TARGET_GYRO_MAG / (float)Math.PI); 

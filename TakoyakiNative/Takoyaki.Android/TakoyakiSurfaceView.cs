@@ -260,6 +260,23 @@ namespace Takoyaki.Android
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
         }
 
+        // Emulation Controls (Public API for Debug Buttons)
+        public void SetEmulationTilt(float tiltY)
+        {
+            _emuTiltY = tiltY;
+        }
+
+        public void SetEmulationThrust(bool enabled)
+        {
+            _emuTrust = enabled;
+        }
+
+        public void TriggerEmulationSwipe()
+        {
+            _inputState.IsSwipe = true;
+            _inputState.SwipeDelta = new System.Numerics.Vector2(50f, 0f);
+        }
+
         private void LoadTexture(int unit, Takoyaki.Core.ProceduralTexture tex)
         {
             int[] textureIds = new int[1];

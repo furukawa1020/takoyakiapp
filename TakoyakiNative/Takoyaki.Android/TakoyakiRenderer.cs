@@ -97,6 +97,15 @@ namespace Takoyaki.Android
             _uModelMatrixHandle = GLES30.GlGetUniformLocation(program, "uModelMatrix");
             _uVPMatrixHandle = GLES30.GlGetUniformLocation(program, "uVPMatrix");
             _uTimeHandle = GLES30.GlGetUniformLocation(program, "uTime");
+            _uLightPosHandle = GLES30.GlGetUniformLocation(program, "uLightPos");
+            _uViewPosHandle = GLES30.GlGetUniformLocation(program, "uViewPos");
+            _uDisplacementHandle = GLES30.GlGetUniformLocation(program, "uDisplacementStrength");
+
+            // Explicitly map texture samplers to texture units
+            GLES30.GlUniform1i(GLES30.GlGetUniformLocation(program, "uBatterTex"), 0);
+            GLES30.GlUniform1i(GLES30.GlGetUniformLocation(program, "uCookedTex"), 1);
+            GLES30.GlUniform1i(GLES30.GlGetUniformLocation(program, "uBurntTex"), 2);
+            GLES30.GlUniform1i(GLES30.GlGetUniformLocation(program, "uNoiseMapFix"), 3);
 
             // 4. VAO/VBO Setup
             int[] vaos = new int[1]; GLES30.GlGenVertexArrays(1, vaos, 0); _vao = vaos[0];

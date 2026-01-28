@@ -74,6 +74,17 @@ namespace Takoyaki.Core
                 // Update Pos
                 _vertices[i].Position += _vertices[i].Velocity * dt;
 
+                // 3.5 CLAMPING (Prevent infinite sagging/exploding)
+                // Limit max distance from original position to avoid "falling forever" look
+                Vector3 currentDisplacement = _vertices[i].Position - _vertices[i].OriginalLocalPos;
+                float maxDist = 0.3f; // Max 30% of radius stretch
+                if (currentDisplacement.LengthSquared() > maxDist * maxDist)
+                {
+                    currentDisplacement = Vector3.Normalize(currentDisplacement) * maxDist;
+                    _vertices[i].Position = _vertices[i].OriginalLocalPos + currentDisplacement;
+                    _vertices[i].Velocity *= 0.1f; // Kill velocity hits limit
+                }
+
                 // 4. Update the Data Model for Rendering
                 _ballRef.DeformedVertices[i] = _vertices[i].Position;
             }

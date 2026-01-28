@@ -11,25 +11,24 @@ namespace Takoyaki.Android
             var rand = new Random(1234);
             for(int i=0; i<count; i++)
             {
-                float px = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.65f;
-                float py = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.65f;
-                float z2 = 1.05f*1.05f - px*px - py*py;
+                float px = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.68f;
+                float py = (float)(rand.NextDouble() * 2.0 - 1.0) * 0.68f;
+                float z2 = 1.06f*1.06f - px*px - py*py;
                 if (z2 < 0) continue;
                 float pz = (float)Math.Sqrt(z2);
                 
-                // Randomize size and aspect ratio for each flake
-                float baseSize = 0.18f + (float)rand.NextDouble() * 0.12f;
-                float aspect = 0.8f + (float)rand.NextDouble() * 0.6f;
+                float baseSize = 0.22f + (float)rand.NextDouble() * 0.15f; 
+                float aspect = 1.0f + (float)rand.NextDouble() * 0.8f; 
                 
-                var (v, ind) = GenerateHighDetailFlake(baseSize, aspect, (float)rand.NextDouble() * 10.0f);
+                var (v, ind) = GenerateHighDetailFlake(baseSize, aspect, (float)rand.NextDouble() * 100.0f);
                 var mesh = new ToppingMesh
                 {
                     Vertices = v,
                     Indices = ind,
                     Position = new System.Numerics.Vector3(px, py, pz),
                     Scale = new System.Numerics.Vector3(1, 1, 1),
-                    // Pale tan color with translucency
-                    Color = new System.Numerics.Vector4(0.92f, 0.78f, 0.65f, 0.75f),
+                    // More natural tan, slightly higher alpha as shader handles clipping
+                    Color = new System.Numerics.Vector4(0.90f, 0.76f, 0.62f, 0.85f), 
                     Visible = false,
                     RotationMatrix = ToppingUtils.CalculateRotationToNormal(new System.Numerics.Vector3(px, py, pz))
                 };
@@ -43,8 +42,8 @@ namespace Takoyaki.Android
         {
             var verts = new List<float>();
             var inds = new List<short>();
-            int segsH = 10; // More segments for complex curl
-            int segsW = 3;  
+            int segsH = 12; // More segments for smooth curves
+            int segsW = 4;  
             float w = size * aspect;
             float h = size;
 
@@ -55,35 +54,27 @@ namespace Takoyaki.Android
                 float th = (float)i/segsH;
                 float py = (th - 0.5f) * h * 2.0f;
                 
-                // Spiral/Curling logic
-                float curlFreq = 1.2f + (float)rand.NextDouble() * 0.5f;
-                float curlAmp = size * (0.4f + (float)rand.NextDouble() * 0.3f);
-                float curl = (float)Math.Sin(th * Math.PI * curlFreq + seed) * curlAmp;
+                // Base curl (curled by nature, not just animation)
+                float curl = (float)Math.Sin(th * Math.PI * 1.5 + seed) * size * 0.6f;
                 
                 for(int j=0; j<=segsW; j++)
                 {
                     float tw = (float)j/segsW;
                     float px = (tw - 0.5f) * w * 2.0f;
                     
-                    // Edge jitter for "torn" look
-                    float jitter = 0;
-                    if (i == 0 || i == segsH || j == 0 || j == segsW)
-                    {
-                        jitter = (float)(rand.NextDouble() - 0.5) * size * 0.15f;
-                    }
-
-                    float x = px + jitter;
-                    float y = py + jitter;
-                    float z = curl + (float)Math.Cos(tw * Math.PI + seed) * size * 0.2f;
+                    float x = px;
+                    float y = py;
+                    float z = curl + (float)Math.Cos(tw * Math.PI + seed) * size * 0.15f;
 
                     verts.Add(x); verts.Add(y); verts.Add(z);
-                    // Normal (Approximate up)
-                    verts.Add(0); verts.Add(0); verts.Add(1);
-                    // UV
+                    // Approximate normal for lighting
+                    var n = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(0, 0, 1));
+                    verts.Add(n.X); verts.Add(n.Y); verts.Add(n.Z);
+                    // Standard UVs for fragment shader noise clipping
                     verts.Add(tw); verts.Add(th);
                 }
             }
-            
+            // ... (index generation stays same)
             for(int i=0; i<segsH; i++)
             {
                 for(int j=0; j<segsW; j++)

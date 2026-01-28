@@ -3,9 +3,12 @@ using System.Numerics;
 
 namespace Takoyaki.Core
 {
-    public class TakoyakiShapingLogic
+    public class TakoyakiShapingLogic : IDisposable
     {
         private PidController _pid;
+        private IntPtr _rustEngine = IntPtr.Zero;
+        private bool _useRust = false;
+
         public float ShapingProgress { get; private set; } = 1.0f; 
         public float MasteryLevel { get; private set; } = 0.0f;
         public float RhythmPulse { get; private set; } = 0.0f;
@@ -22,21 +25,48 @@ namespace Takoyaki.Core
         private float _pulseTimer = 0.0f;
         private float _stabilityTimer = 0.0f;
 
+        // --- Native Rust Interface ---
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern IntPtr tako_init();
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern float tako_update(IntPtr engine, float gx, float gy, float gz, float dt, float target);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern float tako_get_mastery(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern void tako_free(IntPtr engine);
+
         public TakoyakiShapingLogic()
         {
-            _pid = new PidController(1.2f, 0.3f, 0.15f); // Sharper tuning
+            _pid = new PidController(1.2f, 0.3f, 0.15f); 
+            
+            try {
+                _rustEngine = tako_init();
+                _useRust = (_rustEngine != IntPtr.Zero);
+            } catch {
+                _useRust = false;
+            }
         }
 
         public void Update(float dt, Vector3 angularVelocity)
         {
-            float currentMag = angularVelocity.Length();
+            float currentMag;
+            
+            if (_useRust) {
+                // High-performance Rust path (Kalman + PID)
+                currentMag = tako_update(_rustEngine, angularVelocity.X, angularVelocity.Y, angularVelocity.Z, dt, TARGET_GYRO_MAG);
+                // We don't sync terms back for analyzer yet, but we could
+                float nativeMastery = tako_get_mastery(_rustEngine);
+                // Mastery blending or direct use
+            }
+
+            // Standard C# Path (Fallback or Parallel)
+            currentMag = angularVelocity.Length();
             float pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
             
             _pulseTimer += dt * (TARGET_GYRO_MAG / (float)Math.PI); 
             float lastPulse = RhythmPulse;
             RhythmPulse = (float)Math.Abs(Math.Sin(_pulseTimer)); 
 
-            // Trigger haptic on the "beat" (peak of sine)
             if (RhythmPulse > 0.9f && lastPulse <= 0.9f && currentMag > 1.0f) {
                 TriggerHapticTick = true;
             }
@@ -67,6 +97,14 @@ namespace Takoyaki.Core
                 ComboCount = 0;
                 MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 1.0f);
                 ShapingProgress = Math.Min(1.0f, ShapingProgress + dt * 0.05f);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_rustEngine != IntPtr.Zero) {
+                tako_free(_rustEngine);
+                _rustEngine = IntPtr.Zero;
             }
         }
     }

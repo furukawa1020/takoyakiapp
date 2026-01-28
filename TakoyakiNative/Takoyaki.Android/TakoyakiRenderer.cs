@@ -292,5 +292,10 @@ namespace Takoyaki.Android
             _toppings?.Reset();
             _stateMachine?.Reset();
         }
+
+        public void Dispose()
+        {
+            _shaping?.Dispose();
+        }
     }
 }

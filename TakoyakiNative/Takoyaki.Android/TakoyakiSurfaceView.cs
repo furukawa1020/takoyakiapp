@@ -79,5 +79,10 @@ namespace Takoyaki.Android
         {
              // TODO: Re-implement screenshot capture in the new renderer if needed
         }
+
+        public void Dispose()
+        {
+            _renderer?.Dispose();
+        }
     }
 }

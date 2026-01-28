@@ -203,5 +203,11 @@ namespace Takoyaki.Android
             base.OnResume();
             _surfaceView.OnResume();
         }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            _surfaceView?.Dispose();
+        }
     }
 }

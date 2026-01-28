@@ -15,6 +15,8 @@ namespace Takoyaki.Core
         public int ComboCount { get; private set; } = 0;
         public bool IsPerfect { get; private set; } = false;
         public bool TriggerHapticTick { get; set; } = false; 
+        public IntPtr NativeEngine => _rustEngine;
+        public bool IsNativeEnabled => _useRust;
 
         public float P_Term => _pid.P_Contribution;
         public float I_Term => _pid.I_Contribution;
@@ -36,6 +38,8 @@ namespace Takoyaki.Core
         private static extern void tako_free(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private unsafe static extern void tako_smooth_mesh(IntPtr engine, Vector3* vertices, Vector3* base_vertices, int count, float dt);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        public unsafe static extern void tako_step_physics(IntPtr engine, void* states, int count, void* params_ptr, void* g, void* a, float dt);
 
         public TakoyakiShapingLogic()
         {

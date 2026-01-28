@@ -102,7 +102,8 @@ namespace Takoyaki.Android
             {
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 1 - GL Init");
                 GLES30.GlEnable(GLES30.GlDepthTest);
-                GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                // DEBUG: Magenta Background to prove GL is live
+                GLES30.GlClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     
                 // 1. Init Core Logic
                 // 1. Mesh Generation (Must be first to init physics)
@@ -156,7 +157,7 @@ namespace Takoyaki.Android
 
                 int uCooked = GLES30.GlGetUniformLocation(_program, "uCookedTex");
                 int uBurnt = GLES30.GlGetUniformLocation(_program, "uBurntTex");
-                int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMap");
+                int uNoise = GLES30.GlGetUniformLocation(_program, "uNoiseMapFix");
 
                 GLES30.GlUniform1i(uCooked, 1);
                 GLES30.GlUniform1i(uBurnt, 2);

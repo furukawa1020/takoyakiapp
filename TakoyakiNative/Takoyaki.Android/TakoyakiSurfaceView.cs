@@ -822,8 +822,8 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateSauceMesh()
         {
-            // Blob made of multiple small spheres
-            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0.7f, 0), 5);
+            // Blob made of multiple small spheres - positioned on FRONT of ball (towards camera)
+            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0.3f, 0.8f), 5);
             
             var mesh = new ToppingMesh
             {
@@ -840,7 +840,7 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateMayoMesh()
         {
-            // Tube along a wavy path
+            // Tube along a wavy path - positioned on FRONT of ball
             var (vertices, indices) = GenerateTubeMesh();
             
             var mesh = new ToppingMesh

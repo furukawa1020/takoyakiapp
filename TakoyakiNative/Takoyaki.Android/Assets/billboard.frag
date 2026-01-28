@@ -1,0 +1,18 @@
+#version 300 es
+precision mediump float;
+
+uniform sampler2D uTexture;
+uniform vec4 uColor; // Tint color
+
+in vec2 vTexCoord;
+out vec4 fragColor;
+
+void main() {
+    vec4 texColor = texture(uTexture, vTexCoord);
+    fragColor = texColor * uColor;
+    
+    // Discard fully transparent pixels
+    if (fragColor.a < 0.01) {
+        discard;
+    }
+}

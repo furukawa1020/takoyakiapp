@@ -35,9 +35,14 @@ namespace Takoyaki.Core
             TransitionTo(new StateRaw());
         }
 
-        public void Update(InputState input, float dt)
+        public void Update(InputState input, float dt, int rustPhase)
         {
             _currentState?.Update(this, _ball, input, dt, _audio);
+            
+            // Rust-driven Transitions
+            if (rustPhase == 1 && _currentState is StateRaw) TransitionTo(new StateCooking());
+            if (rustPhase == 2 && _currentState is StateCooking) TransitionTo(new StateTurned());
+            if (rustPhase == 3 && _currentState is StateTurned) TransitionTo(new StateFinished());
         }
 
         public void TransitionTo(ITakoyakiState newState)
@@ -83,17 +88,7 @@ namespace Takoyaki.Core
 
         public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
-            if (input.Tilt.Y > 0.2f)
-            {
-                ball.BatterLevel += dt * 0.8f; // Faster fill for rhythm
-            }
-
-            if (ball.BatterLevel >= 1.0f)
-            {
-                ball.BatterLevel = 1.0f;
-                audio.PlayDing(); // RHYTHM CUE
-                machine.TransitionTo(new StateCooking());
-            }
+            // Transition is now handled by Rust via the machine.Update(..., rustPhase)
         }
     }
 
@@ -104,12 +99,7 @@ namespace Takoyaki.Core
 
         public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
-            // Input: Swipe to Turn
-            if (input.IsSwipe && ball.CookLevel > 0.3f) 
-            {
-                audio.PlayTurn(); // RHYTHM CUE
-                machine.TransitionTo(new StateTurned());
-            }
+            // Transition is now handled by Rust via the machine.Update(..., rustPhase)
         }
     }
 
@@ -125,13 +115,7 @@ namespace Takoyaki.Core
 
         public void Update(TakoyakiStateMachine machine, TakoyakiBall ball, InputState input, float dt, ITakoyakiAudio audio)
         {
-            _timeInState += dt;
-            // Thrift forward (Negative Z accel)
-            if (input.Acceleration.Z < -8.0f && _timeInState > 0.5f)
-            {
-                 audio.PlayServe(); // RHYTHM CUE
-                 machine.TransitionTo(new StateFinished());
-            }
+            // Transition is now handled by Rust via the machine.Update(..., rustPhase)
         }
     }
 

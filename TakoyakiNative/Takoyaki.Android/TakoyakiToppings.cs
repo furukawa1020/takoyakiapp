@@ -159,12 +159,12 @@ namespace Takoyaki.Android
             var verts = new List<float>();
             var inds = new List<short>();
             
-            int slices = 32; // Higher res for smoother blob
+            int slices = 32; 
             int rings = 12;  
-            float baseAngle = 0.55f; 
+            float baseAngle = 0.85f; // SPREAD IT! (Was 0.55/0.6)
             
             // Center
-            verts.Add(0); verts.Add(0); verts.Add(1.01f); // Tighter to surface
+            verts.Add(0); verts.Add(0); verts.Add(1.01f);
             verts.Add(0); verts.Add(0); verts.Add(1);     
             verts.Add(0.5f); verts.Add(0.5f);             
             
@@ -175,11 +175,11 @@ namespace Takoyaki.Android
                 {
                     float theta = (float)s / slices * (float)Math.PI * 2;
                     
-                    // Organic noise
-                    float noise = (float)(Math.Sin(theta * 3) * 0.4 + Math.Cos(theta * 7) * 0.2);
+                    // More organic and dripping
+                    float noise = (float)(Math.Sin(theta * 3) * 0.4 + Math.Cos(theta * 7 + t*5) * 0.3);
                     
-                    // Apply noise mainly to the outer rings to form drips
-                    float angleFunc = baseAngle + (noise * 0.15f * (t * t)); 
+                    // Non-linear spread to look like gravity pull
+                    float angleFunc = baseAngle + (noise * 0.25f * (t * t * t)); 
                     
                     float phi = t * angleFunc;
                     float rad = 1.01f;
@@ -220,20 +220,19 @@ namespace Takoyaki.Android
 
         private ToppingMesh CreateMayoMesh()
         {
-            // Mayo: Wavy lines generated on Z+ surface
-            var (vertices, indices) = GenerateSurfaceTube();
+            // Mayo: Bigger spread
+            var (vertices, indices) = GenerateSurfaceTube(); // Logic updated inside GenerateSurfaceTube below
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh already has surface radius
+                Position = new System.Numerics.Vector3(0, 0, 0), 
                 Scale = new System.Numerics.Vector3(1f, 1f, 1f),
                 Color = new System.Numerics.Vector4(1.0f, 0.98f, 0.85f, 1.0f),
                 Visible = false
             };
             
-            // Rotate same as sauce or slightly different
             float[] rot = new float[16];
             Matrix.SetIdentityM(rot, 0);
             Matrix.RotateM(rot, 0, -30f, 1, 0, 0); 
@@ -242,22 +241,78 @@ namespace Takoyaki.Android
             UploadMeshToGPU(mesh);
             return mesh;
         }
+
+        // Updated loop in GenerateSurfaceTube to look more spread out
+         private (float[], short[]) GenerateSurfaceTube()
+        {
+            var verts = new List<float>();
+            var inds = new List<short>();
+            
+            int segments = 40; // Smoother
+            float tubeRadius = 0.05f; // Thicker
+            float patternSize = 0.9f; // SPREAD!
+            
+            for(int i=0; i<=segments; i++) {
+                float t = (float)i/segments; 
+                
+                // More complex swirl
+                float x = (t - 0.5f) * patternSize * 1.8f; 
+                float y = (float)Math.Sin(t * Math.PI * 5) * 0.25f; // Wider waves
+                
+                float z2 = 1.03f*1.03f - x*x - y*y;
+                float z = (float)Math.Sqrt(Math.Max(0, z2));
+                
+                // ... (Tangent calc simplified or same) ...
+                // Re-using simplified tangent for robustness
+                float tx = 1; 
+                float ty = (float)(Math.Cos(t * Math.PI * 5) * 0.25 * Math.PI * 5); 
+                float tz = 0; 
+                var T = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(tx, ty, tz));
+                var Pos = new System.Numerics.Vector3(x, y, z);
+                var N = System.Numerics.Vector3.Normalize(Pos);
+                var B = System.Numerics.Vector3.Cross(T, N); 
+                
+                for(int j=0; j<8; j++) {
+                    float ang = j * 2 * (float)Math.PI / 8;
+                    float cr = (float)Math.Cos(ang) * tubeRadius;
+                    float sr = (float)Math.Sin(ang) * tubeRadius;
+                    var offset = N * cr + B * sr;
+                    var p = Pos + offset;
+                    verts.Add(p.X); verts.Add(p.Y); verts.Add(p.Z);
+                    verts.Add(offset.X); verts.Add(offset.Y); verts.Add(offset.Z); 
+                    verts.Add(t); verts.Add((float)j/8);
+                }
+            }
+            
+             for (int i = 0; i < segments; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    short current = (short)(i * 8 + j);
+                    short next = (short)(i * 8 + (j + 1) % 8);
+                    short currentNext = (short)((i + 1) * 8 + j);
+                    short nextNext = (short)((i + 1) * 8 + (j + 1) % 8);
+                    inds.Add(current); inds.Add(currentNext); inds.Add(next);
+                    inds.Add(next); inds.Add(currentNext); inds.Add(nextNext);
+                }
+            }
+            return (verts.ToArray(), inds.ToArray());
+        }
         
         private void GenerateAonoriMeshes(int count)
         {
+             // ... (Keep existing simple quad for Aonori is fine) ...
+             // Re-implementing just in case override
             var rnd = new Random();
             for(int i=0; i<count; i++)
             {
-                // Random point on sphere
                 var pos = new System.Numerics.Vector3((float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5));
                 pos = System.Numerics.Vector3.Normalize(pos);
-                
-                // Keep on top/front side
                 var up = new System.Numerics.Vector3(0, 1, 0);
                 var front = new System.Numerics.Vector3(0, 0, 1);
                 if(System.Numerics.Vector3.Dot(pos, up) < 0 && System.Numerics.Vector3.Dot(pos, front) < 0) continue;
 
-                pos *= 1.02f; // Surface radius
+                pos *= 1.02f; 
 
                 var (verts, inds) = GenerateDiamondQuad(0.05f);
                 var mesh = new ToppingMesh
@@ -270,7 +325,6 @@ namespace Takoyaki.Android
                 };
                 
                 mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
-                // Add random rotation around Z (normal) to avoid uniform look
                 float rndAngle = (float)rnd.NextDouble() * 360f;
                 Matrix.RotateM(mesh.RotationMatrix, 0, rndAngle, 0, 0, 1);
                 
@@ -278,7 +332,7 @@ namespace Takoyaki.Android
                 _aonoriMeshes.Add(mesh);
             }
         }
-        
+
         private void GenerateKatsuobushiMeshes(int count)
         {
              var rnd = new Random();
@@ -287,27 +341,91 @@ namespace Takoyaki.Android
                 var pos = new System.Numerics.Vector3((float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5));
                 pos = System.Numerics.Vector3.Normalize(pos);
                  var up = new System.Numerics.Vector3(0, 1, 0);
-                if(System.Numerics.Vector3.Dot(pos, up) < -0.2f) continue;
+                 // Only on top hemisphere
+                if(System.Numerics.Vector3.Dot(pos, up) < -0.1f) continue;
 
-                pos *= 1.03f;
+                pos *= 1.04f; // Stick out more
                 
-                var (verts, inds) = GenerateDiamondQuad(0.08f);
+                // HUGE, TWISTED Katsuobushi
+                // Size 0.25f (was 0.08)
+                var (verts, inds) = GenerateTwistedStrip(0.25f, 0.12f, rnd);
+                
                  var mesh = new ToppingMesh
                 {
                     Vertices = verts,
                     Indices = inds,
                     Position = pos,
-                    Color = new System.Numerics.Vector4(0.6f, 0.4f, 0.3f, 1.0f),
+                    Color = new System.Numerics.Vector4(0.75f, 0.55f, 0.40f, 0.9f), // Lighter, slightly transp
                     Visible = false
                 };
                 
                  mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
                  float rndAngle = (float)rnd.NextDouble() * 360f;
                  Matrix.RotateM(mesh.RotationMatrix, 0, rndAngle, 0, 0, 1);
+                 
+                 // Random tilt
+                 Matrix.RotateM(mesh.RotationMatrix, 0, (float)rnd.NextDouble() * 30f - 15f, 1, 0, 0);
 
                 UploadMeshToGPU(mesh);
                 _katsuobushiMeshes.Add(mesh);
             }
+        }
+        
+        // New Helper for Realistic Katsuobushi
+        private (float[], short[]) GenerateTwistedStrip(float length, float width, Random rnd)
+        {
+             var verts = new List<float>();
+             var inds = new List<short>();
+             
+             int segs = 4;
+             for(int i=0; i<=segs; i++)
+             {
+                 float t = (float)i/segs;
+                 float y = (t - 0.5f) * length;
+                 
+                 // Twist and curl
+                 float curl = (float)Math.Sin(t * Math.PI) * 0.05f; 
+                 float twist = (float)(t * Math.PI * (rnd.NextDouble() + 0.5)); 
+                 
+                 float x1 = -width/2; 
+                 float x2 = width/2;
+                 
+                 // Apply twist
+                 float c = (float)Math.Cos(twist);
+                 float s = (float)Math.Sin(twist);
+                 
+                 // Point A
+                 float px1 = x1 * c; 
+                 float pz1 = x1 * s + curl;
+                 
+                 // Point B
+                 float px2 = x2 * c;
+                 float pz2 = x2 * s + curl;
+                 
+                 // Add Verts (Pos, Norm(rough), UV)
+                 // Normal is rough Z+ rotated
+                 verts.Add(px1); verts.Add(y); verts.Add(pz1);
+                 verts.Add(0); verts.Add(0); verts.Add(1);
+                 verts.Add(0); verts.Add(t);
+                 
+                 verts.Add(px2); verts.Add(y); verts.Add(pz2);
+                 verts.Add(0); verts.Add(0); verts.Add(1);
+                 verts.Add(1); verts.Add(t);
+             }
+             
+             for(int i=0; i<segs; i++)
+             {
+                 short baseIdx = (short)(i*2);
+                 inds.Add(baseIdx);
+                 inds.Add((short)(baseIdx+2));
+                 inds.Add((short)(baseIdx+1));
+                 
+                 inds.Add((short)(baseIdx+1));
+                 inds.Add((short)(baseIdx+2));
+                 inds.Add((short)(baseIdx+3));
+             }
+             
+             return (verts.ToArray(), inds.ToArray());
         }
         
         // Helpers

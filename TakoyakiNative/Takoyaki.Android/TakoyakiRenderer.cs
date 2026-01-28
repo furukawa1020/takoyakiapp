@@ -89,7 +89,7 @@ namespace Takoyaki.Android
                 _ball.DeformedVertices[i] = vec;
             }
 
-            _physics = new SoftBodySolver(_ball);
+            _physics = new SoftBodySolver(_ball, _shaping.NativeEngine);
             _heat = new HeatSimulation(_ball);
             _stateMachine = new TakoyakiStateMachine(_ball, _audio);
             _stateMachine.OnFinished = (score) => OnGameFinished?.Invoke(score);
@@ -246,21 +246,32 @@ namespace Takoyaki.Android
 
         private void UpdateLogic(float dt)
         {
-            // Shake to apply topping
+            _totalTime += dt;
+
+            // 1. Shake to apply topping
             float accelMag = _inputState.Acceleration.Length();
             if (accelMag > TakoyakiConstants.SHAKE_THRESHOLD) {
                 ApplyTopping();
             }
 
-            // Core Phys & Machine
+            // 2. Core Shaping & Physics
+            _shaping.Update(dt, _inputState.AngularVelocity);
+            
+            // 🔥 NATIVE MESH SHAPING
+            _shaping.ApplyNativeMeshShaping(_ball.DeformedVertices, _ball.BaseVertices, dt);
+
+            // 🔥 NATIVE SOFT-BODY PHYSICS
             _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(_inputState.Tilt.X * 9.8f, -9.8f, _inputState.Tilt.Y * 9.8f));
+            
             _stateMachine.Update(_inputState, dt);
             
-            // Wobble for toppings
+            // 3. Topping Animations & VBO Sync
             float ballWobble = (float)Math.Sin(_totalTime * TakoyakiConstants.WOBBLE_SPEED);
             _toppings.UpdateAnimations(dt, _ball.CookLevel, ballWobble);
-            
-            // Model Matrix calculation (simplified here, but robust)
+
+            UpdateMeshVBO();
+
+            // 4. Matrix Updates
             Matrix.SetIdentityM(_modelMatrix, 0);
             if (_stateMachine.CurrentState is StateTurned) Matrix.RotateM(_modelMatrix, 0, 180f, 1, 0, 0);
             Matrix.RotateM(_modelMatrix, 0, _inputState.Tilt.X * 45f, 0, 0, 1);

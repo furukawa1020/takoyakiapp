@@ -5,13 +5,14 @@ namespace Takoyaki.Core
 {
     public class SoftBodySolver
     {
-        // Physics Parameters (Tuned for "Juicy" Jiggle)
+        // Physics Parameters
         public float Stiffness { get; set; } = 3.5f;
         public float Damping { get; set; } = 0.4f;
         public float Mass { get; set; } = 0.8f;
-        public float GravityInfluence { get; set; } = 1.0f; // Sagging
+        public float GravityInfluence { get; set; } = 1.0f;
 
-        // Per-Vertex State
+        // Per-Vertex State (Layout must match Rust VertexState)
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct VertexState
         {
             public Vector3 Position;
@@ -19,12 +20,23 @@ namespace Takoyaki.Core
             public Vector3 OriginalLocalPos;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct NativePhysicsParams
+        {
+            public float Stiffness;
+            public float Damping;
+            public float Mass;
+            public float GravityInfluence;
+        }
+
         private VertexState[] _vertices;
         private TakoyakiBall _ballRef;
+        private IntPtr _nativeEngine = IntPtr.Zero;
 
-        public SoftBodySolver(TakoyakiBall ball)
+        public SoftBodySolver(TakoyakiBall ball, IntPtr nativeEngine = default)
         {
             _ballRef = ball;
+            _nativeEngine = nativeEngine;
             int count = ball.BaseVertices.Length;
             _vertices = new VertexState[count];
 
@@ -36,56 +48,53 @@ namespace Takoyaki.Core
             }
         }
 
-        public void Update(float dt, Vector3 worldAccel, Vector3 worldGravity)
+        public unsafe void Update(float dt, Vector3 worldAccel, Vector3 worldGravity)
         {
-            // Transform World Gravity/Accel to Local Space of the ball
-            // (Since vertices are simulated in local space relative to the ball center)
             Quaternion invRot = Quaternion.Inverse(_ballRef.Rotation);
-            
             Vector3 localGravity = Vector3.Transform(worldGravity, invRot);
-            Vector3 localAccel = Vector3.Transform(worldAccel, invRot); // Inertia force
+            Vector3 localAccel = Vector3.Transform(worldAccel, invRot);
 
-            float dtRatio = dt * 60f; // Logically normalize to 60fps base if needed, or just use raw dt
+            if (_nativeEngine != IntPtr.Zero)
+            {
+                // 🔥 NATIVE RUST PATH: High-Performance Simulation
+                var p = new NativePhysicsParams { 
+                    Stiffness = Stiffness, 
+                    Damping = Damping, 
+                    Mass = Mass, 
+                    GravityInfluence = GravityInfluence 
+                };
+                
+                fixed (VertexState* pStates = _vertices)
+                {
+                    TakoyakiShapingLogic.tako_step_physics(_nativeEngine, pStates, _vertices.Length, &p, &localGravity, &localAccel, dt);
+                }
+                
+                // Sync back to ball model
+                for (int i = 0; i < _vertices.Length; i++)
+                {
+                    _ballRef.DeformedVertices[i] = _vertices[i].Position;
+                }
+                return;
+            }
 
+            // Fallback C# Path
+            float dtRatio = dt * 60f;
             for (int i = 0; i < _vertices.Length; i++)
             {
-                // 1. Spring Force (Hooke's Law)
-                // Target is the Original Local Position (Memory shape)
                 Vector3 displacement = _vertices[i].Position - _vertices[i].OriginalLocalPos;
-                Vector3 springForce = -displacement * Stiffness;
-
-                // 2. External Forces
-                Vector3 force = springForce;
-                
-                // Gravity Sag (Vertices droop down in local space)
-                force += localGravity * GravityInfluence;
-
-                // Inertia (Opposite to acceleration)
-                // If ball accelerates RIGHT, inertia acts LEFT on vertices
-                force -= localAccel * Mass; 
-
-                // 3. Integration (Verlet/Euler)
+                Vector3 force = -displacement * Stiffness + localGravity * GravityInfluence - localAccel * Mass;
                 Vector3 acceleration = force / Mass;
                 _vertices[i].Velocity += acceleration * dt;
-                
-                // Damping
                 _vertices[i].Velocity *= MathF.Pow(1.0f - Damping, dtRatio);
-
-                // Update Pos
                 _vertices[i].Position += _vertices[i].Velocity * dt;
 
-                // 3.5 CLAMPING (Prevent infinite sagging/exploding)
-                // Limit max distance from original position to avoid "falling forever" look
                 Vector3 currentDisplacement = _vertices[i].Position - _vertices[i].OriginalLocalPos;
-                float maxDist = 0.3f; // Max 30% of radius stretch
-                if (currentDisplacement.LengthSquared() > maxDist * maxDist)
+                if (currentDisplacement.LengthSquared() > 0.09f)
                 {
-                    currentDisplacement = Vector3.Normalize(currentDisplacement) * maxDist;
+                    currentDisplacement = Vector3.Normalize(currentDisplacement) * 0.3f;
                     _vertices[i].Position = _vertices[i].OriginalLocalPos + currentDisplacement;
-                    _vertices[i].Velocity *= 0.1f; // Kill velocity hits limit
+                    _vertices[i].Velocity *= 0.1f;
                 }
-
-                // 4. Update the Data Model for Rendering
                 _ballRef.DeformedVertices[i] = _vertices[i].Position;
             }
         }
@@ -95,8 +104,7 @@ namespace Takoyaki.Core
             var random = new Random();
             for (int i = 0; i < _vertices.Length; i++)
             {
-                // Radial burst + Noise
-                Vector3 dir = Vector3.Normalize(_vertices[i].Position); // Center to vertex
+                Vector3 dir = Vector3.Normalize(_vertices[i].Position);
                 float noise = (float)random.NextDouble() * 1.5f + 0.5f;
                 _vertices[i].Velocity += dir * strength * noise;
             }

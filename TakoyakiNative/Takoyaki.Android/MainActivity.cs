@@ -157,6 +157,41 @@ namespace Takoyaki.Android
             _surfaceView.ResetGame();
         }
 
+        private void ShareScreenshot()
+        {
+            _surfaceView.CaptureScreenshot((bitmap) => {
+                try
+                {
+                    // Save Bitmap to Cache Dir
+                    var cachePath = new Java.IO.File(CacheDir, "images");
+                    cachePath.Mkdirs(); 
+                    var filePath = new Java.IO.File(cachePath, "takoyaki_share.png");
+                    var stream = new System.IO.FileStream(filePath.AbsolutePath, System.IO.FileMode.Create);
+                    bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png, 100, stream);
+                    stream.Close();
+
+                    // Create URI
+                    var contentUri = AndroidX.Core.Content.FileProvider.GetUriForFile(
+                        this, "com.hatake.takoyaki.soul.fileprovider", filePath);
+
+                    if (contentUri != null)
+                    {
+                        var shareIntent = new global::Android.Content.Intent();
+                        shareIntent.SetAction(global::Android.Content.Intent.ActionSend);
+                        shareIntent.AddFlags(global::Android.Content.ActivityFlags.GrantReadUriPermission); 
+                        shareIntent.SetDataAndType(contentUri, ContentResolver.GetType(contentUri));
+                        shareIntent.PutExtra(global::Android.Content.Intent.ExtraStream, contentUri);
+                        shareIntent.SetType("image/png");
+                        StartActivity(global::Android.Content.Intent.CreateChooser(shareIntent, "たこ焼きを共有"));
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    global::Android.Util.Log.Error("TakoyakiShare", $"Share failed: {ex}");
+                }
+            });
+        }
+
         protected override void OnPause()
         {
             base.OnPause();

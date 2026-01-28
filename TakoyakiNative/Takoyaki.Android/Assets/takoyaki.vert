@@ -8,6 +8,7 @@ uniform mat4 uModelMatrix;
 uniform float uDisplacementStrength;
 uniform sampler2D uNoiseMapFix;
 uniform float uTime;
+uniform mat4 uVPMatrix;
 
 out vec3 vFragPos;
 out vec3 vNormal;
@@ -21,19 +22,24 @@ void main() {
     float noiseVal = texture(uNoiseMapFix, aTexCoord).r;
     vec3 displacedPos = aPosition + aNormal * (noiseVal * uDisplacementStrength);
 
-    // Soft Body Animation (Jiggle/Wobble)
-    // "Nentai" effect: varying displacement over time
-    float wobble = sin(uTime * 6.0 + aPosition.y * 3.0) * 0.025; 
-    wobble += cos(uTime * 4.5 + aPosition.x * 3.0 + aPosition.z * 1.5) * 0.02;
+    // 1. Calculate World Position (Base)
+    vec4 worldPosRaw = uModelMatrix * vec4(displacedPos, 1.0);
     
-    vec3 animatedPos = displacedPos + aNormal * wobble;
+    // 2. Calculate World Normal
+    vec3 worldNormal = normalize(mat3(transpose(inverse(uModelMatrix))) * aNormal);
 
-    // World Space Position
-    vFragPos = vec3(uModelMatrix * vec4(animatedPos, 1.0));
-    vVertexHeight = aPosition.y; // Pass original Y for blend logic
+    // 3. Soft Body Animation (World Space)
+    // "Nentai" effect: synchronized based on absolute position
+    float wobble = sin(uTime * 6.0 + worldPosRaw.y * 3.0) * 0.025; 
+    wobble += cos(uTime * 4.5 + worldPosRaw.x * 3.0 + worldPosRaw.z * 1.5) * 0.02;
     
-    // Simple Normal Recalculation (Approximate)
-    vNormal = mat3(transpose(inverse(uModelMatrix))) * aNormal;
+    vec3 animatedWorldPos = worldPosRaw.xyz + worldNormal * wobble;
 
-    gl_Position = uMVPMatrix * vec4(animatedPos, 1.0);
+    // Pass using World Space
+    vFragPos = animatedWorldPos;
+    vNormal = worldNormal;
+    vVertexHeight = aPosition.y; // Keep local Y for gradient logic (batter level)
+
+    // Final Position: VP * World
+    gl_Position = uVPMatrix * vec4(animatedWorldPos, 1.0);
 }

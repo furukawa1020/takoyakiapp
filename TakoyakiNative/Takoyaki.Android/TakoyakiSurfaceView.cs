@@ -118,6 +118,9 @@ namespace Takoyaki.Android
 
         public Action<int> OnGameFinished;
 
+        // Screenshot
+        private Action<global::Android.Graphics.Bitmap>? _pendingCaptureCallback;
+
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
             try

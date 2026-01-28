@@ -750,4 +750,5 @@ namespace Takoyaki.Android
         }
     }
     
-    // Helper class for 3D topping meshes
+    }
+}

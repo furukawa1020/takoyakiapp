@@ -415,7 +415,7 @@ namespace Takoyaki.Android
                 float z = radius * (float)System.Math.Cos(phi);
                 
                 // Create small leaf quad
-                var (vertices, indices) = GenerateLeafQuad(0.08f);
+                var (vertices, indices) = GenerateLeafQuad(0.05f); // Smaller, more natural size
                 
                 var mesh = new ToppingMesh
                 {

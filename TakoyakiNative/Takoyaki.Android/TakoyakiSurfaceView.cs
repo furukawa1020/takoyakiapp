@@ -477,6 +477,16 @@ namespace Takoyaki.Android
                 // 1. Update Core Simulation
                 if (_ball == null || _physics == null || _stateMachine == null) return;
                 
+                // FIRST FRAME: Apply initial toppings for visual appeal
+                if (_needsInitialToppings)
+                {
+                    global::Android.Util.Log.Debug("TakoyakiInit", "Applying initial toppings!");
+                    ApplyTopping(); // Sauce
+                    ApplyTopping(); // Mayo
+                    ApplyTopping(); // Aonori
+                    _needsInitialToppings = false;
+                }
+                
                 UpdateLogic(dt);
     
                 // 2. Render

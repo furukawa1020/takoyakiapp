@@ -1066,7 +1066,7 @@ namespace Takoyaki.Android
             
             // Calculate camera direction (camera is at (0, 4, 4) looking at origin)
             var cameraPos = new System.Numerics.Vector3(0, 4, 4);
-            var cameraDir = System.Numerics.Vector3.Normalize(-cameraPos); // Direction from camera to origin
+            var cameraDir = System.Numerics.Vector3.Normalize(cameraPos); // Direction FROM origin TO camera
             
             // Position sauce and mayo on the front-facing hemisphere (towards camera)
             // Project camera direction onto sphere surface
@@ -1076,15 +1076,18 @@ namespace Takoyaki.Android
             {
                 // Sauce: slightly above center, towards camera
                 var sauceDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0, 0.3f, 0));
-                _sauceMesh.Position = sauceDir * sphereRadius * 0.85f; // Slightly inside sphere surface
+                _sauceMesh.Position = sauceDir * sphereRadius * 0.9f; // Slightly inside sphere surface
             }
             
             if (_mayoMesh != null && _mayoMesh.Visible)
             {
                 // Mayo: offset to the side, towards camera
                 var mayoDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0.3f, -0.2f, 0));
-                _mayoMesh.Position = mayoDir * sphereRadius * 0.9f;
+                _mayoMesh.Position = mayoDir * sphereRadius * 0.95f;
             }
+            
+            // Disable culling for toppings to ensure visibility (especially leaves)
+            GLES30.GlDisable(GLES30.GlCullFace);
             
             // Render each topping
             if (_takoMesh != null && _takoMesh.Visible) RenderToppingMesh(_takoMesh);
@@ -1101,6 +1104,7 @@ namespace Takoyaki.Android
                 if (katsuobushi.Visible) RenderToppingMesh(katsuobushi);
             }
             
+            GLES30.GlEnable(GLES30.GlCullFace); // Re-enable culling
             GLES30.GlDisable(GLES30.GlBlend);
         }
         

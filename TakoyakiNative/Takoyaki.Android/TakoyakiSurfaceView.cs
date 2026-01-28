@@ -823,14 +823,14 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateSauceMesh()
         {
-            // Blob made of multiple small spheres - positioned on FRONT of ball (towards camera)
-            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0.3f, 0.8f), 5);
+            // Blob made of multiple small spheres - CENTERED at origin for dynamic positioning
+            var (vertices, indices) = GenerateBlobMesh(new System.Numerics.Vector3(0, 0, 0), 5);
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0),
+                Position = new System.Numerics.Vector3(0, 0, 0), // Will be set dynamically
                 Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 1.0f), // Dark brown
                 Visible = false
             };
@@ -841,14 +841,14 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateMayoMesh()
         {
-            // Tube along a wavy path - positioned on FRONT of ball
+            // Tube along a wavy path - CENTERED at origin for dynamic positioning
             var (vertices, indices) = GenerateTubeMesh();
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0, 0),
+                Position = new System.Numerics.Vector3(0, 0, 0), // Will be set dynamically
                 Color = new System.Numerics.Vector4(1.0f, 0.95f, 0.8f, 1.0f), // Cream white
                 Visible = false
             };

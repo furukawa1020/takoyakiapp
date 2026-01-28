@@ -13,8 +13,11 @@ namespace Takoyaki.Core
         public float MasteryLevel { get; private set; } = 0.0f;
         public float RhythmPulse { get; private set; } = 0.0f;
         public float BatterLevel { get; private set; } = 0.0f;
+        public float CookLevel { get; private set; } = 0.0f;
         public int ComboCount { get; private set; } = 0;
         public int CurrentPhase { get; private set; } = 0;
+        public int Score { get; private set; } = 0;
+        public bool ResultReady { get; private set; } = false;
         public bool IsPerfect { get; private set; } = false;
         public bool TriggerHapticTick { get; set; } = false; 
         public IntPtr NativeEngine => _rustEngine;
@@ -44,6 +47,14 @@ namespace Takoyaki.Core
         private static extern int tako_get_phase(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern float tako_get_batter(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern float tako_get_cooked_level(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern int tako_get_score(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern bool tako_is_result_ready(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern void tako_reset(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern void tako_free(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
@@ -78,6 +89,9 @@ namespace Takoyaki.Core
                 ComboCount = tako_get_combo(_rustEngine);
                 CurrentPhase = tako_get_phase(_rustEngine);
                 BatterLevel = tako_get_batter(_rustEngine);
+                CookLevel = tako_get_cooked_level(_rustEngine);
+                Score = tako_get_score(_rustEngine);
+                ResultReady = tako_is_result_ready(_rustEngine);
                 
                 unsafe {
                     float p, i, d;
@@ -144,6 +158,20 @@ namespace Takoyaki.Core
             {
                 tako_smooth_mesh(_rustEngine, pDeformed, pOriginal, deformed.Length, dt);
             }
+        }
+
+        public void Reset()
+        {
+            if (_useRust) {
+                tako_reset(_rustEngine);
+            }
+            ShapingProgress = 1.0f;
+            MasteryLevel = 0.0f;
+            ComboCount = 0;
+            BatterLevel = 0.0f;
+            CookLevel = 0.0f;
+            Score = 0;
+            ResultReady = false;
         }
 
         public void Dispose()

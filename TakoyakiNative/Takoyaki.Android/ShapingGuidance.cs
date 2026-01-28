@@ -44,7 +44,7 @@ namespace Takoyaki.Android
             Matrix.OrthoM(_orthoMatrix, 0, -1, 1, -1, 1, -1, 1);
         }
 
-        public void Draw(float currentGyro, float targetGyro, float mastery, float pulse, int combo, float p, float i, float d)
+        public void Draw(float shapingProgress, float currentGyro, float targetGyro, float mastery, float pulse, int combo, float p, float i, float d)
         {
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
@@ -65,13 +65,13 @@ namespace Takoyaki.Android
             GLES30.GlBindVertexArray(_vao);
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
-            // 2. Draw Progress Bar (Current Speed)
+            // 2. Draw Progress Bar (SHAPING PROGRESS)
             GLES30.GlUniform1i(uType, 1);
-            vec4 col = mastery > 0.8f ? new vec4(1, 0.84f, 0, 0.9f) : new vec4(0, 0.7f, 1.0f, 0.7f);
+            vec4 col = mastery > 0.8f ? new vec4(1, 0.84f, 0, 0.9f) : new vec4(0.2f, 0.9f, 0.2f, 0.7f); // Green/Gold
             if (mastery > 0.9f && pulse > 0.8f) col = new vec4(1, 1, 1, 1.0f); 
             
             GLES30.GlUniform4f(uColor, col.X, col.Y, col.Z, col.W);
-            GLES30.GlUniform1f(uProgress, currentGyro / (targetGyro * 1.5f));
+            GLES30.GlUniform1f(uProgress, 1.0f - shapingProgress); // Increase as it nears 0
             GLES30.GlDrawArrays(GLES30.GlTriangleStrip, 0, 4);
 
             // 3. PID Analyzer Bars (Small vertical bars)

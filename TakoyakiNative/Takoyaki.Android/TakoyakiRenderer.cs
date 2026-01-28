@@ -166,6 +166,12 @@ namespace Takoyaki.Android
             _shaping.Update(dt, _inputState.AngularVelocity);
             _ball.ShapingQuality = 1.0f - _shaping.ShapingProgress;
             _ball.BatterLevel = _shaping.BatterLevel;
+            _ball.CookLevel = _shaping.CookLevel;
+            
+            if (_shaping.ResultReady && _stateMachine.CurrentState is not StateFinished) {
+                OnGameFinished?.Invoke(_shaping.Score);
+                _stateMachine.TransitionTo(new StateFinished());
+            }
             
             if (_shaping.TriggerHapticTick) {
                 _haptics.TriggerImpact(0.3f);
@@ -237,7 +243,8 @@ namespace Takoyaki.Android
 
             // Render HUD & Zen Glow
             _edgeGlow.Draw(_shaping.MasteryLevel);
-            _guidance.Draw(_inputState.AngularVelocity.Length(), 
+            _guidance.Draw(_shaping.ShapingProgress,
+                           _inputState.AngularVelocity.Length(), 
                            TakoyakiShapingLogic.TARGET_GYRO_MAG, 
                            _shaping.MasteryLevel, 
                            _shaping.RhythmPulse, 
@@ -303,7 +310,9 @@ namespace Takoyaki.Android
         public void Reset() {
             _toppingStage = 0;
             _toppings?.Reset();
+            _shaping?.Reset(); // 🚀 NEW: Reset native Rust engine
             _stateMachine?.Reset();
+            _totalTime = 0;
         }
 
         public void Dispose()

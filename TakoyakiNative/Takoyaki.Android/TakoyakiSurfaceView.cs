@@ -127,14 +127,13 @@ namespace Takoyaki.Android
         // Initial topping application flag
         private bool _needsInitialToppings = true;
         
-        // Topping System (3D Objects)
-        private int _billboardProgram;
-        private int _billboardVBO;
-        private int _sauceTexture;
-        private int _mayoTexture;
-        private bool _sauceVisible = false;
-        private bool _mayoVisible = false;
-        private List<System.Numerics.Vector3> _aonoriParticles = new List<System.Numerics.Vector3>();
+        // 3D Topping System (Full Geometry)
+        private ToppingMesh? _takoMesh;
+        private ToppingMesh? _sauceMesh;
+        private ToppingMesh? _mayoMesh;
+        private List<ToppingMesh> _aonoriMeshes = new List<ToppingMesh>();
+        private List<ToppingMesh> _katsuobushiMeshes = new List<ToppingMesh>();
+        private float _animationTime = 0f;
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
@@ -924,7 +923,7 @@ namespace Takoyaki.Android
                 {
                     GLES30.GlUniform3f(uPos, particle.X, particle.Y, particle.Z);
                     GLES30.GlUniform2f(uSize, 0.1f, 0.1f); // Small
-                    GLES30.GlUniform4f(uColor, 0.2f, 0.8f, 0.2f, 1.0f); // Green
+                    GLES30.GlUniform4f(uColor, 0.1f, 0.4f, 0.1f, 1.0f); // Darker green (not fluorescent)
                     GLES30.GlDrawArrays(GLES30.GlTriangleFan, 0, 4);
                 }
             }
@@ -936,5 +935,20 @@ namespace Takoyaki.Android
             GLES30.GlEnable(GLES30.GlDepthTest);
             GLES30.GlDisable(GLES30.GlBlend);
         }
+    }
+    
+    // Helper class for 3D topping meshes
+    internal class ToppingMesh
+    {
+        public float[] Vertices { get; set; } = Array.Empty<float>();
+        public short[] Indices { get; set; } = Array.Empty<short>();
+        public int VBO { get; set; }
+        public int IBO { get; set; }
+        public System.Numerics.Vector3 Position { get; set; }
+        public System.Numerics.Vector3 Rotation { get; set; }
+        public System.Numerics.Vector3 Scale { get; set; } = new System.Numerics.Vector3(1, 1, 1);
+        public System.Numerics.Vector4 Color { get; set; }
+        public bool Visible { get; set; }
+        public int IndexCount { get; set; }
     }
 }

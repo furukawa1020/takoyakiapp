@@ -467,65 +467,7 @@ namespace Takoyaki.Android
 
         // --- Geometry Generators ---
 
-        private (float[], short[]) GenerateSurfaceTube()
-        {
-            var verts = new List<float>();
-            var inds = new List<short>();
-            
-            // Wavy line on surface (Z+)
-            int segments = 20;
-            float tubeRadius = 0.04f;
-            float patternSize = 0.6f;
-            
-            for(int i=0; i<=segments; i++) {
-                float t = (float)i/segments; // 0 to 1
-                float x = (t - 0.5f) * patternSize * 1.5f;
-                float y = (float)Math.Sin(t * Math.PI * 4) * 0.15f;
-                // Project X,Y onto Sphere Z
-                float z2 = 1.03f*1.03f - x*x - y*y;
-                float z = (float)Math.Sqrt(Math.Max(0, z2));
-                
-                // Tangent/Normal calculation
-                float tx = 1; 
-                float ty = (float)(Math.Cos(t * Math.PI * 4) * 0.15 * Math.PI * 4); 
-                float tz = 0; // rough
-                var T = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(tx, ty, tz));
-                var Pos = new System.Numerics.Vector3(x, y, z);
-                var N = System.Numerics.Vector3.Normalize(Pos);
-                var B = System.Numerics.Vector3.Cross(T, N); // Binormal
-                
-                // Generate Ring
-                for(int j=0; j<8; j++) {
-                    float ang = j * 2 * (float)Math.PI / 8;
-                    float cr = (float)Math.Cos(ang) * tubeRadius;
-                    float sr = (float)Math.Sin(ang) * tubeRadius;
-                    
-                    // Ring vertex in local frame (N, B)
-                    var offset = N * cr + B * sr;
-                    var p = Pos + offset;
-                    
-                    verts.Add(p.X); verts.Add(p.Y); verts.Add(p.Z);
-                    verts.Add(offset.X); verts.Add(offset.Y); verts.Add(offset.Z); // Normal (from center of tube)
-                    verts.Add(t); verts.Add((float)j/8);
-                }
-            }
-            
-             for (int i = 0; i < segments; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    short current = (short)(i * 8 + j);
-                    short next = (short)(i * 8 + (j + 1) % 8);
-                    short currentNext = (short)((i + 1) * 8 + j);
-                    short nextNext = (short)((i + 1) * 8 + (j + 1) % 8);
-                    
-                    inds.Add(current); inds.Add(currentNext); inds.Add(next);
-                    inds.Add(next); inds.Add(currentNext); inds.Add(nextNext);
-                }
-            }
-            
-            return (verts.ToArray(), inds.ToArray());
-        }
+
 
         private (float[], short[]) GenerateDiamondQuad(float size)
         {

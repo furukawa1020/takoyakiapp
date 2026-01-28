@@ -16,8 +16,6 @@ namespace Takoyaki.Android
         private readonly TakoyakiHaptics _haptics;
         private readonly TakoyakiAudio _audio;
         private readonly TakoyakiSensor _sensor;
-        private TakoyakiToppings _toppings;
-
         // --- Simulation ---
         private TakoyakiBall _ball;
         private SoftBodySolver _physics;
@@ -58,7 +56,7 @@ namespace Takoyaki.Android
             Input = new TakoyakiInputHandler(_sensor, _inputState);
         }
 
-        public void OnSurfaceCreated(IGL10 gl, EGLConfig config)
+        public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {
             GLES30.GlEnable(GLES30.GlDepthTest);
             GLES30.GlEnable(GLES30.GlBlend);
@@ -127,7 +125,7 @@ namespace Takoyaki.Android
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
 
-        public void OnSurfaceChanged(IGL10 gl, int width, int height)
+        public void OnSurfaceChanged(IGL10? gl, int width, int height)
         {
             GLES30.GlViewport(0, 0, width, height);
             float ratio = (float)width / height;
@@ -135,7 +133,7 @@ namespace Takoyaki.Android
             Matrix.SetLookAtM(_viewMatrix, 0, 0f, 0f, 6f, 0f, 0f, 0f, 0f, 1f, 0f);
         }
 
-        public void OnDrawFrame(IGL10 gl)
+        public void OnDrawFrame(IGL10? gl)
         {
             long now = Java.Lang.JavaSystem.NanoTime();
             float dt = (now - _lastTimeNs) / 1_000_000_000.0f;

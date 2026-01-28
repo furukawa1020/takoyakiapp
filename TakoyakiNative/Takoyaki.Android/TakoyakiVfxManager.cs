@@ -12,16 +12,18 @@ namespace Takoyaki.Android
     public class TakoyakiVfxManager
     {
         private readonly SteamParticles _steam;
+        private readonly ShapingSparkles _sparkles;
         private float _steamIntensity;
 
         public TakoyakiVfxManager(Context context)
         {
             _steam = new SteamParticles(context);
+            _sparkles = new ShapingSparkles(context);
         }
 
-        public void Update(float dt, float cookLevel, float temperature)
+        public void Update(float dt, float cookLevel, float mastery)
         {
-            // Steam intensity depends on cook level and heat
+            // Steam intensity depends on cook level
             float targetIntensity = 0;
             if (cookLevel > 0.3f)
             {
@@ -30,12 +32,14 @@ namespace Takoyaki.Android
             
             _steamIntensity = MathHelper.Lerp(_steamIntensity, targetIntensity, dt * 2.0f);
             _steam.Update(dt, _steamIntensity);
+            
+            _sparkles.Update(dt, mastery);
         }
 
         public void Draw(float[] mvpMatrix)
         {
-            // Additive blending for steam usually handled inside SteamParticles
             _steam.Draw(mvpMatrix);
+            _sparkles.Draw(mvpMatrix);
         }
         
         public void TriggerServeSplash()

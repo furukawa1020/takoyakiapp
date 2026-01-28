@@ -24,6 +24,7 @@ namespace Takoyaki.Core
         public float CookLevel; // 0.0 (Raw) -> 1.0 (Perfect) -> 2.0 (Burnt)
         public float BatterLevel; // 0.0 (Empty) -> 1.0 (Full)
         public float Temperature; // Celsius
+        public float ShapingQuality; // 0.0 (Bumpy) -> 1.0 (Perfect Circle)
         
         // Directional Cooking (Heatmap)
         // 6 directions: Up, Down, Left, Right, Forward, Back

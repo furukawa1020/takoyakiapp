@@ -26,6 +26,7 @@ namespace Takoyaki.Android
 
         private TakoyakiToppings _toppings;
         private TakoyakiVfxManager _vfx;
+        private ShapingGuidance _guidance;
         // --- Rendering State ---
         private float[] _modelMatrix = new float[16];
         private float[] _viewMatrix = new float[16];
@@ -136,6 +137,7 @@ namespace Takoyaki.Android
             _toppings.GenerateToppings();
  
             _vfx = new TakoyakiVfxManager(global::Android.App.Application.Context);
+            _guidance = new ShapingGuidance(global::Android.App.Application.Context);
             
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
@@ -158,6 +160,7 @@ namespace Takoyaki.Android
             // 1. Update Input & Logic
             Input.Update(dt);
             _shaping.Update(dt, _inputState.AngularVelocity);
+            _ball.ShapingQuality = 1.0f - _shaping.ShapingProgress;
             UpdateLogic(dt);
 
             // 2. Render
@@ -205,8 +208,11 @@ namespace Takoyaki.Android
             _toppings.RenderRecursive(vpMatrix, _modelMatrix, _totalTime);
  
             // Render VFX
-            _vfx.Update(dt, _ball.CookLevel, 100.0f); // Temp 100 as placeholder
+            _vfx.Update(dt, _ball.CookLevel, _shaping.MasteryLevel); // Use mastery for sparkles
             _vfx.Draw(vpMatrix);
+
+            // Render HUD
+            _guidance.Draw(_inputState.AngularVelocity.Length(), TakoyakiShapingLogic.TARGET_GYRO_MAG, _shaping.MasteryLevel, _shaping.RhythmPulse);
         }
 
         private void UpdateLogic(float dt)

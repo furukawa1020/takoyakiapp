@@ -49,15 +49,15 @@ namespace Takoyaki.Core
             if (newState is StateFinished)
             {
                 // Calculate Score
-                // Perfect: CookLevel 1.0, Shape (Deformed vs Base) close
-                // Simple logic for prototype:
-                // Score = 100 - abs(CookLevel - 1.0) * 100
-                int score = 100 - (int)(Math.Abs(_ball.CookLevel - 1.0f) * 50);
-                if (_ball.CookLevel < 0.5f) score = 10; // Raw penalty
-                if (score < 0) score = 0;
-                if (score > 100) score = 100;
+                // Perfect: CookLevel 1.0, ShapingQuality 1.0
+                int cookScore = 100 - (int)(Math.Abs(_ball.CookLevel - 1.0f) * 60);
+                int shapeScore = (int)(_ball.ShapingQuality * 40);
                 
-                OnFinished?.Invoke(score);
+                int totalScore = cookScore + shapeScore;
+                if (_ball.CookLevel < 0.5f) totalScore -= 50; // Raw penalty
+                
+                totalScore = Math.Clamp(totalScore, 0, 100);
+                OnFinished?.Invoke(totalScore);
             }
         }
         

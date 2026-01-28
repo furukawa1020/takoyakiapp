@@ -46,6 +46,9 @@ pub struct RhythmEngine {
     last_error: f32,
     integral: f32,
     pub mastery: f32,
+    pub shaping_progress: f32,
+    pub combo_count: i32,
+    pub stability_timer: f32,
     pub p_term: f32,
     pub i_term: f32,
     pub d_term: f32,
@@ -56,6 +59,7 @@ impl RhythmEngine {
         Self {
             kf_x: KalmanFilter::new(0.0), kf_y: KalmanFilter::new(0.0), kf_z: KalmanFilter::new(0.0),
             last_error: 0.0, integral: 0.0, mastery: 0.0,
+            shaping_progress: 1.0, combo_count: 0, stability_timer: 0.0,
             p_term: 0.0, i_term: 0.0, d_term: 0.0,
         }
     }

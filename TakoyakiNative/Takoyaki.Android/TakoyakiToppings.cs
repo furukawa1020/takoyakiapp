@@ -349,73 +349,7 @@ namespace Takoyaki.Android
 
         // --- Geometry Generators ---
 
-        private (float[], short[]) GenerateSauceCap()
-        {
-            var verts = new List<float>();
-            var inds = new List<short>();
-            
-            int slices = 20; // angular resolution
-            int rings = 6;   // radial resolution
-            float maxAngle = 0.6f; // Covering ~35 degrees
-            
-            // Center
-            verts.Add(0); verts.Add(0); verts.Add(1.02f); // Slightly above 1.0
-            verts.Add(0); verts.Add(0); verts.Add(1);     // Normal
-            verts.Add(0.5f); verts.Add(0.5f);             // UV
-            
-            for(int r = 1; r <= rings; r++)
-            {
-                float phi = (float)r / rings * maxAngle;
-                for(int s = 0; s < slices; s++)
-                {
-                    float theta = (float)s / slices * (float)Math.PI * 2;
-                    
-                    // Add irregularity to edge rings
-                    float noise = 0;
-                    if (r > rings/2) 
-                        noise = (float)Math.Sin(theta * 5) * 0.05f * ((float)r/rings);
-
-                    float currentPhi = phi + noise;
-                    float rad = 1.02f;
-                    
-                    // Generate point on sphere cap (around Z axis)
-                    float x = rad * (float)(Math.Sin(currentPhi) * Math.Cos(theta));
-                    float y = rad * (float)(Math.Sin(currentPhi) * Math.Sin(theta));
-                    float z = rad * (float)Math.Cos(currentPhi);
-                    
-                    verts.Add(x); verts.Add(y); verts.Add(z);
-                    verts.Add(x); verts.Add(y); verts.Add(z); // Normal
-                    verts.Add(0.5f + x*0.5f); verts.Add(0.5f + y*0.5f); // UV
-                }
-            }
-            
-            // Indices
-            // Center fan
-            for(int s=0; s<slices; s++) {
-                inds.Add(0);
-                inds.Add((short)(s+1));
-                inds.Add((short)((s+1)%slices + 1));
-            }
-            
-            // Rings
-            for(int r=0; r<rings-1; r++) {
-                int ringStart = 1 + r*slices;
-                int nextRingStart = ringStart + slices;
-                for(int s=0; s<slices; s++) {
-                    short p1 = (short)(ringStart + s);
-                    short p2 = (short)(ringStart + (s+1)%slices);
-                    short p3 = (short)(nextRingStart + s);
-                    short p4 = (short)(nextRingStart + (s+1)%slices);
-                    
-                    inds.Add(p1); inds.Add(p3); inds.Add(p2);
-                    inds.Add(p2); inds.Add(p3); inds.Add(p4);
-                }
-            }
-            
-            return (verts.ToArray(), inds.ToArray());
-        }
-        
-         private (float[], short[]) GenerateSurfaceTube()
+        private (float[], short[]) GenerateSurfaceTube()
         {
             var verts = new List<float>();
             var inds = new List<short>();
@@ -435,7 +369,7 @@ namespace Takoyaki.Android
                 
                 // Tangent/Normal calculation
                 float tx = 1; 
-                float ty = (float)(Math.Cos(t * Math.PI * 4) * 0.15 * Math.PI * 4); // Fixed cast
+                float ty = (float)(Math.Cos(t * Math.PI * 4) * 0.15 * Math.PI * 4); 
                 float tz = 0; // rough
                 var T = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(tx, ty, tz));
                 var Pos = new System.Numerics.Vector3(x, y, z);
@@ -460,12 +394,12 @@ namespace Takoyaki.Android
             
              for (int i = 0; i < segments; i++)
             {
-                for (int j = 0; j < 6; j++)
+                for (int j = 0; j < 8; j++)
                 {
-                    short current = (short)(i * 6 + j);
-                    short next = (short)(i * 6 + (j + 1) % 6);
-                    short currentNext = (short)((i + 1) * 6 + j);
-                    short nextNext = (short)((i + 1) * 6 + (j + 1) % 6);
+                    short current = (short)(i * 8 + j);
+                    short next = (short)(i * 8 + (j + 1) % 8);
+                    short currentNext = (short)((i + 1) * 8 + j);
+                    short nextNext = (short)((i + 1) * 8 + (j + 1) % 8);
                     
                     inds.Add(current); inds.Add(currentNext); inds.Add(next);
                     inds.Add(next); inds.Add(currentNext); inds.Add(nextNext);

@@ -56,18 +56,21 @@ namespace Takoyaki.Core
         public void Update(float dt, Vector3 angularVelocity)
         {
             float currentMag;
+            float pidOutput;
             
             if (_useRust) {
                 // High-performance Rust path (Kalman + PID)
                 currentMag = tako_update(_rustEngine, angularVelocity.X, angularVelocity.Y, angularVelocity.Z, dt, TARGET_GYRO_MAG);
-                // We don't sync terms back for analyzer yet, but we could
-                float nativeMastery = tako_get_mastery(_rustEngine);
-                // Mastery blending or direct use
+                MasteryLevel = tako_get_mastery(_rustEngine);
+                // Use a simplified error for C# harmony calculation when Rust handles the core
+                pidOutput = TARGET_GYRO_MAG - currentMag; 
             }
-
-            // Standard C# Path
-            currentMag = angularVelocity.Length();
-            float pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
+            else
+            {
+                // Standard C# Path
+                currentMag = angularVelocity.Length();
+                pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
+            }
             
             _pulseTimer += dt * (TARGET_GYRO_MAG / (float)Math.PI); 
             float lastPulse = RhythmPulse;

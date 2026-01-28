@@ -30,30 +30,35 @@ float noise(vec2 p) {
 
 void main() {
     // 1. NOISE-BASED EDGE CLIPPING (The "Torn" look)
-    // We discard pixels based on noise, especially near the UV boundaries
     float edgeMask = min(min(vTexCoord.x, 1.0 - vTexCoord.x), min(vTexCoord.y, 1.0 - vTexCoord.y));
     float n = noise(vTexCoord * 20.0);
     
-    // If we're near the edge, the noise threshold for discard increases
-    if (n > edgeMask * 4.0 + 0.2) {
+    // Higher discard threshold at the center of the flake for a more "torn" look
+    if (n > edgeMask * 6.0 + 0.1) {
         discard;
     }
 
     // 2. SHADING
     vec3 N = normalize(vNormal);
+    if (!gl_FrontFacing) N = -N; // Two-sided lighting
+
     vec3 L = normalize(uLightPos - vFragPos);
     vec3 V = normalize(uViewPos - vFragPos);
     
     // Half-Lambert for softer, more food-like lighting
-    float diff = pow(dot(N, L) * 0.5 + 0.5, 2.0);
+    float diff = pow(dot(N, L) * 0.5 + 0.5, 1.5);
     
     // Subsurface translucency (Fake)
-    float translucency = pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.2;
+    float translucency = pow(1.0 - max(dot(N, V), 0.0), 4.0) * 0.4;
     
-    vec3 color = uToppingColor.rgb * (0.4 + 0.6 * diff + translucency);
+    // Specular Rim Highlight (Makes it look thin and crisp)
+    float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0) * max(dot(N, L), 0.0);
+    
+    vec3 color = uToppingColor.rgb * (0.3 + 0.7 * diff + translucency);
+    color += vec3(1.0, 0.9, 0.8) * rim * 0.3; // Golden rim highlight
     
     // Add subtle color variation based on UV
-    color *= (0.9 + 0.2 * noise(vTexCoord * 5.0));
+    color *= (0.85 + 0.3 * noise(vTexCoord * 8.0));
 
     FragColor = vec4(color, uToppingColor.a);
 }

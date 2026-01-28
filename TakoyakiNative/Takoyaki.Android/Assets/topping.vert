@@ -15,12 +15,15 @@ out vec2 vTexCoord;
 void main() {
     vTexCoord = aTexCoord;
     
-    // Procedural Waving Animation
-    // We want the edges (high UV values) to flap more than the center
-    float flap = sin(uTime * 10.0 + aPosition.x * 5.0 + aPosition.y * 5.0) * aTexCoord.y * 0.05;
-    flap += cos(uTime * 15.0 + aPosition.z * 10.0) * aTexCoord.x * 0.03;
+    // Procedural Waving & Curling Animation
+    // Katsuobushi should curl and dance on the heat
+    float curl = sin(uTime * 8.0 + aPosition.x * 12.0) * aTexCoord.y * 0.12;
+    curl += cos(uTime * 12.0 + aPosition.z * 15.0) * aTexCoord.x * 0.08;
     
-    vec3 animatedPos = aPosition + aNormal * flap;
+    // Add a randomized twist based on UV
+    float twist = sin(uTime * 5.0 + (aTexCoord.x + aTexCoord.y) * 10.0) * 0.05;
+    
+    vec3 animatedPos = aPosition + aNormal * (curl + twist);
 
     vec4 worldPos = uModelMatrix * vec4(animatedPos, 1.0);
     vFragPos = worldPos.xyz;

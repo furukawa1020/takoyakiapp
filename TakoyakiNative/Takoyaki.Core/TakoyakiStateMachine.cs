@@ -75,7 +75,7 @@ namespace Takoyaki.Core
     {
         public void Enter(TakoyakiBall ball, ITakoyakiAudio audio) 
         {
-             ball.BatterLevel = 0f;
+             ball.BatterLevel = 1.0f; // Start Full for MVP
              ball.CookLevel = 0f;
              ball.Rotation = System.Numerics.Quaternion.Identity;
         }

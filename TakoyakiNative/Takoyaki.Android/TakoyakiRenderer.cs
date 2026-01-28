@@ -165,6 +165,7 @@ namespace Takoyaki.Android
             Input.Update(dt);
             _shaping.Update(dt, _inputState.AngularVelocity);
             _ball.ShapingQuality = 1.0f - _shaping.ShapingProgress;
+            _ball.BatterLevel = _shaping.BatterLevel;
             
             if (_shaping.TriggerHapticTick) {
                 _haptics.TriggerImpact(0.3f);
@@ -249,9 +250,9 @@ namespace Takoyaki.Android
             _totalTime += dt;
             Input.Update(dt); // 🚀 Essential: Sync sensors to InputState
 
-            // 1. Shake to apply topping
+            // 1. Shake to apply topping (Increased threshold to prevent bug)
             float accelMag = _inputState.Acceleration.Length();
-            if (accelMag > TakoyakiConstants.SHAKE_THRESHOLD) {
+            if (accelMag > 25.0f) { // Higher threshold
                 ApplyTopping();
             }
 
@@ -264,7 +265,7 @@ namespace Takoyaki.Android
             // 🔥 NATIVE SOFT-BODY PHYSICS
             _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(_inputState.Tilt.X * 9.8f, -9.8f, _inputState.Tilt.Y * 9.8f));
             
-            _stateMachine.Update(_inputState, dt);
+            _stateMachine.Update(_inputState, dt, _shaping.CurrentPhase);
             
             // 3. Topping Animations & VBO Sync
             float ballWobble = (float)Math.Sin(_totalTime * TakoyakiConstants.WOBBLE_SPEED);

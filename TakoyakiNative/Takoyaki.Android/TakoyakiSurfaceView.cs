@@ -579,7 +579,16 @@ namespace Takoyaki.Android
                 _inputState.Tilt.Y * gScale // Y mapping to Z for 3D depth roll
             );
 
+            // Simple Collision/Ground check
+            _ball.IsInHole = true; // Always in hole for MVP
+
             _heatDelay.Update(dt, 200.0f);
+            
+            // Debug Log every ~60 frames
+            if ((int)(dt * 1000) % 60 == 0) {
+                 global::Android.Util.Log.Debug("TakoyakiHeat", $"CookLvl: {_ball.CookLevel:F3} IsInHole:{_ball.IsInHole}");
+            }
+
             _physics.Update(dt, System.Numerics.Vector3.Zero, gravity);
             
             // Interaction: Visual Rolling based on Tilt (Simple visual feedback)

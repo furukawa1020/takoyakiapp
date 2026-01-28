@@ -258,6 +258,37 @@ pub extern "C" fn tako_get_batter(e: *mut RhythmEngine) -> f32 {
 }
 
 #[no_mangle]
+pub extern "C" fn tako_get_cooked_level(e: *mut RhythmEngine) -> f32 {
+    let e = unsafe { &*e }; e.cook_level
+}
+
+#[no_mangle]
+pub extern "C" fn tako_get_score(e: *mut RhythmEngine) -> i32 {
+    let e = unsafe { &*e }; e.score
+}
+
+#[no_mangle]
+pub extern "C" fn tako_is_result_ready(e: *mut RhythmEngine) -> bool {
+    let e = unsafe { &*e }; e.result_ready
+}
+
+#[no_mangle]
+pub extern "C" fn tako_reset(e: *mut RhythmEngine) {
+    let e = unsafe { &mut *e };
+    e.shaping_progress = 1.0;
+    e.batter_level = 0.0;
+    e.cook_level = 0.0;
+    e.game_phase = GamePhase::Raw;
+    e.combo_count = 0;
+    e.stability_timer = 0.0;
+    e.mastery = 0.0;
+    e.score = 0;
+    e.result_ready = false;
+    e.integral = 0.0;
+    e.last_error = 0.0;
+}
+
+#[no_mangle]
 pub extern "C" fn tako_free(e: *mut RhythmEngine) {
     if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
 }

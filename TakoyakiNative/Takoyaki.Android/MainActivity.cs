@@ -29,9 +29,10 @@ namespace Takoyaki.Android
 
         protected override void OnCreate(Bundle? savedInstanceState)
         {
-            base.OnCreate(savedInstanceState);
             try
             {
+                global::Android.Util.Log.Error("TakoyakiCrash", "STARTING ONCREATE");
+                base.OnCreate(savedInstanceState);
                 // Hide System UI
                 Window!.DecorView!.SystemUiVisibility = (StatusBarVisibility)(
                     SystemUiFlags.ImmersiveSticky | 

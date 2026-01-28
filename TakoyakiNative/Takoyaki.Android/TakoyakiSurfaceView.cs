@@ -370,7 +370,23 @@ namespace Takoyaki.Android
                 _lastTimeNs = now;
     
                 // 1. Update Core Simulation
-                if (_ball == null || _physics == null || _stateMachine == null) return;
+                if (_ball == null)
+                {
+                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _ball is NULL!");
+                    return;
+                }
+                if (_physics == null)
+                {
+                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _physics is NULL!");
+                    return;
+                }
+                if (_stateMachine == null)
+                {
+                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _stateMachine is NULL!");
+                    return;
+                }
+                
+                global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: All objects valid, proceeding...");
                 
                 UpdateLogic(dt);
     

@@ -54,10 +54,18 @@ namespace Takoyaki.Android
         
         public void Reset()
         {
-            if (_sauceMesh != null) _sauceMesh.Visible = false;
-            if (_mayoMesh != null) _mayoMesh.Visible = false;
-            foreach(var m in _aonoriMeshes) m.Visible = false;
-            foreach(var m in _katsuobushiMeshes) m.Visible = false;
+            if (_sauceMesh != null) { _sauceMesh.Visible = false; _sauceMesh.Animation = new ToppingAnimationState(); }
+            if (_mayoMesh != null) { _mayoMesh.Visible = false; _mayoMesh.Animation = new ToppingAnimationState(); }
+            foreach(var m in _aonoriMeshes) { m.Visible = false; m.Animation = new ToppingAnimationState(); }
+            foreach(var m in _katsuobushiMeshes) { m.Visible = false; m.Animation = new ToppingAnimationState(); }
+        }
+
+        public void UpdateAnimations(float dt, float heat, float wobble)
+        {
+            if (_sauceMesh != null && _sauceMesh.Visible) _sauceMesh.Animation.Update(dt, heat, wobble);
+            if (_mayoMesh != null && _mayoMesh.Visible) _mayoMesh.Animation.Update(dt, heat, wobble);
+            foreach(var m in _aonoriMeshes) if(m.Visible) m.Animation.Update(dt, heat, wobble);
+            foreach(var m in _katsuobushiMeshes) if(m.Visible) m.Animation.Update(dt, heat, wobble);
         }
 
         public void RenderRecursive(float[] vpMatrix, float[] parentModel, float time)
@@ -92,15 +100,28 @@ namespace Takoyaki.Android
         {
             float[] localModel = new float[16];
             Matrix.SetIdentityM(localModel, 0);
-            Matrix.TranslateM(localModel, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
             
+            // Base Position + Procedural Animation Offset
+            Matrix.TranslateM(localModel, 0, 
+                mesh.Position.X + mesh.Animation.CurrentOffset.X, 
+                mesh.Position.Y + mesh.Animation.CurrentOffset.Y, 
+                mesh.Position.Z + mesh.Animation.CurrentOffset.Z);
+            
+            // Base Rotation
             if (mesh.RotationMatrix != null) {
                 float[] temp = new float[16];
                 Matrix.MultiplyMM(temp, 0, localModel, 0, mesh.RotationMatrix, 0);
                 Array.Copy(temp, localModel, 16);
             }
             
-            Matrix.ScaleM(localModel, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
+            // Procedural Animation Rotation (The "Dance")
+            Matrix.RotateM(localModel, 0, mesh.Animation.CurrentRotation.X, 1, 0, 0);
+            Matrix.RotateM(localModel, 0, mesh.Animation.CurrentRotation.Y, 0, 1, 0);
+            Matrix.RotateM(localModel, 0, mesh.Animation.CurrentRotation.Z, 0, 0, 1);
+            
+            // Scale (including heat shrinking)
+            float shrink = 1.0f - (mesh.Animation.HeatReaction * 0.2f);
+            Matrix.ScaleM(localModel, 0, mesh.Scale.X * shrink, mesh.Scale.Y * shrink, mesh.Scale.Z * shrink);
             
             float[] finalModel = new float[16];
             Matrix.MultiplyMM(finalModel, 0, parentModel, 0, localModel, 0);

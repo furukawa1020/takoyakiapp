@@ -24,7 +24,7 @@ namespace Takoyaki.Android
         private InputState _inputState;
 
         private TakoyakiToppings _toppings;
-        private SteamParticles _steam;
+        private TakoyakiVfxManager _vfx;
         // --- Rendering State ---
         private float[] _modelMatrix = new float[16];
         private float[] _viewMatrix = new float[16];
@@ -119,8 +119,8 @@ namespace Takoyaki.Android
             _toppings = new TakoyakiToppings();
             _toppings.Initialize(Assets.ToppingProgram);
             _toppings.GenerateToppings();
-
-            _steam = new SteamParticles(global::Android.App.Application.Context);
+ 
+            _vfx = new TakoyakiVfxManager(global::Android.App.Application.Context);
             
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
@@ -177,10 +177,10 @@ namespace Takoyaki.Android
 
             // Render Toppings
             _toppings.RenderRecursive(vpMatrix, _modelMatrix, _totalTime);
-
-            // Render Steam
-            _steam.Update(dt, _ball.CookLevel > 0.5f ? (_ball.CookLevel - 0.5f) : 0.0f);
-            _steam.Draw(_mvpMatrix);
+ 
+            // Render VFX
+            _vfx.Update(dt, _ball.CookLevel, 100.0f); // Temp 100 as placeholder
+            _vfx.Draw(vpMatrix);
         }
 
         private void UpdateLogic(float dt)
@@ -194,6 +194,10 @@ namespace Takoyaki.Android
             // Core Phys & Machine
             _physics.Update(dt, System.Numerics.Vector3.Zero, new System.Numerics.Vector3(_inputState.Tilt.X * 9.8f, -9.8f, _inputState.Tilt.Y * 9.8f));
             _stateMachine.Update(_inputState, dt);
+            
+            // Wobble for toppings
+            float ballWobble = (float)Math.Sin(_totalTime * TakoyakiConstants.WOBBLE_SPEED);
+            _toppings.UpdateAnimations(dt, _ball.CookLevel, ballWobble);
             
             // Model Matrix calculation (simplified here, but robust)
             Matrix.SetIdentityM(_modelMatrix, 0);

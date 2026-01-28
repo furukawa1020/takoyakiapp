@@ -270,12 +270,12 @@ namespace Takoyaki.Android
                 var callback = _pendingCaptureCallback;
                 _pendingCaptureCallback = null; // Clear first to avoid re-entry
 
-                int w = _renderer.Width;
-                int h = _renderer.Height;
+                int w = _width; // Use stored _width from OnSurfaceChanged
+                int h = _height;
                 int[] pixels = new int[w * h];
                 int[] pixelsReversed = new int[w * h];
                 
-                var buf = java.nio.IntBuffer.Wrap(pixels);
+                var buf = Java.Nio.IntBuffer.Wrap(pixels);
                 buf.Position(0);
                 
                 // Read pixels (RGBA)
@@ -290,22 +290,6 @@ namespace Takoyaki.Android
                     }
                 }
                 
-                // Convert ABGR to ARGB if needed? Or Bitmap.CreateBitmap handles int[] as ARGB.
-                // GlReadPixels returns RGBA but Bitmap expects ARGB usually, 
-                // BUT Android IntBuffer read might need channel swap.
-                // It's safer to use Bitmap.Config.Argb8888 
-                // Let's optimize: Just create Bitmap and set pixels.
-                // Actually GlReadPixels gives format: R G B A. 
-                // Android Color is A R G B.
-                // We need to swap R and B channel? No, usually handled. 
-                // Let's try simple copy first.
-                
-                // Simplified manual swap just in case (R G B A -> A R G B)
-                // Actually for int[], format is usually 0xAARRGGBB
-                // GlUnsignedByte reads byte by byte: R, G, B, A memory.
-                // Little Endian machine reads int as: A B G R.
-                // So we likely have 0xAABBGGRR. Needs swap R and B.
-                
                  for (int i = 0; i < pixelsReversed.Length; i++)
                  {
                      int p = pixelsReversed[i];
@@ -319,12 +303,11 @@ namespace Takoyaki.Android
                  }
 
                 // Create Bitmap on UI Thread (or just here and pass back)
-                // Bitmap creation must be managed carefully.
                 var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(w, h, global::Android.Graphics.Bitmap.Config.Argb8888);
                 bitmap.SetPixels(pixelsReversed, 0, w, 0, 0, w, h);
 
                 // Invoke callback on UI Thread
-                var handler = new Handler(Looper.MainLooper);
+                var handler = new global::Android.OS.Handler(global::Android.OS.Looper.MainLooper);
                 handler.Post(() => callback(bitmap));
             }
         }
@@ -385,8 +368,13 @@ namespace Takoyaki.Android
         }
         private int _toppingStage = 0;
 
+        private int _width;
+        private int _height;
+
         public void OnSurfaceChanged(IGL10? gl, int width, int height)
         {
+            _width = width;
+            _height = height;
             global::Android.Util.Log.Error("TakoyakiCrash", $"ONSURFACECHANGED: w={width}, h={height}");
             GLES30.GlViewport(0, 0, width, height);
             float ratio = (float)width / height;

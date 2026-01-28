@@ -9,6 +9,7 @@ namespace Takoyaki.Android
     {
         private ToppingMesh _sauceMesh;
         private ToppingMesh _mayoMesh;
+        private ToppingMesh _takoMesh; // Added missing field
         private List<ToppingMesh> _aonoriMeshes = new List<ToppingMesh>();
         private List<ToppingMesh> _katsuobushiMeshes = new List<ToppingMesh>();
         
@@ -367,10 +368,9 @@ namespace Takoyaki.Android
                 float z2 = 1.03f*1.03f - x*x - y*y;
                 float z = (float)Math.Sqrt(Math.Max(0, z2));
                 
-                // Tangent/Normal calculation for ring orientation
-                // Local tangent approx
+                // Tangent/Normal calculation
                 float tx = 1; 
-                float ty = (float)Math.Cos(t * Math.PI * 4) * 0.15f * Math.PI * 4;
+                float ty = (float)(Math.Cos(t * Math.PI * 4) * 0.15 * Math.PI * 4); // Fixed cast
                 float tz = 0; // rough
                 var T = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(tx, ty, tz));
                 var Pos = new System.Numerics.Vector3(x, y, z);

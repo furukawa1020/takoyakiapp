@@ -1,30 +1,41 @@
 use std::f32::consts::PI;
 
+#[repr(C)]
+pub struct Vec3 {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[repr(C)]
+pub struct VertexState {
+    pub position: Vec3,
+    pub velocity: Vec3,
+    pub original_pos: Vec3,
+}
+
+#[repr(C)]
+pub struct PhysicsParams {
+    pub stiffness: f32,
+    pub damping: f32,
+    pub mass: f32,
+    pub gravity_influence: f32,
+}
+
 /// A simple 1D Kalman Filter for smoothing sensor noise
 struct KalmanFilter {
-    q: f32, // Process noise covariance
-    r: f32, // Measurement noise covariance
-    x: f32, // Estimated value
-    p: f32, // Estimation error covariance
-    k: f32, // Kalman gain
+    q: f32, r: f32, x: f32, p: f32, k: f32,
 }
 
 impl KalmanFilter {
     fn new(init_x: f32) -> Self {
-        Self {
-            q: 0.01,
-            r: 0.1,
-            x: init_x,
-            p: 1.0,
-            k: 0.0,
-        }
+        Self { q: 0.01, r: 0.1, x: init_x, p: 1.0, k: 0.0 }
     }
-
-    fn update(&mut self, measurement: f32) -> f32 {
-        self.p = self.p + self.q;
+    fn update(&mut self, m: f32) -> f32 {
+        self.p += self.q;
         self.k = self.p / (self.p + self.r);
-        self.x = self.x + self.k * (measurement - self.x);
-        self.p = (1.0 - self.k) * self.p;
+        self.x += self.k * (m - self.x);
+        self.p *= 1.0 - self.k;
         self.x
     }
 }
@@ -38,22 +49,11 @@ pub struct RhythmEngine {
     pub mastery: f32,
 }
 
-#[repr(C)]
-pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
 impl RhythmEngine {
     fn new() -> Self {
         Self {
-            kf_x: KalmanFilter::new(0.0),
-            kf_y: KalmanFilter::new(0.0),
-            kf_z: KalmanFilter::new(0.0),
-            last_error: 0.0,
-            integral: 0.0,
-            mastery: 0.0,
+            kf_x: KalmanFilter::new(0.0), kf_y: KalmanFilter::new(0.0), kf_z: KalmanFilter::new(0.0),
+            last_error: 0.0, integral: 0.0, mastery: 0.0,
         }
     }
 
@@ -61,37 +61,67 @@ impl RhythmEngine {
         let fx = self.kf_x.update(x);
         let fy = self.kf_y.update(y);
         let fz = self.kf_z.update(z);
-        let magnitude = (fx*fx + fy*fy + fz*fz).sqrt();
-        
-        let error = target - magnitude;
+        let mag = (fx*fx + fy*fy + fz*fz).sqrt();
+        let error = target - mag;
         self.integral += error * dt;
-        let derivative = (error - self.last_error) / dt;
+        let der = (error - self.last_error) / dt;
         self.last_error = error;
-        
-        let output = 1.5 * error + 0.5 * self.integral + 0.2 * derivative;
-        
-        // Mastery calculation
+        let output = 1.5 * error + 0.5 * self.integral + 0.2 * der;
         let stability = 1.0 - (output.abs() / target).clamp(0.0, 1.0);
-        if stability > 0.9 {
-            self.mastery = (self.mastery + dt * 0.8).min(1.0);
-        } else {
-            self.mastery = (self.mastery - dt * 0.4).max(0.0);
-        }
-        
-        magnitude
+        if stability > 0.9 { self.mastery = (self.mastery + dt * 0.8).min(1.0); }
+        else { self.mastery = (self.mastery - dt * 0.4).max(0.0); }
+        mag
     }
 
-    fn smooth_vertices(&self, vertices: &mut [Vec3], base_vertices: &[Vec3], delta: f32) {
-        let factor = (self.mastery * delta * 2.0).clamp(0.0, 1.0);
-        for (v, base) in vertices.iter_mut().zip(base_vertices.iter()) {
-            v.x += (base.x - v.x) * factor;
-            v.y += (base.y - v.y) * factor;
-            v.z += (base.z - v.z) * factor;
+    fn step_physics(&self, states: &mut [VertexState], params: &PhysicsParams, gravity: &Vec3, accel: &Vec3, dt: f32) {
+        let dt_ratio = dt * 60.0;
+        let d_factor = (1.0 - params.damping).powf(dt_ratio);
+        
+        for v in states.iter_mut() {
+            // Spring
+            let dx = v.position.x - v.original_pos.x;
+            let dy = v.position.y - v.original_pos.y;
+            let dz = v.position.z - v.original_pos.z;
+            
+            let mut fx = -dx * params.stiffness;
+            let mut fy = -dy * params.stiffness;
+            let mut fz = -dz * params.stiffness;
+            
+            // Forces
+            fx += gravity.x * params.gravity_influence - accel.x * params.mass;
+            fy += gravity.y * params.gravity_influence - accel.y * params.mass;
+            fz += gravity.z * params.gravity_influence - accel.z * params.mass;
+            
+            // Integrate
+            v.velocity.x += (fx / params.mass) * dt;
+            v.velocity.y += (fy / params.mass) * dt;
+            v.velocity.z += (fz / params.mass) * dt;
+            
+            v.velocity.x *= d_factor;
+            v.velocity.y *= d_factor;
+            v.velocity.z *= d_factor;
+            
+            v.position.x += v.velocity.x * dt;
+            v.position.y += v.velocity.y * dt;
+            v.position.z += v.velocity.z * dt;
+            
+            // Simple Limit
+            let cur_dx = v.position.x - v.original_pos.x;
+            let cur_dy = v.position.y - v.original_pos.y;
+            let cur_dz = v.position.z - v.original_pos.z;
+            let dist_sq = cur_dx*cur_dx + cur_dy*cur_dy + cur_dz*cur_dz;
+            if dist_sq > 0.09 { // 0.3^2
+                let d = dist_sq.sqrt();
+                v.position.x = v.original_pos.x + (cur_dx / d) * 0.3;
+                v.position.y = v.original_pos.y + (cur_dy / d) * 0.3;
+                v.position.z = v.original_pos.z + (cur_dz / d) * 0.3;
+                v.velocity.x *= 0.1; v.velocity.y *= 0.1; v.velocity.z *= 0.1;
+            }
         }
     }
 }
 
-// --- C-ABI Bridge ---
+// --- Bridge ---
 
 #[no_mangle]
 pub extern "C" fn tako_init() -> *mut RhythmEngine {
@@ -99,28 +129,27 @@ pub extern "C" fn tako_init() -> *mut RhythmEngine {
 }
 
 #[no_mangle]
-pub extern "C" fn tako_update(engine: *mut RhythmEngine, gx: f32, gy: f32, gz: f32, dt: f32, target: f32) -> f32 {
-    let engine = unsafe { assert!(!engine.is_null()); &mut *engine };
-    engine.update(gx, gy, gz, dt, target)
+pub extern "C" fn tako_update(e: *mut RhythmEngine, gx: f32, gy: f32, gz: f32, dt: f32, target: f32) -> f32 {
+    let e = unsafe { &mut *e };
+    e.update(gx, gy, gz, dt, target)
 }
 
 #[no_mangle]
-pub extern "C" fn tako_get_mastery(engine: *mut RhythmEngine) -> f32 {
-    let engine = unsafe { assert!(!engine.is_null()); &mut *engine };
-    engine.mastery
+pub extern "C" fn tako_step_physics(e: *mut RhythmEngine, states: *mut VertexState, count: i32, params: *const PhysicsParams, g: *const Vec3, a: *const Vec3, dt: f32) {
+    let e = unsafe { &mut *e };
+    let s_slice = unsafe { std::slice::from_raw_parts_mut(states, count as usize) };
+    let p = unsafe { &*params };
+    let g_vec = unsafe { &*g };
+    let a_vec = unsafe { &*a };
+    e.step_physics(s_slice, p, g_vec, a_vec, dt);
 }
 
 #[no_mangle]
-pub extern "C" fn tako_smooth_mesh(engine: *mut RhythmEngine, vertices: *mut Vec3, base_vertices: *const Vec3, count: i32, dt: f32) {
-    let engine = unsafe { assert!(!engine.is_null()); &mut *engine };
-    let v_slice = unsafe { std::slice::from_raw_parts_mut(vertices, count as usize) };
-    let b_slice = unsafe { std::slice::from_raw_parts(base_vertices, count as usize) };
-    engine.smooth_vertices(v_slice, b_slice, dt);
+pub extern "C" fn tako_get_mastery(e: *mut RhythmEngine) -> f32 {
+    let e = unsafe { &*e }; e.mastery
 }
 
 #[no_mangle]
-pub extern "C" fn tako_free(engine: *mut RhythmEngine) {
-    if !engine.is_null() {
-        unsafe { let _ = Box::from_raw(engine); }
-    }
+pub extern "C" fn tako_free(e: *mut RhythmEngine) {
+    if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
 }

@@ -370,23 +370,7 @@ namespace Takoyaki.Android
                 _lastTimeNs = now;
     
                 // 1. Update Core Simulation
-                if (_ball == null)
-                {
-                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _ball is NULL!");
-                    return;
-                }
-                if (_physics == null)
-                {
-                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _physics is NULL!");
-                    return;
-                }
-                if (_stateMachine == null)
-                {
-                    global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: _stateMachine is NULL!");
-                    return;
-                }
-                
-                global::Android.Util.Log.Error("TakoyakiRender", "OnDrawFrame: All objects valid, proceeding...");
+                if (_ball == null || _physics == null || _stateMachine == null) return;
                 
                 UpdateLogic(dt);
     
@@ -436,8 +420,6 @@ namespace Takoyaki.Android
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);
     
-                global::Android.Util.Log.Error("TakoyakiRender", $"About to draw: IndexCount={_indexCount}");
-                
                 GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
                 GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
                 

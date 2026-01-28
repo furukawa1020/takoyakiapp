@@ -252,6 +252,7 @@ namespace Takoyaki.Android
                 // Initialize 3D Topping System
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 6 - 3D Toppings");
                 Initialize3DToppings();
+                _needsInitialToppings = true; // Reset flag for initial topping application
             }
             catch (System.Exception ex)
             {

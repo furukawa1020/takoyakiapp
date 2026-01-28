@@ -123,6 +123,9 @@ namespace Takoyaki.Android
         
         // Shake detection cooldown
         private long _lastShakeTime = 0;
+        
+        // Initial topping application flag
+        private bool _needsInitialToppings = true;
 
         public void OnSurfaceCreated(IGL10? gl, Javax.Microedition.Khronos.Egl.EGLConfig? config)
         {

@@ -110,10 +110,10 @@ namespace Takoyaki.Android
             _stateMachine.OnFinished = (score) => OnGameFinished?.Invoke(score);
 
             // Particles
-            _steam = new SteamParticles(Android.App.Application.Context);
+            _steam = new SteamParticles(global::Android.App.Application.Context);
 
             // 2. Load Shaders
-            _program = ShaderHelper.LoadProgram(Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
+            _program = ShaderHelper.LoadProgram(global::Android.App.Application.Context, "takoyaki.vert", "takoyaki.frag");
             GLES30.GlUseProgram(_program);
 
             _uMVPMatrixHandle = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
@@ -157,7 +157,7 @@ namespace Takoyaki.Android
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
             int bytes = _meshData.Length * 4;
             // Use DynamicDraw for frequent updates
-            GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, java.nio.FloatBuffer.Wrap(_meshData), GLES30.GlDynamicDraw);
+            GLES30.GlBufferData(GLES30.GlArrayBuffer, bytes, Java.Nio.FloatBuffer.Wrap(_meshData), GLES30.GlDynamicDraw);
 
             // Attributes
             int stride = 8 * 4;
@@ -169,11 +169,11 @@ namespace Takoyaki.Android
             GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, stride, 6 * 4);
 
             GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
-            GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, java.nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
+            GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indices.Length * 2, Java.Nio.ShortBuffer.Wrap(indices), GLES30.GlStaticDraw);
 
             GLES30.GlBindVertexArray(0);
             Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
-            _lastTimeNs = Java.Lang.System.NanoTime();
+            _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
 
         private void UpdateMeshVBO()
@@ -318,7 +318,7 @@ namespace Takoyaki.Android
         public void OnDrawFrame(IGL10? gl)
         {
             // Time Delta
-            long now = Java.Lang.System.NanoTime();
+            long now = Java.Lang.JavaSystem.NanoTime();
             float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
             _lastTimeNs = now;
 

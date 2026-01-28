@@ -34,6 +34,8 @@ namespace Takoyaki.Core
         private static extern float tako_get_mastery(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern void tako_free(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private unsafe static extern void tako_smooth_mesh(IntPtr engine, Vector3* vertices, Vector3* base_vertices, int count, float dt);
 
         public TakoyakiShapingLogic()
         {
@@ -59,7 +61,7 @@ namespace Takoyaki.Core
                 // Mastery blending or direct use
             }
 
-            // Standard C# Path (Fallback or Parallel)
+            // Standard C# Path
             currentMag = angularVelocity.Length();
             float pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
             
@@ -97,6 +99,17 @@ namespace Takoyaki.Core
                 ComboCount = 0;
                 MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 1.0f);
                 ShapingProgress = Math.Min(1.0f, ShapingProgress + dt * 0.05f);
+            }
+        }
+
+        public unsafe void ApplyNativeMeshShaping(Vector3[] deformed, Vector3[] original, float dt)
+        {
+            if (!_useRust || _rustEngine == IntPtr.Zero) return;
+
+            fixed (Vector3* pDeformed = deformed)
+            fixed (Vector3* pOriginal = original)
+            {
+                tako_smooth_mesh(_rustEngine, pDeformed, pOriginal, deformed.Length, dt);
             }
         }
 

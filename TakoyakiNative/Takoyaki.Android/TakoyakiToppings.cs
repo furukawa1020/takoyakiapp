@@ -395,12 +395,12 @@ namespace Takoyaki.Android
             
              for (int i = 0; i < segments; i++)
             {
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < 6; j++)
                 {
-                    short current = (short)(i * 8 + j);
-                    short next = (short)(i * 8 + (j + 1) % 8);
-                    short currentNext = (short)((i + 1) * 8 + j);
-                    short nextNext = (short)((i + 1) * 8 + (j + 1) % 8);
+                    short current = (short)(i * 6 + j);
+                    short next = (short)(i * 6 + (j + 1) % 6);
+                    short currentNext = (short)((i + 1) * 6 + j);
+                    short nextNext = (short)((i + 1) * 6 + (j + 1) % 6);
                     
                     inds.Add(current); inds.Add(currentNext); inds.Add(next);
                     inds.Add(next); inds.Add(currentNext); inds.Add(nextNext);

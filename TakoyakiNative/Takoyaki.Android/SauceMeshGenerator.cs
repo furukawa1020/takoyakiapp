@@ -15,7 +15,7 @@ namespace Takoyaki.Android
                 Indices = indices,
                 Position = new System.Numerics.Vector3(0, 0, 0),
                 Scale = new System.Numerics.Vector3(1f, 1f, 1f),
-                Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 0.90f),
+                Color = new System.Numerics.Vector4(0.2f, 0.1f, 0.05f, 0.95f),
                 Visible = false
             };
             

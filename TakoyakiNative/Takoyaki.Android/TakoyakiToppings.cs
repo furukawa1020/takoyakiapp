@@ -127,7 +127,7 @@ namespace Takoyaki.Android
             Matrix.MultiplyMM(finalModel, 0, parentModel, 0, localModel, 0);
             
             GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_toppingProgram, "uModelMatrix"), 1, false, finalModel, 0);
-            GLES30.GlUniform4f(GLES30.GlGetUniformLocation(_toppingProgram, "uColor"), mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
+            GLES30.GlUniform4f(GLES30.GlGetUniformLocation(_toppingProgram, "uToppingColor"), mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
             GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_toppingProgram, "uRoughness"), roughness);
 
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, mesh.VBO);

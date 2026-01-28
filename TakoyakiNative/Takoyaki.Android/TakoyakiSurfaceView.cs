@@ -1068,28 +1068,6 @@ namespace Takoyaki.Android
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
             
-            // Calculate camera direction (camera is at (0, 4, 4) looking at origin)
-            var cameraPos = new System.Numerics.Vector3(0, 4, 4);
-            var cameraDir = System.Numerics.Vector3.Normalize(cameraPos); // Direction FROM origin TO camera
-            
-            // Position sauce and mayo on the front-facing hemisphere (towards camera)
-            // Project camera direction onto sphere surface
-            float sphereRadius = 1.0f;
-            
-            if (_sauceMesh != null && _sauceMesh.Visible)
-            {
-                // Sauce: slightly above center, towards camera
-                var sauceDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0, 0.3f, 0));
-                _sauceMesh.Position = sauceDir * sphereRadius * 1.15f; // Push out to 1.15 radius
-            }
-            
-            if (_mayoMesh != null && _mayoMesh.Visible)
-            {
-                // Mayo: offset to the side, towards camera
-                var mayoDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0.3f, -0.2f, 0));
-                _mayoMesh.Position = mayoDir * sphereRadius * 1.2f; // Push out further to 1.2
-            }
-            
             // Disable culling for toppings to ensure visibility (especially leaves)
             GLES30.GlDisable(0x0B44); // GL_CULL_FACE
             
@@ -1121,31 +1099,7 @@ namespace Takoyaki.Android
             // 1. Translate to position
             Matrix.TranslateM(modelMatrix, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
             
-            // 2. Rotate to face outward (align Z axis with Position vector)
-            if (mesh.Position.LengthSquared() > 0.001f)
-            {
-                var pos = System.Numerics.Vector3.Normalize(mesh.Position);
-                var up = new System.Numerics.Vector3(0, 1, 0);
-                if (System.Math.Abs(System.Numerics.Vector3.Dot(pos, up)) > 0.9f)
-                    up = new System.Numerics.Vector3(1, 0, 0);
-                
-                var right = System.Numerics.Vector3.Normalize(System.Numerics.Vector3.Cross(up, pos));
-                var newUp = System.Numerics.Vector3.Cross(pos, right);
-                
-                float[] rotMat = new float[16];
-                Matrix.SetIdentityM(rotMat, 0);
-                // Column 0: Right (X)
-                rotMat[0] = right.X; rotMat[1] = right.Y; rotMat[2] = right.Z;
-                // Column 1: Up (Y)
-                rotMat[4] = newUp.X; rotMat[5] = newUp.Y; rotMat[6] = newUp.Z;
-                // Column 2: Forward (Z) -> pos
-                rotMat[8] = pos.X;   rotMat[9] = pos.Y;   rotMat[10] = pos.Z;
-                
-                float[] temp = new float[16];
-                Matrix.MultiplyMM(temp, 0, modelMatrix, 0, rotMat, 0);
-                System.Array.Copy(temp, modelMatrix, 16);
-            }
-
+            // 2. Scale
             Matrix.ScaleM(modelMatrix, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
             
             // MVP matrix

@@ -249,6 +249,10 @@ namespace Takoyaki.Android
                 GLES30.GlBindVertexArray(0);
                 Matrix.SetLookAtM(_viewMatrix, 0, 0, 4, 4, 0, 0, 0, 0, 1, 0);
                 _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
+                
+                // Initialize Billboard System for Toppings
+                global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 6 - Billboards");
+                InitializeBillboards();
             }
             catch (System.Exception ex)
             {
@@ -375,15 +379,42 @@ namespace Takoyaki.Android
 
         public void ApplyTopping()
         {
-            // Simple state sequence: Sauce -> Mayo -> Aonori
-            if (_toppingStage == 0) _cookedTex.DrawSauce();
-            else if (_toppingStage == 1) _cookedTex.DrawMayo();
-            else if (_toppingStage == 2) _cookedTex.DrawAonori();
+            // NEW: Show 3D topping objects instead of texture baking
+            if (_toppingStage == 0)
+            {
+                _sauceVisible = true;
+                global::Android.Util.Log.Debug("TakoyakiTopping", "Sauce applied!");
+            }
+            else if (_toppingStage == 1)
+            {
+                _mayoVisible = true;
+                global::Android.Util.Log.Debug("TakoyakiTopping", "Mayo applied!");
+            }
+            else if (_toppingStage == 2)
+            {
+                GenerateAonoriParticles(15);
+                global::Android.Util.Log.Debug("TakoyakiTopping", $"Aonori applied! {_aonoriParticles.Count} particles");
+            }
             
             _toppingStage++;
-            
-            // Re-upload
-            LoadTexture(_cookedTexUnit, _cookedTex);
+        }
+        
+        private void GenerateAonoriParticles(int count)
+        {
+            var random = new System.Random();
+            for (int i = 0; i < count; i++)
+            {
+                // Random position on sphere surface (using spherical coordinates)
+                float theta = (float)(random.NextDouble() * System.Math.PI * 2);
+                float phi = (float)(random.NextDouble() * System.Math.PI);
+                float radius = 1.0f; // Ball radius
+                
+                float x = radius * (float)System.Math.Sin(phi) * (float)System.Math.Cos(theta);
+                float y = radius * (float)System.Math.Sin(phi) * (float)System.Math.Sin(theta);
+                float z = radius * (float)System.Math.Cos(phi);
+                
+                _aonoriParticles.Add(new System.Numerics.Vector3(x, y, z));
+            }
         }
         private int _toppingStage = 0;
 

@@ -9,6 +9,7 @@ in vec3 vLocalPos;
 uniform sampler2D uBatterTex;
 uniform sampler2D uCookedTex;
 uniform sampler2D uBurntTex;
+uniform sampler2D uNoiseMapFix;
 
 uniform vec3 uLightPos;
 uniform vec3 uViewPos;
@@ -121,7 +122,7 @@ void main() {
     // Add a reddish transmission for thin parts
     float sssMask = 1.0 - height; // Thin parts
     vec3 sssColor = vec3(1.0, 0.3, 0.1);
-    vec3 sss = sssColor * sssMask * 0.2 * (1.0 - t2); // Disappears when burnt
+    vec3 sss = sssColor * sssMask * 0.2 * (1.0 - burntMask); // Disappears when burnt
     
     vec3 color = ambient + Lo + sss;
 

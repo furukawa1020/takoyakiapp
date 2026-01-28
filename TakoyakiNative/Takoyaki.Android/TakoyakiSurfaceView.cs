@@ -290,9 +290,9 @@ namespace Takoyaki.Android
             float ratio = (float)width / height;
             Matrix.FrustumM(_projectionMatrix, 0, -ratio, ratio, -1, 1, 2, 10);
             
-            // Camera Setup
-            // Eye: (0, 4, 6), Center: (0, 0, 0), Up: (0, 1, 0)
-            Matrix.SetLookAtM(_viewMatrix, 0, 0f, 4f, 6f, 0f, 0f, 0f, 0f, 1f, 0f);
+            // Camera Setup - Eye level with sphere
+            // Eye: (0, 0, 6), Center: (0, 0, 0), Up: (0, 1, 0)
+            Matrix.SetLookAtM(_viewMatrix, 0, 0f, 0f, 6f, 0f, 0f, 0f, 0f, 1f, 0f);
         }
 
         // Input
@@ -415,7 +415,7 @@ namespace Takoyaki.Android
                 GLES30.GlUniform3f(uLight, 5.0f, 5.0f, 5.0f);
 
                 int uView = GLES30.GlGetUniformLocation(_program, "uViewPos");
-                GLES30.GlUniform3f(uView, 0.0f, 2.0f, 5.0f);
+                GLES30.GlUniform3f(uView, 0.0f, 0.0f, 6.0f);
 
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);

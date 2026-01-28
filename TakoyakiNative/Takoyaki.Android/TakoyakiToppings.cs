@@ -26,17 +26,15 @@ namespace Takoyaki.Android
             _katsuobushiMeshes.Clear();
             
             // Sauce (Blob)
-            // Center on top-front of the ball
+            _takoMesh = CreateTakoMesh();
             _sauceMesh = CreateSauceMesh();
-            
-            // Mayo (Tube)
             _mayoMesh = CreateMayoMesh();
             
             // Aonori (Flakes)
-            GenerateAonoriMeshes(15);
+            GenerateAonoriMeshes(20); // Increase count
             
             // Katsuobushi (Flakes)
-            GenerateKatsuobushiMeshes(10);
+            GenerateKatsuobushiMeshes(12);
         }
         
         public void SetToppingVisible(int stage)
@@ -131,21 +129,24 @@ namespace Takoyaki.Android
         
         private ToppingMesh CreateSauceMesh()
         {
-            // Sauce on top-front
-            // Just a simple flattened sphere / blob
-            var (vertices, indices) = GenerateFormattedBlob();
+            // Sauce: A spherical cap that hugs the surface centered at Z+ (0,0,1)
+            var (vertices, indices) = GenerateSauceCap();
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0, 0.4f, 0.85f), // Front-Top
-                Scale = new System.Numerics.Vector3(1.2f, 1.2f, 1.0f),  // Slightly larger
+                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh already has 1.02f radius
+                Scale = new System.Numerics.Vector3(1f, 1f, 1f),
                 Color = new System.Numerics.Vector4(0.3f, 0.15f, 0.05f, 0.95f),
                 Visible = false
             };
-            // Orient sauce to match position normal approx
-            mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
+            
+            // Rotate -30 deg around X to tilt Z-pole towards Y (Up/Front view)
+            float[] rot = new float[16];
+            Matrix.SetIdentityM(rot, 0);
+            Matrix.RotateM(rot, 0, -30f, 1, 0, 0); 
+            mesh.RotationMatrix = rot;
 
             UploadMeshToGPU(mesh);
             return mesh;
@@ -153,20 +154,24 @@ namespace Takoyaki.Android
 
         private ToppingMesh CreateMayoMesh()
         {
-            var (vertices, indices) = GenerateFormattedTube();
+            // Mayo: Wavy lines generated on Z+ surface
+            var (vertices, indices) = GenerateSurfaceTube();
             
             var mesh = new ToppingMesh
             {
                 Vertices = vertices,
                 Indices = indices,
-                Position = new System.Numerics.Vector3(0.1f, 0.2f, 0.9f), // Front
+                Position = new System.Numerics.Vector3(0, 0, 0), // Mesh already has surface radius
                 Scale = new System.Numerics.Vector3(1f, 1f, 1f),
                 Color = new System.Numerics.Vector4(1.0f, 0.98f, 0.85f, 1.0f),
                 Visible = false
             };
             
-            // Orient mayo 
-            mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
+            // Rotate same as sauce or slightly different
+            float[] rot = new float[16];
+            Matrix.SetIdentityM(rot, 0);
+            Matrix.RotateM(rot, 0, -30f, 1, 0, 0); 
+            mesh.RotationMatrix = rot;
             
             UploadMeshToGPU(mesh);
             return mesh;
@@ -177,52 +182,18 @@ namespace Takoyaki.Android
             var rnd = new Random();
             for(int i=0; i<count; i++)
             {
-                // Random spherical coord
-                // Concentrate on top hemisphere (phi < PI/2)
-                double theta = rnd.NextDouble() * Math.PI * 2;
-                double phi = rnd.NextDouble() * (Math.PI / 1.5); // Top ~120 deg
-                
-                float radius = 1.02f;
-                float x = radius * (float)(Math.Sin(phi) * Math.Cos(theta));
-                float y = radius * (float)(Math.Sin(phi) * Math.Sin(theta)); // Y is up? No, Y is usually up in OpenGL... wait.
-                // In this app:
-                // Camera at (0, 4, 4), looking at (0,0,0). Up is (0,1,0)?
-                // Previous code logic suggested Y is up.
-                // Let's stick to standard Y-up.
-                
-                float z = radius * (float)Math.Cos(phi); 
-                
-                // Oops, standard spherical coord: Y is up -> phi from Y axis?
-                // x = r sin(phi) cos(theta)
-                // y = r cos(phi)   <-- Y is UP
-                // z = r sin(phi) sin(theta)
-                
-                // Let's use simple Vector3 logic
-                 y = radius * (float)Math.Cos(phi); // Y is Up
-                 float r_xz = radius * (float)Math.Sin(phi);
-                 x = r_xz * (float)Math.Cos(theta);
-                 z = r_xz * (float)Math.Sin(theta);
-
-                // Wait, previous code used:
-                // x = r sin(phi) cos(theta)
-                // y = r sin(phi) sin(theta)
-                // z = r cos(phi)
-                // This implies Z is UP. Or Z is Forward/Back.
-                // Camera (0, 4, 4) -> Looking down and back.
-                // If Z is up, then (0,4,4) is very weird. 
-                // Let's assume sphere is centered at 0.
-                
-                // Use random point on sphere logic
+                // Random point on sphere
                 var pos = new System.Numerics.Vector3((float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5));
-                pos = System.Numerics.Vector3.Normalize(pos) * 1.03f;
+                pos = System.Numerics.Vector3.Normalize(pos);
                 
-                // Only on "Front/Top" side visible to camera?
-                // Camera (0, 4, 4). Normalized dir (0, 0.7, 0.7).
-                // Let's filter simple dot product
-                var camDir = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(0, 4, 4));
-                if(System.Numerics.Vector3.Dot(System.Numerics.Vector3.Normalize(pos), camDir) < 0.2f) continue;
+                // Keep on top/front side
+                var up = new System.Numerics.Vector3(0, 1, 0);
+                var front = new System.Numerics.Vector3(0, 0, 1);
+                if(System.Numerics.Vector3.Dot(pos, up) < 0 && System.Numerics.Vector3.Dot(pos, front) < 0) continue;
 
-                var (verts, inds) = GenerateDiamondQuad(0.06f);
+                pos *= 1.02f; // Surface radius
+
+                var (verts, inds) = GenerateDiamondQuad(0.05f);
                 var mesh = new ToppingMesh
                 {
                     Vertices = verts,
@@ -233,6 +204,9 @@ namespace Takoyaki.Android
                 };
                 
                 mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
+                // Add random rotation around Z (normal) to avoid uniform look
+                float rndAngle = (float)rnd.NextDouble() * 360f;
+                Matrix.RotateM(mesh.RotationMatrix, 0, rndAngle, 0, 0, 1);
                 
                 UploadMeshToGPU(mesh);
                 _aonoriMeshes.Add(mesh);
@@ -241,16 +215,17 @@ namespace Takoyaki.Android
         
         private void GenerateKatsuobushiMeshes(int count)
         {
-            // Similar to Aonori but brown and larger
              var rnd = new Random();
             for(int i=0; i<count; i++)
             {
                 var pos = new System.Numerics.Vector3((float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5), (float)(rnd.NextDouble()-0.5));
-                pos = System.Numerics.Vector3.Normalize(pos) * 1.04f;
-                 var camDir = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(0, 4, 4));
-                if(System.Numerics.Vector3.Dot(System.Numerics.Vector3.Normalize(pos), camDir) < 0.2f) continue;
+                pos = System.Numerics.Vector3.Normalize(pos);
+                 var up = new System.Numerics.Vector3(0, 1, 0);
+                if(System.Numerics.Vector3.Dot(pos, up) < -0.2f) continue;
+
+                pos *= 1.03f;
                 
-                var (verts, inds) = GenerateDiamondQuad(0.09f); // Larger
+                var (verts, inds) = GenerateDiamondQuad(0.08f);
                  var mesh = new ToppingMesh
                 {
                     Vertices = verts,
@@ -260,9 +235,10 @@ namespace Takoyaki.Android
                     Visible = false
                 };
                 
-                 mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position); // Align
-                 // Add random spin around normal later if needed
-                 
+                 mesh.RotationMatrix = CalculateRotationToNormal(mesh.Position);
+                 float rndAngle = (float)rnd.NextDouble() * 360f;
+                 Matrix.RotateM(mesh.RotationMatrix, 0, rndAngle, 0, 0, 1);
+
                 UploadMeshToGPU(mesh);
                 _katsuobushiMeshes.Add(mesh);
             }
@@ -298,84 +274,139 @@ namespace Takoyaki.Android
             return rotMat;
         }
 
-        private (float[], short[]) GenerateFormattedBlob()
+        private ToppingMesh CreateTakoMesh()
         {
-             // Simple Hemisphere centered at 0,0,0, pointing Z+
-             // Vertices logic... simplified
-             // A flat circle on Z=0, and a popped up center at Z=Height
-             var verts = new List<float>();
-             var inds = new List<short>();
-             
-             // Center top
-             verts.Add(0); verts.Add(0); verts.Add(0.15f); // Pos
-             verts.Add(0); verts.Add(0); verts.Add(1);    // Norm
-             verts.Add(0.5f); verts.Add(0.5f);            // UV
-             
-             int distinct = 8;
-             float radius = 0.4f;
-             
-             // Ring
-             for(int i=0; i<distinct; i++) {
-                 float ang = i * 2 * (float)Math.PI / distinct;
-                 float x = (float)Math.Cos(ang) * radius;
-                 float y = (float)Math.Sin(ang) * radius;
-                 verts.Add(x); verts.Add(y); verts.Add(0); // slightly off surface
-                 verts.Add(0); verts.Add(0); verts.Add(1); // Normal Z+
-                 verts.Add(0.5f + x); verts.Add(0.5f + y);
-             }
-             
-             // Indices (Fan)
-             for(int i=0; i<distinct; i++) {
-                 inds.Add(0);
-                 inds.Add((short)(i+1));
-                 inds.Add((short)((i+1)%distinct + 1));
-             }
-             
-             return (verts.ToArray(), inds.ToArray());
+            // Placeholder for Tako mesh generation
+            // For now, return a simple mesh or null
+            return null;
         }
-        
-         private (float[], short[]) GenerateFormattedTube()
+
+        // --- Geometry Generators ---
+
+        private (float[], short[]) GenerateSauceCap()
         {
-            // Wavy line tube
-            // Path: Along X axis, varying Y
             var verts = new List<float>();
             var inds = new List<short>();
             
-            int segments = 10;
-            float length = 0.8f;
-            float tubeR = 0.06f;
+            int slices = 20; // angular resolution
+            int rings = 6;   // radial resolution
+            float maxAngle = 0.6f; // Covering ~35 degrees
             
-            for(int i=0; i<=segments; i++) {
-                float t = (float)i/segments;
-                float x = (t - 0.5f) * length;
-                float y = (float)Math.Sin(t * Math.PI * 3) * 0.15f; 
-                float z = 0; 
-                
-                // Ring
-                for(int j=0; j<6; j++) {
-                    float ang = j * 2 * (float)Math.PI / 6;
-                    float rx = 0; // tube ring plane is YZ mostly? No, path is generally X. Ring in YZ.
-                    float ry = (float)Math.Cos(ang) * tubeR;
-                    float rz = (float)Math.Sin(ang) * tubeR;
+            // Center
+            verts.Add(0); verts.Add(0); verts.Add(1.02f); // Slightly above 1.0
+            verts.Add(0); verts.Add(0); verts.Add(1);     // Normal
+            verts.Add(0.5f); verts.Add(0.5f);             // UV
+            
+            for(int r = 1; r <= rings; r++)
+            {
+                float phi = (float)r / rings * maxAngle;
+                for(int s = 0; s < slices; s++)
+                {
+                    float theta = (float)s / slices * (float)Math.PI * 2;
                     
-                    verts.Add(x); verts.Add(y + ry); verts.Add(z + rz);
-                    verts.Add(0); verts.Add(ry); verts.Add(rz); // Norm
-                    verts.Add(t); verts.Add((float)j/6);
+                    // Add irregularity to edge rings
+                    float noise = 0;
+                    if (r > rings/2) 
+                        noise = (float)Math.Sin(theta * 5) * 0.05f * ((float)r/rings);
+
+                    float currentPhi = phi + noise;
+                    float rad = 1.02f;
+                    
+                    // Generate point on sphere cap (around Z axis)
+                    float x = rad * (float)(Math.Sin(currentPhi) * Math.Cos(theta));
+                    float y = rad * (float)(Math.Sin(currentPhi) * Math.Sin(theta));
+                    float z = rad * (float)Math.Cos(currentPhi);
+                    
+                    verts.Add(x); verts.Add(y); verts.Add(z);
+                    verts.Add(x); verts.Add(y); verts.Add(z); // Normal
+                    verts.Add(0.5f + x*0.5f); verts.Add(0.5f + y*0.5f); // UV
                 }
             }
+            
+            // Indices
+            // Center fan
+            for(int s=0; s<slices; s++) {
+                inds.Add(0);
+                inds.Add((short)(s+1));
+                inds.Add((short)((s+1)%slices + 1));
+            }
+            
+            // Rings
+            for(int r=0; r<rings-1; r++) {
+                int ringStart = 1 + r*slices;
+                int nextRingStart = ringStart + slices;
+                for(int s=0; s<slices; s++) {
+                    short p1 = (short)(ringStart + s);
+                    short p2 = (short)(ringStart + (s+1)%slices);
+                    short p3 = (short)(nextRingStart + s);
+                    short p4 = (short)(nextRingStart + (s+1)%slices);
+                    
+                    inds.Add(p1); inds.Add(p3); inds.Add(p2);
+                    inds.Add(p2); inds.Add(p3); inds.Add(p4);
+                }
+            }
+            
+            return (verts.ToArray(), inds.ToArray());
+        }
+        
+         private (float[], short[]) GenerateSurfaceTube()
+        {
+            var verts = new List<float>();
+            var inds = new List<short>();
+            
+            // Wavy line on surface (Z+)
+            int segments = 20;
+            float tubeRadius = 0.04f;
+            float patternSize = 0.6f;
+            
+            for(int i=0; i<=segments; i++) {
+                float t = (float)i/segments; // 0 to 1
+                float x = (t - 0.5f) * patternSize * 1.5f;
+                float y = (float)Math.Sin(t * Math.PI * 4) * 0.15f;
+                // Project X,Y onto Sphere Z
+                float z2 = 1.03f*1.03f - x*x - y*y;
+                float z = (float)Math.Sqrt(Math.Max(0, z2));
+                
+                // Tangent/Normal calculation for ring orientation
+                // Local tangent approx
+                float tx = 1; 
+                float ty = (float)Math.Cos(t * Math.PI * 4) * 0.15f * Math.PI * 4;
+                float tz = 0; // rough
+                var T = System.Numerics.Vector3.Normalize(new System.Numerics.Vector3(tx, ty, tz));
+                var Pos = new System.Numerics.Vector3(x, y, z);
+                var N = System.Numerics.Vector3.Normalize(Pos);
+                var B = System.Numerics.Vector3.Cross(T, N); // Binormal
+                
+                // Generate Ring
+                for(int j=0; j<8; j++) {
+                    float ang = j * 2 * (float)Math.PI / 8;
+                    float cr = (float)Math.Cos(ang) * tubeRadius;
+                    float sr = (float)Math.Sin(ang) * tubeRadius;
+                    
+                    // Ring vertex in local frame (N, B)
+                    var offset = N * cr + B * sr;
+                    var p = Pos + offset;
+                    
+                    verts.Add(p.X); verts.Add(p.Y); verts.Add(p.Z);
+                    verts.Add(offset.X); verts.Add(offset.Y); verts.Add(offset.Z); // Normal (from center of tube)
+                    verts.Add(t); verts.Add((float)j/8);
+                }
+            }
+            
              for (int i = 0; i < segments; i++)
             {
-                for (int j = 0; j < 6; j++)
+                for (int j = 0; j < 8; j++)
                 {
-                    short current = (short)(i * 6 + j);
-                    short next = (short)(i * 6 + (j + 1) % 6);
-                    short currentNext = (short)((i + 1) * 6 + j);
-                    short nextNext = (short)((i + 1) * 6 + (j + 1) % 6);
+                    short current = (short)(i * 8 + j);
+                    short next = (short)(i * 8 + (j + 1) % 8);
+                    short currentNext = (short)((i + 1) * 8 + j);
+                    short nextNext = (short)((i + 1) * 8 + (j + 1) % 8);
                     
                     inds.Add(current); inds.Add(currentNext); inds.Add(next);
                     inds.Add(next); inds.Add(currentNext); inds.Add(nextNext);
                 }
             }
+            
             return (verts.ToArray(), inds.ToArray());
         }
 

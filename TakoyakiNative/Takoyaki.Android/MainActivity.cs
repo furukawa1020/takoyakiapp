@@ -80,6 +80,12 @@ namespace Takoyaki.Android
                 _resetButton.Text = "焼く"; // "Grill Another"
                 _resetButton.Click += (s, e) => RestartGame();
                 centerLayout.AddView(_resetButton);
+                
+                // Share Button
+                var shareButton = new global::Android.Widget.Button(this);
+                shareButton.Text = "シェア";
+                shareButton.Click += (s, e) => ShareScreenshot();
+                centerLayout.AddView(shareButton);
 
                 _uiOverlay.AddView(centerLayout, centerParams);
                 rootLayout.AddView(_uiOverlay);

@@ -868,7 +868,6 @@ namespace Takoyaki.Android
             return mesh;
         }
 
-        // ... (Render3DToppings)
         private void Render3DToppings()
         {
             GLES30.GlUseProgram(_program);
@@ -908,7 +907,46 @@ namespace Takoyaki.Android
             Matrix.MultiplyMM(tempMatrix, 0, _viewMatrix, 0, modelMatrix, 0);
             Matrix.MultiplyMM(mvpMatrix, 0, _projectionMatrix, 0, tempMatrix, 0);
             
-            // ... (uniforms) ...
+            int uMVP = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
+            GLES30.GlUniformMatrix4fv(uMVP, 1, false, mvpMatrix, 0);
+            
+            int uModel = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
+            GLES30.GlUniformMatrix4fv(uModel, 1, false, modelMatrix, 0);
+            
+            int uColor = GLES30.GlGetUniformLocation(_program, "uToppingColor");
+            GLES30.GlUniform4f(uColor, mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
+            
+            // Bind VAO and draw
+            if (mesh.Vertices != null && mesh.Indices != null) // Simple check
+            {
+                // In a real implementation with VAO support, we'd bind VAO.
+                // Since this is GLES3.0 we can use VAOs, but reusing the sphere VBO logic might be complex.
+                // For now, let's just upload VBOs if needed or assume we are not using VAOs for toppings yet?
+                // Wait, UploadMeshToGPU was used. Let's check how drawing is handled.
+                // It seems we need to bind buffers here.
+                
+                int vbo = mesh.VboId;
+                int ibo = mesh.IboId;
+                
+                GLES30.GlBindBuffer(GLES30.GlArrayBuffer, vbo);
+                GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, ibo);
+                
+                int positionHandle = GLES30.GlGetAttribLocation(_program, "aPosition");
+                GLES30.GlEnableVertexAttribArray(positionHandle);
+                GLES30.GlVertexAttribPointer(positionHandle, 3, GLES30.GlFloat, false, 8 * 4, 0);
+                
+                int normalHandle = GLES30.GlGetAttribLocation(_program, "aNormal");
+                GLES30.GlEnableVertexAttribArray(normalHandle);
+                GLES30.GlVertexAttribPointer(normalHandle, 3, GLES30.GlFloat, false, 8 * 4, 3 * 4);
+                
+                GLES30.GlDrawElements(GLES30.GlTriangles, mesh.Indices.Length, GLES30.GlUnsignedShort, 0);
+                
+                GLES30.GlDisableVertexAttribArray(positionHandle);
+                GLES30.GlDisableVertexAttribArray(normalHandle);
+                GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
+                GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, 0);
+            }
+        }
 
         
         private (float[], short[]) GenerateSmallSphere(float radius, int subdivisions)

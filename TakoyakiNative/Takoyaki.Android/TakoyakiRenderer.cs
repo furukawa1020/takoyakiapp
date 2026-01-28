@@ -25,6 +25,8 @@ namespace Takoyaki.Android
         private TakoyakiStateMachine _stateMachine;
         private InputState _inputState;
 
+        private TakoyakiToppings _toppings;
+        private SteamParticles _steam;
         // --- Rendering State ---
         private float[] _modelMatrix = new float[16];
         private float[] _viewMatrix = new float[16];
@@ -119,6 +121,8 @@ namespace Takoyaki.Android
             _toppings = new TakoyakiToppings();
             _toppings.Initialize(Assets.ToppingProgram);
             _toppings.GenerateToppings();
+
+            _steam = new SteamParticles(global::Android.App.Application.Context);
             
             _lastTimeNs = Java.Lang.JavaSystem.NanoTime();
         }
@@ -175,6 +179,9 @@ namespace Takoyaki.Android
 
             // Render Toppings
             _toppings.RenderRecursive(vpMatrix, _modelMatrix, _totalTime);
+
+            // Render Steam
+            _steam.UpdateAndDraw(vpMatrix, _totalTime);
         }
 
         private void UpdateLogic(float dt)

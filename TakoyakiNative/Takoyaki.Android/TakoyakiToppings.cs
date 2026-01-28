@@ -52,80 +52,83 @@ namespace Takoyaki.Android
             }
         }
         
-        public void Render(float[] viewMatrix, float[] projectionMatrix)
+        public void Reset()
+        {
+            _sauceMesh.Visible = false;
+            _mayoMesh.Visible = false;
+            foreach(var m in _aonoriMeshes) m.Visible = false;
+            foreach(var m in _katsuobushiMeshes) m.Visible = false;
+        }
+
+        public void RenderRecursive(float[] vpMatrix, float[] parentModel, float time)
         {
             GLES30.GlUseProgram(_program);
             
+            // Shared Uniforms
+            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_program, "uVPMatrix"), 1, false, vpMatrix, 0);
+            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_program, "uTime"), time);
+            
+            // Toppings are double-sided and alpha blended
+            GLES30.GlDisable(GLES30.GlCullFace);
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
-            GLES30.GlDisable(0x0B44); // GL_CULL_FACE Double-Sided
             
-            if (_sauceMesh != null && _sauceMesh.Visible) RenderMesh(_sauceMesh, viewMatrix, projectionMatrix);
-            if (_mayoMesh != null && _mayoMesh.Visible) RenderMesh(_mayoMesh, viewMatrix, projectionMatrix);
+            // Render in order
+            if (_sauceMesh != null && _sauceMesh.Visible) RenderMeshEx(_sauceMesh, parentModel, 0.2f); // Glossy
+            if (_mayoMesh != null && _mayoMesh.Visible) RenderMeshEx(_mayoMesh, parentModel, 0.4f);
             
-            foreach(var m in _aonoriMeshes)
-            {
-                if(m.Visible) RenderMesh(m, viewMatrix, projectionMatrix);
-            }
-            
-            foreach(var m in _katsuobushiMeshes)
-            {
-                if(m.Visible) RenderMesh(m, viewMatrix, projectionMatrix);
-            }
-            
-            GLES30.GlEnable(0x0B44); // GL_CULL_FACE
-            GLES30.GlDisable(GLES30.GlBlend);
+            foreach(var m in _aonoriMeshes) if(m.Visible) RenderMeshEx(m, parentModel, 0.9f); // Matte
+            foreach(var m in _katsuobushiMeshes) if(m.Visible) RenderMeshEx(m, parentModel, 0.8f);
+
+            GLES30.GlEnable(GLES30.GlCullFace);
         }
-        
-        private void RenderMesh(ToppingMesh mesh, float[] viewMatrix, float[] projectionMatrix)
+
+        private void RenderMeshEx(ToppingMesh mesh, float[] parentModel, float roughness)
         {
-            float[] modelMatrix = new float[16];
+            float[] localModel = new float[16];
+            Matrix.SetIdentityM(localModel, 0);
             
-            // Apply Transform: Translate -> Rotate -> Scale
-            Matrix.SetIdentityM(modelMatrix, 0);
+            // Position
+            Matrix.TranslateM(localModel, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
             
-            Matrix.TranslateM(modelMatrix, 0, mesh.Position.X, mesh.Position.Y, mesh.Position.Z);
-            
-            // Apply Rotation Matrix if exists
-            if (mesh.RotationMatrix != null)
-            {
+            // Rotation
+            if (mesh.RotationMatrix != null) {
                 float[] temp = new float[16];
-                Matrix.MultiplyMM(temp, 0, modelMatrix, 0, mesh.RotationMatrix, 0);
-                Array.Copy(temp, modelMatrix, 16);
+                Matrix.MultiplyMM(temp, 0, localModel, 0, mesh.RotationMatrix, 0);
+                Array.Copy(temp, localModel, 16);
             }
             
-            Matrix.ScaleM(modelMatrix, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
+            // Scale
+            Matrix.ScaleM(localModel, 0, mesh.Scale.X, mesh.Scale.Y, mesh.Scale.Z);
             
-            // MVP
-            float[] mvpMatrix = new float[16];
-            float[] tempM = new float[16];
-            Matrix.MultiplyMM(tempM, 0, viewMatrix, 0, modelMatrix, 0);
-            Matrix.MultiplyMM(mvpMatrix, 0, projectionMatrix, 0, tempM, 0);
+            // Global Model = Parent (Ball) * Local (Topping)
+            float[] finalModel = new float[16];
+            Matrix.MultiplyMM(finalModel, 0, parentModel, 0, localModel, 0);
             
-            // Uniforms
-            int uMVP = GLES30.GlGetUniformLocation(_program, "uMVPMatrix");
-            GLES30.GlUniformMatrix4fv(uMVP, 1, false, mvpMatrix, 0);
+            // Update Uniforms
+            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_program, "uModelMatrix"), 1, false, finalModel, 0);
             
-            int uModel = GLES30.GlGetUniformLocation(_program, "uModelMatrix");
-            GLES30.GlUniformMatrix4fv(uModel, 1, false, modelMatrix, 0);
+            // Set Color (uColor is used in topping.frag instead of uToppingColor)
+            int uCol = GLES30.GlGetUniformLocation(_program, "uColor");
+            if (uCol == -1) uCol = GLES30.GlGetUniformLocation(_program, "uToppingColor"); // Fallback for old shaders
+            GLES30.GlUniform4f(uCol, mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
             
-            int uColor = GLES30.GlGetUniformLocation(_program, "uToppingColor");
-            GLES30.GlUniform4f(uColor, mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
-            
-            // Draw
+            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_program, "uRoughness"), roughness);
+
+            // Bind Buffers
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, mesh.VBO);
-            GLES30.GlEnableVertexAttribArray(0);
-            GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, 32, 0); // Pos
-            GLES30.GlEnableVertexAttribArray(1);
-            GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, 32, 12); // Norm
-             
             GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, mesh.IBO);
+            
+            int stride = (3+3+2)*4; // Pos(3), Norm(3), UV(2)
+            GLES30.GlEnableVertexAttribArray(0); GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, stride, 0);
+            GLES30.GlEnableVertexAttribArray(1); GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, stride, 12);
+            GLES30.GlEnableVertexAttribArray(2); GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, stride, 24);
+            
             GLES30.GlDrawElements(GLES30.GlTriangles, mesh.IndexCount, GLES30.GlUnsignedShort, 0);
             
             GLES30.GlDisableVertexAttribArray(0);
             GLES30.GlDisableVertexAttribArray(1);
-            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
-            GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, 0);
+            GLES30.GlDisableVertexAttribArray(2);
         }
         
         private ToppingMesh CreateSauceMesh()

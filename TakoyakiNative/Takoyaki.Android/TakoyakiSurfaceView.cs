@@ -102,7 +102,7 @@ namespace Takoyaki.Android
             {
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 1 - GL Init");
                 GLES30.GlEnable(GLES30.GlDepthTest);
-                GLES30.GlClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                GLES30.GlClearColor(0.0f, 0.0f, 1.0f, 1.0f); // Blue for debugging
     
                 // 1. Init Core Logic
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 2 - Core Logic");

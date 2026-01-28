@@ -433,17 +433,27 @@ namespace Takoyaki.Android
         
         private (float[], short[]) GenerateLeafQuad(float size)
         {
-            // Simple quad for leaf
+            // Elongated leaf shape (narrow ellipse approximation)
+            float width = size * 0.4f; // Narrow
+            float height = size * 1.2f; // Tall
+            
             float[] vertices = new float[]
             {
-                // Position,        Normal,         UV
-                -size, -size, 0,   0, 0, 1,        0, 0,
-                 size, -size, 0,   0, 0, 1,        1, 0,
-                 size,  size, 0,   0, 0, 1,        1, 1,
-                -size,  size, 0,   0, 0, 1,        0, 1
+                // Position,              Normal,         UV
+                -width, -height, 0,       0, 0, 1,        0, 0,
+                 width, -height, 0,       0, 0, 1,        1, 0,
+                 width * 0.7f,  0, 0,     0, 0, 1,        1, 0.5f, // Taper towards tip
+                 width,  height, 0,       0, 0, 1,        1, 1,
+                -width,  height, 0,       0, 0, 1,        0, 1,
+                -width * 0.7f,  0, 0,     0, 0, 1,        0, 0.5f
             };
             
-            short[] indices = new short[] { 0, 1, 2, 0, 2, 3 };
+            short[] indices = new short[] { 
+                0, 1, 2,  // Bottom triangle
+                0, 2, 5,  // Middle left
+                2, 3, 4,  // Top triangle
+                2, 4, 5   // Middle right
+            };
             
             return (vertices, indices);
         }
@@ -1053,6 +1063,28 @@ namespace Takoyaki.Android
             // Enable blending for semi-transparent toppings
             GLES30.GlEnable(GLES30.GlBlend);
             GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
+            
+            // Calculate camera direction (camera is at (0, 4, 4) looking at origin)
+            var cameraPos = new System.Numerics.Vector3(0, 4, 4);
+            var cameraDir = System.Numerics.Vector3.Normalize(-cameraPos); // Direction from camera to origin
+            
+            // Position sauce and mayo on the front-facing hemisphere (towards camera)
+            // Project camera direction onto sphere surface
+            float sphereRadius = 1.0f;
+            
+            if (_sauceMesh != null && _sauceMesh.Visible)
+            {
+                // Sauce: slightly above center, towards camera
+                var sauceDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0, 0.3f, 0));
+                _sauceMesh.Position = sauceDir * sphereRadius * 0.85f; // Slightly inside sphere surface
+            }
+            
+            if (_mayoMesh != null && _mayoMesh.Visible)
+            {
+                // Mayo: offset to the side, towards camera
+                var mayoDir = System.Numerics.Vector3.Normalize(cameraDir + new System.Numerics.Vector3(0.3f, -0.2f, 0));
+                _mayoMesh.Position = mayoDir * sphereRadius * 0.9f;
+            }
             
             // Render each topping
             if (_takoMesh != null && _takoMesh.Visible) RenderToppingMesh(_takoMesh);

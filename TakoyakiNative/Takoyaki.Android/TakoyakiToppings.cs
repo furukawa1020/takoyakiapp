@@ -13,11 +13,11 @@ namespace Takoyaki.Android
         private List<ToppingMesh> _aonoriMeshes = new List<ToppingMesh>();
         private List<ToppingMesh> _katsuobushiMeshes = new List<ToppingMesh>();
         
-        private int _program;
+        private int _toppingProgram;
         
         public void Initialize(int program)
         {
-            _program = program;
+            _toppingProgram = program;
         }
         
         public void GenerateToppings()
@@ -62,11 +62,11 @@ namespace Takoyaki.Android
 
         public void RenderRecursive(float[] vpMatrix, float[] parentModel, float time)
         {
-            GLES30.GlUseProgram(_program);
+            GLES30.GlUseProgram(_toppingProgram);
             
             // Shared Uniforms
-            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_program, "uVPMatrix"), 1, false, vpMatrix, 0);
-            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_program, "uTime"), time);
+            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_toppingProgram, "uVPMatrix"), 1, false, vpMatrix, 0);
+            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_toppingProgram, "uTime"), time);
             
             // Toppings are double-sided and alpha blended
             GLES30.GlDisable(GLES30.GlCullFace);
@@ -106,14 +106,14 @@ namespace Takoyaki.Android
             Matrix.MultiplyMM(finalModel, 0, parentModel, 0, localModel, 0);
             
             // Update Uniforms
-            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_program, "uModelMatrix"), 1, false, finalModel, 0);
+            GLES30.GlUniformMatrix4fv(GLES30.GlGetUniformLocation(_toppingProgram, "uModelMatrix"), 1, false, finalModel, 0);
             
             // Set Color (uColor is used in topping.frag instead of uToppingColor)
-            int uCol = GLES30.GlGetUniformLocation(_program, "uColor");
-            if (uCol == -1) uCol = GLES30.GlGetUniformLocation(_program, "uToppingColor"); // Fallback for old shaders
+            int uCol = GLES30.GlGetUniformLocation(_toppingProgram, "uColor");
+            if (uCol == -1) uCol = GLES30.GlGetUniformLocation(_toppingProgram, "uToppingColor"); // Fallback for old shaders
             GLES30.GlUniform4f(uCol, mesh.Color.X, mesh.Color.Y, mesh.Color.Z, mesh.Color.W);
             
-            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_program, "uRoughness"), roughness);
+            GLES30.GlUniform1f(GLES30.GlGetUniformLocation(_toppingProgram, "uRoughness"), roughness);
 
             // Bind Buffers
             GLES30.GlBindBuffer(GLES30.GlArrayBuffer, mesh.VBO);

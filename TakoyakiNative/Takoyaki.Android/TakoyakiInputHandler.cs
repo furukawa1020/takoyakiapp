@@ -9,7 +9,7 @@ namespace Takoyaki.Android
     /// </summary>
     public class TakoyakiInputHandler
     {
-        private readonly InputState _inputState;
+        private InputState _inputState;
         private readonly TakoyakiSensor _sensor;
         
         // Emulation State (useful for testing on emulators without sensors)

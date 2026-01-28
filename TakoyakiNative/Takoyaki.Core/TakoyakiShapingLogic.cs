@@ -35,6 +35,10 @@ namespace Takoyaki.Core
         [System.Runtime.InteropServices.DllImport("takores")]
         private static extern float tako_get_mastery(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern float tako_get_progress(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
+        private static extern int tako_get_combo(IntPtr engine);
+        [System.Runtime.InteropServices.DllImport("takores")]
         private static extern void tako_free(IntPtr engine);
         [System.Runtime.InteropServices.DllImport("takores")]
         private unsafe static extern void tako_smooth_mesh(IntPtr engine, Vector3* vertices, Vector3* base_vertices, int count, float dt);
@@ -61,9 +65,11 @@ namespace Takoyaki.Core
             float pidOutput;
             
             if (_useRust) {
-                // High-performance Rust path (Kalman + PID)
+                // High-performance Rust path (Kalman + PID + Progress)
                 currentMag = tako_update(_rustEngine, angularVelocity.X, angularVelocity.Y, angularVelocity.Z, dt, TARGET_GYRO_MAG);
                 MasteryLevel = tako_get_mastery(_rustEngine);
+                ShapingProgress = tako_get_progress(_rustEngine);
+                ComboCount = tako_get_combo(_rustEngine);
                 
                 unsafe {
                     float p, i, d;
@@ -76,12 +82,40 @@ namespace Takoyaki.Core
             }
             else
             {
-                // Standard C# Path
+                // Standard C# Path FALLBACK
                 currentMag = angularVelocity.Length();
                 pidOutput = _pid.Update(TARGET_GYRO_MAG, currentMag, dt);
                 P_Term = _pid.P_Contribution;
                 I_Term = _pid.I_Contribution;
                 D_Term = _pid.D_Contribution;
+
+                if (currentMag > 2.0f)
+                {
+                    float harmony = Math.Clamp(1.0f - Math.Abs(pidOutput) / TARGET_GYRO_MAG, 0.0f, 1.0f);
+                    IsPerfect = harmony > 0.85f;
+
+                    if (IsPerfect) {
+                        _stabilityTimer += dt;
+                        if (_stabilityTimer > 0.5f) {
+                            ComboCount++;
+                            _stabilityTimer = 0.0f;
+                        }
+                        MasteryLevel = Math.Min(1.0f, MasteryLevel + dt * 0.5f);
+                    } else {
+                        _stabilityTimer = 0.0f;
+                        if (harmony < 0.5f) ComboCount = 0;
+                        MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 0.2f);
+                    }
+
+                    float pressure = harmony * (1.0f + MasteryLevel * 2.0f); 
+                    ShapingProgress = Math.Max(0.0f, ShapingProgress - pressure * SHAPING_SPEED * dt);
+                }
+                else
+                {
+                    ComboCount = 0;
+                    MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 1.0f);
+                    ShapingProgress = Math.Min(1.0f, ShapingProgress + dt * 0.05f);
+                }
             }
             
             _pulseTimer += dt * (TARGET_GYRO_MAG / (float)Math.PI); 
@@ -90,34 +124,6 @@ namespace Takoyaki.Core
 
             if (RhythmPulse > 0.9f && lastPulse <= 0.9f && currentMag > 1.0f) {
                 TriggerHapticTick = true;
-            }
-
-            if (currentMag > 2.0f)
-            {
-                float harmony = Math.Clamp(1.0f - Math.Abs(pidOutput) / TARGET_GYRO_MAG, 0.0f, 1.0f);
-                IsPerfect = harmony > 0.85f;
-
-                if (IsPerfect) {
-                    _stabilityTimer += dt;
-                    if (_stabilityTimer > 0.5f) {
-                        ComboCount++;
-                        _stabilityTimer = 0.0f;
-                    }
-                    MasteryLevel = Math.Min(1.0f, MasteryLevel + dt * 0.5f);
-                } else {
-                    _stabilityTimer = 0.0f;
-                    if (harmony < 0.5f) ComboCount = 0;
-                    MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 0.2f);
-                }
-
-                float pressure = harmony * (1.0f + MasteryLevel * 2.0f); 
-                ShapingProgress = Math.Max(0.0f, ShapingProgress - pressure * SHAPING_SPEED * dt);
-            }
-            else
-            {
-                ComboCount = 0;
-                MasteryLevel = Math.Max(0.0f, MasteryLevel - dt * 1.0f);
-                ShapingProgress = Math.Min(1.0f, ShapingProgress + dt * 0.05f);
             }
         }
 

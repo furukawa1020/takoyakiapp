@@ -378,42 +378,73 @@ namespace Takoyaki.Android
 
         public void ApplyTopping()
         {
-            // NEW: Show 3D topping objects instead of texture baking
+            // Show 3D topping meshes
             if (_toppingStage == 0)
             {
-                _sauceVisible = true;
-                global::Android.Util.Log.Debug("TakoyakiTopping", "Sauce applied!");
+                if (_sauceMesh != null) _sauceMesh.Visible = true;
+                global::Android.Util.Log.Debug("TakoyakiTopping", "Sauce (3D blob) applied!");
             }
             else if (_toppingStage == 1)
             {
-                _mayoVisible = true;
-                global::Android.Util.Log.Debug("TakoyakiTopping", "Mayo applied!");
+                if (_mayoMesh != null) _mayoMesh.Visible = true;
+                global::Android.Util.Log.Debug("TakoyakiTopping", "Mayo (3D tube) applied!");
             }
             else if (_toppingStage == 2)
             {
-                GenerateAonoriParticles(15);
-                global::Android.Util.Log.Debug("TakoyakiTopping", $"Aonori applied! {_aonoriParticles.Count} particles");
+                // Generate aonori as small leaf-shaped meshes
+                GenerateAonoriMeshes(12);
+                global::Android.Util.Log.Debug("TakoyakiTopping", $"Aonori (3D leaves) applied! {_aonoriMeshes.Count} pieces");
             }
             
             _toppingStage++;
         }
         
-        private void GenerateAonoriParticles(int count)
+        private void GenerateAonoriMeshes(int count)
         {
             var random = new System.Random();
             for (int i = 0; i < count; i++)
             {
-                // Random position on sphere surface (using spherical coordinates)
+                // Random position on sphere surface
                 float theta = (float)(random.NextDouble() * System.Math.PI * 2);
                 float phi = (float)(random.NextDouble() * System.Math.PI);
-                float radius = 1.0f; // Ball radius
+                float radius = 1.05f; // Slightly above ball surface
                 
                 float x = radius * (float)System.Math.Sin(phi) * (float)System.Math.Cos(theta);
                 float y = radius * (float)System.Math.Sin(phi) * (float)System.Math.Sin(theta);
                 float z = radius * (float)System.Math.Cos(phi);
                 
-                _aonoriParticles.Add(new System.Numerics.Vector3(x, y, z));
+                // Create small leaf quad
+                var (vertices, indices) = GenerateLeafQuad(0.08f);
+                
+                var mesh = new ToppingMesh
+                {
+                    Vertices = vertices,
+                    Indices = indices,
+                    Position = new System.Numerics.Vector3(x, y, z),
+                    Color = new System.Numerics.Vector4(0.1f, 0.4f, 0.1f, 1.0f), // Dark green
+                    Visible = true
+                };
+                
+                UploadMeshToGPU(mesh);
+                _aonoriMeshes.Add(mesh);
             }
+        }
+        
+        private (float[], short[]) GenerateLeafQuad(float size)
+        {
+            // Simple quad for leaf
+            float[] vertices = new float[]
+            {
+                // Position,        Normal,         UV
+                -size, -size, 0,   0, 0, 1,        0, 0,
+                 size, -size, 0,   0, 0, 1,        1, 0,
+                 size,  size, 0,   0, 0, 1,        1, 1,
+                -size,  size, 0,   0, 0, 1,        0, 1
+            };
+            
+            short[] indices = new short[] { 0, 1, 2, 0, 2, 3 };
+            
+            return (vertices, indices);
         }
         private int _toppingStage = 0;
 
@@ -573,6 +604,10 @@ namespace Takoyaki.Android
 
                 int uFresnel = GLES30.GlGetUniformLocation(_program, "uOilFresnel");
                 GLES30.GlUniform1f(uFresnel, 1.0f);
+                
+                // Set topping color to default (alpha=0) for ball rendering
+                int uToppingColor = GLES30.GlGetUniformLocation(_program, "uToppingColor");
+                GLES30.GlUniform4f(uToppingColor, 0, 0, 0, 0);
     
                 GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _ibo);
                 GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);

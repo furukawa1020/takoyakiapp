@@ -17,10 +17,21 @@ uniform vec3 uViewPos;
 uniform float uCookLevel; // 0.0 to 2.0
 uniform float uBatterLevel; // 0.0 to 1.0
 uniform float uOilFresnel;
+uniform vec4 uToppingColor; // For rendering topping meshes with custom colors
 
 out vec4 FragColor;
 
 void main() {
+    // TOPPING MESH MODE: If uToppingColor is set, use simple shading
+    if (uToppingColor.a > 0.5) {
+        vec3 N = normalize(vNormal);
+        vec3 L = normalize(uLightPos - vFragPos);
+        float diff = max(dot(N, L), 0.0);
+        vec3 color = uToppingColor.rgb * (0.3 + 0.7 * diff); // Simple diffuse
+        FragColor = vec4(color, uToppingColor.a);
+        return;
+    }
+    
     // 0. Pouring/Filling Visualization
     // Sphere is radius ~1.0 (Y: -1 to 1)
     // Map BatterLevel 0..1 to Height -1..1

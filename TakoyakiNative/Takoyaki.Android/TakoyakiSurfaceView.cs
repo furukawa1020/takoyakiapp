@@ -102,6 +102,7 @@ namespace Takoyaki.Android
             {
                 global::Android.Util.Log.Error("TakoyakiCrash", "ONSURFACECREATED: 1 - GL Init");
                 GLES30.GlEnable(GLES30.GlDepthTest);
+                GLES30.GlDisable(GLES30.GlCullFace); // Safety: Draw both sides
                 // DEBUG: Magenta Background to prove GL is live
                 GLES30.GlClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     
@@ -286,8 +287,8 @@ namespace Takoyaki.Android
             Matrix.FrustumM(_projectionMatrix, 0, -ratio, ratio, -1, 1, 2, 10);
             
             // Camera Setup
-            // Eye: (0, 4, 4), Center: (0, 0, 0), Up: (0, 1, 0)
-            Matrix.SetLookAtM(_viewMatrix, 0, 0f, 4f, 4f, 0f, 0f, 0f, 0f, 1f, 0f);
+            // Eye: (0, 4, 6), Center: (0, 0, 0), Up: (0, 1, 0)
+            Matrix.SetLookAtM(_viewMatrix, 0, 0f, 4f, 6f, 0f, 0f, 0f, 0f, 1f, 0f);
         }
 
         // Input

@@ -324,43 +324,50 @@ namespace Takoyaki.Android
 
         public void OnDrawFrame(IGL10? gl)
         {
-            // Time Delta
-            long now = Java.Lang.JavaSystem.NanoTime();
-            float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
-            _lastTimeNs = now;
-
-            // 1. Update Core Simulation
-            UpdateLogic(dt);
-
-            // 2. Render
-            GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
-
-            GLES30.GlUseProgram(_program);
-            GLES30.GlBindVertexArray(_vao);
-
-            // Update Dynamic VBO (Physics Jiggle)
-            UpdateMeshVBO();
-
-            // Calc MVP
-            Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 
-            Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0); 
-
-            GLES30.GlUniformMatrix4fv(_uMVPMatrixHandle, 1, false, _mvpMatrix, 0);
-            GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);
-
-            // Update Shader Props
-            int uCook = GLES30.GlGetUniformLocation(_program, "uCookLevel");
-            GLES30.GlUniform1f(uCook, _ball.CookLevel);
-            
-            int uBatterLvl = GLES30.GlGetUniformLocation(_program, "uBatterLevel");
-            GLES30.GlUniform1f(uBatterLvl, _ball.BatterLevel);
-
-            GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
-            GLES30.GlBindVertexArray(0);
-            
-            // 3. Draw Particles (After opaque geometry)
-            _steam.Update(dt, _ball.CookLevel > 0.3f ? 1.0f : 0.0f); // Steam if cooking
-            _steam.Draw(_mvpMatrix);
+            try
+            {
+                // Time Delta
+                long now = Java.Lang.JavaSystem.NanoTime();
+                float dt = (now - _lastTimeNs) / 1_000_000_000.0f;
+                _lastTimeNs = now;
+    
+                // 1. Update Core Simulation
+                UpdateLogic(dt);
+    
+                // 2. Render
+                GLES30.GlClear(GLES30.GlColorBufferBit | GLES30.GlDepthBufferBit);
+    
+                GLES30.GlUseProgram(_program);
+                GLES30.GlBindVertexArray(_vao);
+    
+                // Update Dynamic VBO (Physics Jiggle)
+                UpdateMeshVBO();
+    
+                // Calc MVP
+                Matrix.MultiplyMM(_mvpMatrix, 0, _viewMatrix, 0, _modelMatrix, 0); 
+                Matrix.MultiplyMM(_mvpMatrix, 0, _projectionMatrix, 0, _mvpMatrix, 0); 
+    
+                GLES30.GlUniformMatrix4fv(_uMVPMatrixHandle, 1, false, _mvpMatrix, 0);
+                GLES30.GlUniformMatrix4fv(_uModelMatrixHandle, 1, false, _modelMatrix, 0);
+    
+                // Update Shader Props
+                int uCook = GLES30.GlGetUniformLocation(_program, "uCookLevel");
+                GLES30.GlUniform1f(uCook, _ball.CookLevel);
+                
+                int uBatterLvl = GLES30.GlGetUniformLocation(_program, "uBatterLevel");
+                GLES30.GlUniform1f(uBatterLvl, _ball.BatterLevel);
+    
+                GLES30.GlDrawElements(GLES30.GlTriangles, _indexCount, GLES30.GlUnsignedShort, 0);
+                GLES30.GlBindVertexArray(0);
+                
+                // 3. Draw Particles (After opaque geometry)
+                _steam.Update(dt, _ball.CookLevel > 0.3f ? 1.0f : 0.0f); // Steam if cooking
+                _steam.Draw(_mvpMatrix);
+            }
+            catch (System.Exception ex)
+            {
+                 global::Android.Util.Log.Error("TakoyakiCrash", $"CRASH IN ONDRAWFRAME: {ex}");
+            }
         }
 
         private TakoyakiHaptics _haptics;

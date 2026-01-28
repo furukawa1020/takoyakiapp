@@ -37,7 +37,7 @@ void main() {
     
     // Get Height/Displacement value for realistic blending
     // "Crispy" parts (high values) cook first
-    float height = texture(uNoiseMap, vTexCoord).r;
+    float height = texture(uNoiseMapFix, vTexCoord).r;
 
     // Height-Based Blend: Raw -> Cooked
     // Instead of global fade, we use the height map to control the transition frontier.

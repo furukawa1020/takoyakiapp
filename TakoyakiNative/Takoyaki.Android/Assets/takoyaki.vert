@@ -6,7 +6,7 @@ layout(location = 2) in vec2 aTexCoord;
 uniform mat4 uMVPMatrix;
 uniform mat4 uModelMatrix;
 uniform float uDisplacementStrength;
-uniform sampler2D uNoiseMap;
+uniform sampler2D uNoiseMapFix;
 
 out vec3 vFragPos;
 out vec3 vNormal;
@@ -17,7 +17,7 @@ void main() {
     vTexCoord = aTexCoord;
     
     // Vertex Displacement (Puffiness logic)
-    float noiseVal = texture(uNoiseMap, aTexCoord).r;
+    float noiseVal = texture(uNoiseMapFix, aTexCoord).r;
     vec3 displacedPos = aPosition + aNormal * (noiseVal * uDisplacementStrength);
 
     // World Space Position

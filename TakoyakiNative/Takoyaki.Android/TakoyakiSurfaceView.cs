@@ -588,6 +588,9 @@ namespace Takoyaki.Android
                 // 3. Draw Particles (After opaque geometry)
                 _steam.Update(dt, _ball.CookLevel > 0.3f ? 1.0f : 0.0f); // Steam if cooking
                 _steam.Draw(_mvpMatrix);
+                
+                // 4. Draw Toppings (Billboards & Particles)
+                RenderToppings();
             }
             catch (System.Exception ex)
             {
@@ -747,6 +750,191 @@ namespace Takoyaki.Android
         public void Reset()
         {
             if (_stateMachine != null) _stateMachine.Reset();
+        }
+        
+        // ===== TOPPING BILLBOARD SYSTEM =====
+        
+        private void InitializeBillboards()
+        {
+            // Load billboard shader
+            _billboardProgram = ShaderHelper.LoadProgram(global::Android.App.Application.Context, "billboard.vert", "billboard.frag");
+            
+            // Create quad VBO (2 triangles, 4 vertices)
+            // Layout: position (vec2), texcoord (vec2)
+            float[] quadData = new float[] {
+                // Corner,  TexCoord
+                -1, -1,     0, 0,  // Bottom-left
+                 1, -1,     1, 0,  // Bottom-right
+                 1,  1,     1, 1,  // Top-right
+                -1,  1,     0, 1   // Top-left
+            };
+            
+            int[] buffers = new int[1];
+            GLES30.GlGenBuffers(1, buffers, 0);
+            _billboardVBO = buffers[0];
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _billboardVBO);
+            GLES30.GlBufferData(GLES30.GlArrayBuffer, quadData.Length * 4, Java.Nio.FloatBuffer.Wrap(quadData), GLES30.GlStaticDraw);
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
+            
+            // Generate topping textures
+            _sauceTexture = GenerateSauceTexture();
+            _mayoTexture = GenerateMayoTexture();
+            
+            global::Android.Util.Log.Debug("TakoyakiBillboard", "Billboards initialized!");
+        }
+        
+        private int GenerateSauceTexture()
+        {
+            int size = 64;
+            byte[] pixels = new byte[size * size * 4];
+            
+            // Simple brown circle for MVP
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x - size / 2f) / (size / 2f);
+                    float dy = (y - size / 2f) / (size / 2f);
+                    float dist = (float)System.Math.Sqrt(dx * dx + dy * dy);
+                    
+                    int idx = (y * size + x) * 4;
+                    if (dist < 0.8f)
+                    {
+                        pixels[idx + 0] = 80;  // R (brown)
+                        pixels[idx + 1] = 40;  // G
+                        pixels[idx + 2] = 20;  // B
+                        pixels[idx + 3] = (byte)(255 * (1.0f - dist)); // Alpha (fade out)
+                    }
+                    else
+                    {
+                        pixels[idx + 3] = 0; // Transparent
+                    }
+                }
+            }
+            
+            return CreateTexture(pixels, size, size);
+        }
+        
+        private int GenerateMayoTexture()
+        {
+            int size = 64;
+            byte[] pixels = new byte[size * size * 4];
+            
+            // Simple white circle for MVP
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x - size / 2f) / (size / 2f);
+                    float dy = (y - size / 2f) / (size / 2f);
+                    float dist = (float)System.Math.Sqrt(dx * dx + dy * dy);
+                    
+                    int idx = (y * size + x) * 4;
+                    if (dist < 0.6f)
+                    {
+                        pixels[idx + 0] = 255; // R (white)
+                        pixels[idx + 1] = 255; // G
+                        pixels[idx + 2] = 200; // B (slightly yellow)
+                        pixels[idx + 3] = (byte)(255 * (1.0f - dist)); // Alpha
+                    }
+                    else
+                    {
+                        pixels[idx + 3] = 0; // Transparent
+                    }
+                }
+            }
+            
+            return CreateTexture(pixels, size, size);
+        }
+        
+        private int CreateTexture(byte[] pixels, int width, int height)
+        {
+            int[] textures = new int[1];
+            GLES30.GlGenTextures(1, textures, 0);
+            int texId = textures[0];
+            
+            GLES30.GlBindTexture(GLES30.GlTexture2d, texId);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMinFilter, GLES30.GlLinear);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, GLES30.GlLinear);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlClampToEdge);
+            GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlClampToEdge);
+            
+            var buffer = Java.Nio.ByteBuffer.Wrap(pixels);
+            GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, width, height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, buffer);
+            
+            return texId;
+        }
+        
+        private void RenderToppings()
+        {
+            // Enable blending for transparency
+            GLES30.GlEnable(GLES30.GlBlend);
+            GLES30.GlBlendFunc(GLES30.GlSrcAlpha, GLES30.GlOneMinusSrcAlpha);
+            GLES30.GlDisable(GLES30.GlDepthTest); // Render on top
+            
+            GLES30.GlUseProgram(_billboardProgram);
+            
+            // Bind VBO
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _billboardVBO);
+            GLES30.GlEnableVertexAttribArray(0); // aCorner
+            GLES30.GlVertexAttribPointer(0, 2, GLES30.GlFloat, false, 16, 0);
+            GLES30.GlEnableVertexAttribArray(1); // aTexCoord
+            GLES30.GlVertexAttribPointer(1, 2, GLES30.GlFloat, false, 16, 8);
+            
+            // Get uniform locations
+            int uMVP = GLES30.GlGetUniformLocation(_billboardProgram, "uMVPMatrix");
+            int uPos = GLES30.GlGetUniformLocation(_billboardProgram, "uBillboardPos");
+            int uSize = GLES30.GlGetUniformLocation(_billboardProgram, "uBillboardSize");
+            int uTex = GLES30.GlGetUniformLocation(_billboardProgram, "uTexture");
+            int uColor = GLES30.GlGetUniformLocation(_billboardProgram, "uColor");
+            
+            GLES30.GlUniformMatrix4fv(uMVP, 1, false, _mvpMatrix, 0);
+            GLES30.GlUniform1i(uTex, 0); // Texture unit 0
+            
+            // Render Sauce
+            if (_sauceVisible)
+            {
+                GLES30.GlActiveTexture(GLES30.GlTexture0);
+                GLES30.GlBindTexture(GLES30.GlTexture2d, _sauceTexture);
+                GLES30.GlUniform3f(uPos, -0.3f, 0.3f, 0.0f); // Position on ball
+                GLES30.GlUniform2f(uSize, 0.8f, 0.8f); // Size
+                GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 1.0f); // White tint
+                GLES30.GlDrawArrays(GLES30.GlTriangleFan, 0, 4);
+            }
+            
+            // Render Mayo
+            if (_mayoVisible)
+            {
+                GLES30.GlActiveTexture(GLES30.GlTexture0);
+                GLES30.GlBindTexture(GLES30.GlTexture2d, _mayoTexture);
+                GLES30.GlUniform3f(uPos, 0.3f, -0.2f, 0.0f); // Different position
+                GLES30.GlUniform2f(uSize, 0.6f, 0.6f);
+                GLES30.GlUniform4f(uColor, 1.0f, 1.0f, 1.0f, 1.0f);
+                GLES30.GlDrawArrays(GLES30.GlTriangleFan, 0, 4);
+            }
+            
+            // Render Aonori Particles (as small green squares)
+            if (_aonoriParticles.Count > 0)
+            {
+                // Use a simple green texture (or reuse mayo texture with green tint)
+                GLES30.GlActiveTexture(GLES30.GlTexture0);
+                GLES30.GlBindTexture(GLES30.GlTexture2d, _mayoTexture); // Reuse
+                
+                foreach (var particle in _aonoriParticles)
+                {
+                    GLES30.GlUniform3f(uPos, particle.X, particle.Y, particle.Z);
+                    GLES30.GlUniform2f(uSize, 0.1f, 0.1f); // Small
+                    GLES30.GlUniform4f(uColor, 0.2f, 0.8f, 0.2f, 1.0f); // Green
+                    GLES30.GlDrawArrays(GLES30.GlTriangleFan, 0, 4);
+                }
+            }
+            
+            // Cleanup
+            GLES30.GlDisableVertexAttribArray(0);
+            GLES30.GlDisableVertexAttribArray(1);
+            GLES30.GlBindBuffer(GLES30.GlArrayBuffer, 0);
+            GLES30.GlEnable(GLES30.GlDepthTest);
+            GLES30.GlDisable(GLES30.GlBlend);
         }
     }
 }

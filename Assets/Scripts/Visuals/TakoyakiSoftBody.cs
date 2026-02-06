@@ -7,6 +7,7 @@ namespace TakoyakiPhysics.Visuals
     public class TakoyakiSoftBody : MonoBehaviour
     {
         [Header("Mass-Spring Settings")]
+        [Header("Mass-Spring Settings")]
         [SerializeField] private float intensity = 1.2f; // Increased
         [SerializeField] private float mass = 0.8f; // Lighter -> More reactive
         [SerializeField] private float stiffness = 3.5f; // Looser springs
@@ -31,10 +32,6 @@ namespace TakoyakiPhysics.Visuals
         private Vector3[] _meshVertices;
         private Vector3 _lastWorldPosition;
         private Quaternion _lastWorldRotation;
-        
-        // Track frames for periodic normal recalculation
-        private int _frameCounter = 0;
-        private const int NORMAL_RECALC_INTERVAL = 3; // Recalculate normals every 3 frames
 
         private void Start()
         {
@@ -82,15 +79,7 @@ namespace TakoyakiPhysics.Visuals
                 }
                 
                 _workingMesh.vertices = _meshVertices;
-                
-                // Performance optimization: only recalculate normals periodically
-                _frameCounter++;
-                if (_frameCounter >= NORMAL_RECALC_INTERVAL)
-                {
-                    _workingMesh.RecalculateNormals();
-                    _frameCounter = 0;
-                }
-                
+                _workingMesh.RecalculateNormals();
                 _workingMesh.RecalculateBounds();
             }
             catch (System.Exception e)
@@ -103,9 +92,6 @@ namespace TakoyakiPhysics.Visuals
 
         private void UpdatePhysics(float dt)
         {
-            // Performance optimization: clamp delta time to prevent physics explosion
-            dt = Mathf.Min(dt, 0.033f); // Cap at ~30Hz physics timestep
-            
             // Calculate Inertia (Object movement in world space)
             Vector3 worldPos = transform.position;
             Quaternion worldRot = transform.rotation;
@@ -119,13 +105,6 @@ namespace TakoyakiPhysics.Visuals
 
             // Global "Down" in local space for gravity sag
             Vector3 localGravity = transform.InverseTransformDirection(Physics.gravity).normalized;
-            
-            // Cache InputManager acceleration for performance
-            Vector3 inputAccel = Vector3.zero;
-            if (InputManager.Instance != null)
-            {
-                inputAccel = transform.InverseTransformDirection(InputManager.Instance.CurrentAcceleration);
-            }
 
             for (int i = 0; i < _physicsVertices.Length; i++)
             {
@@ -154,8 +133,11 @@ namespace TakoyakiPhysics.Visuals
                 force -= localInertia * inertiaScale * intensity;
 
                 // Add Explicit Acceleration from InputManager (Gyro/Keyboard Shake)
-                // Apply acceleration as force: F = ma
-                force -= inputAccel * mass * intensity;
+                if (InputManager.Instance != null)
+                {
+                    Vector3 inputAccel = transform.InverseTransformDirection(InputManager.Instance.CurrentAcceleration);
+                    force -= inputAccel * mass * intensity; // F = ma, so a = F/m -> F = ma
+                }
 
                 // 6. Integrate (Euler)
                 Vector3 acceleration = force / mass;

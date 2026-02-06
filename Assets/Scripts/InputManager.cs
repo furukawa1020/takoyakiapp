@@ -64,7 +64,7 @@ namespace TakoyakiPhysics
         private void UpdateInput()
         {
             // Gyro Input
-            if (SystemInfo.supportsGyroscope && Input.gyro != null)
+            if (SystemInfo.supportsGyroscope)
             {
                 CurrentGyroRotation = Input.gyro.rotationRate * gyroSensitivity;
                 
@@ -93,7 +93,7 @@ namespace TakoyakiPhysics
             }
 
             // Acceleration Input
-            if (SystemInfo.supportsGyroscope && Input.gyro != null)
+            if (SystemInfo.supportsGyroscope)
             {
                 CurrentAcceleration = Input.acceleration * accelSensitivity;
             }

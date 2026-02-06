@@ -40,10 +40,7 @@ namespace TakoyakiPhysics.States
             Controller.CookLevel += effectiveHeat * dt;
 
             // Simulate "Reaction" to heat (sound/particles)
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.StartSizzle(Controller.CookLevel * 0.5f);
-            }
+            AudioManager.Instance.StartSizzle(Controller.CookLevel * 0.5f);
 
             // Transition Logic (Placeholder input)
             if (Controller.CookLevel > 0.5f && Input.GetKeyDown(KeyCode.Space)) 
@@ -55,11 +52,7 @@ namespace TakoyakiPhysics.States
             {
                 Debug.Log("Burnt!");
                 Controller.NotifyBurn();
-                if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.StopSizzle();
-                    AudioManager.Instance.PlayBurnt();
-                }
+                AudioManager.Instance.StopSizzle();
             }
         }
 
@@ -68,10 +61,7 @@ namespace TakoyakiPhysics.States
             base.Exit();
             var pc = Controller.GetComponent<Visuals.ParticleController>();
             if (pc != null) pc.PlaySteam(false);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.StopSizzle();
-            }
+            AudioManager.Instance.StopSizzle();
         }
     }
 }

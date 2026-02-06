@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+// use std::f32::consts::PI;
 
 #[repr(C)]
 pub struct Vec3 {
@@ -40,6 +40,7 @@ impl KalmanFilter {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum GamePhase {
     Raw = 0,
     Cooking = 1,
@@ -94,6 +95,8 @@ impl RhythmEngine {
         self.p_term = 1.5 * error;
         self.i_term = 0.5 * self.integral;
         self.d_term = 0.2 * der;
+        
+        let output = self.p_term + self.i_term + self.d_term;
         
         if mag > 2.0 {
             let harmony = (1.0 - (output.abs() / target)).clamp(0.0, 1.0);
@@ -291,4 +294,41 @@ pub extern "C" fn tako_reset(e: *mut RhythmEngine) {
 #[no_mangle]
 pub extern "C" fn tako_free(e: *mut RhythmEngine) {
     if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
+}
+
+#[no_mangle]
+pub extern "C" fn tako_smooth_mesh(
+    _e: *mut RhythmEngine,
+    vertices: *mut Vec3,
+    base_vertices: *const Vec3,
+    count: i32,
+    dt: f32,
+) {
+    if vertices.is_null() || base_vertices.is_null() || count <= 0 {
+        return;
+    }
+    
+    let verts = unsafe { std::slice::from_raw_parts_mut(vertices, count as usize) };
+    let bases = unsafe { std::slice::from_raw_parts(base_vertices, count as usize) };
+    
+    // Smooth vertices towards sphere shape based on shaping progress
+    let smooth_speed = 2.0 * dt;
+    
+    for i in 0..count as usize {
+        let base = &bases[i];
+        let vert = &mut verts[i];
+        
+        // Calculate direction from origin to base position (sphere surface)
+        let len = (base.x * base.x + base.y * base.y + base.z * base.z).sqrt();
+        if len > 0.001 {
+            let target_x = base.x / len;
+            let target_y = base.y / len;
+            let target_z = base.z / len;
+            
+            // Smoothly interpolate current position towards sphere surface
+            vert.x += (target_x * len - vert.x) * smooth_speed;
+            vert.y += (target_y * len - vert.y) * smooth_speed;
+            vert.z += (target_z * len - vert.z) * smooth_speed;
+        }
+    }
 }

@@ -131,5 +131,23 @@ namespace TakoyakiPhysics.Feedback
                 ambientSource.volume = Mathf.Clamp01(volume);
             }
         }
+        
+        public void StartPouring()
+        {
+            // Play pouring sound effect if available
+            Debug.Log("[AudioManager] Start Pouring");
+        }
+        
+        public void StopPouring()
+        {
+            // Stop pouring sound effect
+            Debug.Log("[AudioManager] Stop Pouring");
+        }
+        
+        public void PlayToppingSound()
+        {
+            // Play topping application sound
+            Debug.Log("[AudioManager] Play Topping Sound");
+        }
     }
 }

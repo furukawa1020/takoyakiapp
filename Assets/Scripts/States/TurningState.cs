@@ -15,6 +15,12 @@ namespace TakoyakiPhysics.States
             base.Enter();
             _timer = 0f;
             
+            // Play turn sound effect
+            if (TakoyakiPhysics.Feedback.AudioManager.Instance != null)
+            {
+                TakoyakiPhysics.Feedback.AudioManager.Instance.PlayTurn();
+            }
+            
             // DRAMATIC TURN: Jump up!
             if (Controller.Rb != null)
             {

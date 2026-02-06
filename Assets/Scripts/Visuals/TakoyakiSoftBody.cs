@@ -104,7 +104,7 @@ namespace TakoyakiPhysics.Visuals
         private void UpdatePhysics(float dt)
         {
             // Performance optimization: clamp delta time to prevent physics explosion
-            dt = Mathf.Min(dt, 0.033f); // Cap at ~30fps physics timestep
+            dt = Mathf.Min(dt, 0.033f); // Cap at ~30Hz physics timestep
             
             // Calculate Inertia (Object movement in world space)
             Vector3 worldPos = transform.position;

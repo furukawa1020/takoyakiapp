@@ -18,6 +18,7 @@ namespace TakoyakiPhysics.Feedback
         
         private float _targetSizzleVolume = 0f;
         private bool _isSizzling = false;
+        private bool _isPendingStop = false;
 
         private void Awake()
         {
@@ -60,6 +61,13 @@ namespace TakoyakiPhysics.Feedback
             if (sizzleSource != null)
             {
                 sizzleSource.volume = Mathf.Lerp(sizzleSource.volume, _targetSizzleVolume, Time.deltaTime * 5f);
+                
+                // Auto-stop when faded out
+                if (_isPendingStop && sizzleSource.volume < 0.01f)
+                {
+                    sizzleSource.Stop();
+                    _isPendingStop = false;
+                }
             }
         }
 
@@ -84,19 +92,11 @@ namespace TakoyakiPhysics.Feedback
         {
             _targetSizzleVolume = 0f;
             
-            if (_isSizzling && sizzleSource != null)
+            if (_isSizzling)
             {
-                // Don't stop immediately, let it fade out
-                Invoke(nameof(StopSizzleDelayed), 0.5f);
+                // Mark for auto-stop when volume fades out
+                _isPendingStop = true;
                 _isSizzling = false;
-            }
-        }
-
-        private void StopSizzleDelayed()
-        {
-            if (sizzleSource != null && sizzleSource.volume < 0.1f)
-            {
-                sizzleSource.Stop();
             }
         }
 

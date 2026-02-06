@@ -26,7 +26,7 @@ namespace TakoyakiPhysics.Visuals
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.loop = true;
             main.playOnAwake = false;
-            main.maxParticles = 100; // Limit for performance
+            main.maxParticles = 200; // Increased to prevent premature culling with 80 emission rate
 
             var emission = ps.emission;
             emission.rateOverTime = 80f; // Higher density for more dramatic effect

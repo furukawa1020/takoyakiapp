@@ -32,7 +32,7 @@ namespace TakoyakiPhysics.Visuals
         private Vector3 _lastWorldPosition;
         private Quaternion _lastWorldRotation;
         
-        // Performance optimization: cache frame counter
+        // Track frames for periodic normal recalculation
         private int _frameCounter = 0;
         private const int NORMAL_RECALC_INTERVAL = 3; // Recalculate normals every 3 frames
 
@@ -154,7 +154,8 @@ namespace TakoyakiPhysics.Visuals
                 force -= localInertia * inertiaScale * intensity;
 
                 // Add Explicit Acceleration from InputManager (Gyro/Keyboard Shake)
-                force -= inputAccel * mass * intensity; // F = ma, so a = F/m -> F = ma
+                // Apply acceleration as force: F = ma
+                force -= inputAccel * mass * intensity;
 
                 // 6. Integrate (Euler)
                 Vector3 acceleration = force / mass;

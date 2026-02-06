@@ -22,7 +22,7 @@ namespace TakoyakiPhysics.Visuals
 
         private void Update()
         {
-            // Null check with early return
+            // Skip update if components aren't initialized
             if (_controller == null || _renderer == null) return;
 
             // Update shader properties based on controller state

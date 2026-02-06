@@ -14,7 +14,7 @@ Shader "Takoyaki/TakoyakiCinematic"
         
         [Header(Subsurface Scattering)]
         _SSSColor ("SSS Color", Color) = (1, 0.8, 0.6, 1)
-        _SSSIntensity ("SSS Intensity", Range(0, 2)) = 0.8
+        _SSSIntensity ("SSS Intensity", Range(0, 2)) = 0.8  // Values > 1.0 create dramatic glow for stylized look
         _SSSPower ("SSS Power", Range(1, 8)) = 3.0
 
         [Header(Oil and Glaze)]

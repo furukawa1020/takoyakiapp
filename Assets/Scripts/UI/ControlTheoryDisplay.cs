@@ -78,7 +78,7 @@ namespace TakoyakiPhysics.UI
             
             priorError = shapeError;
             
-            var rhythmTracker = Game.RhythmHarmonyTracker.GetInstance();
+            var rhythmTracker = TakoyakiPhysics.Game.RhythmHarmonyTracker.GetInstance();
             if (rhythmTracker)
             {
                 float gyroError = rhythmTracker.GetRotationDeviation();

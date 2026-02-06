@@ -88,20 +88,23 @@ namespace TakoyakiPhysics.Game
             SkillLevel = Mathf.Clamp01(SkillLevel);
         }
 
+        private float lastChimeTime;
+        
         void BroadcastFeedbackSignals()
         {
-            var cameraOsc = Visuals.ZenCameraOscillator.GetInstance();
+            var cameraOsc = TakoyakiPhysics.Visuals.ZenCameraOscillator.GetInstance();
             if (cameraOsc) cameraOsc.UpdateHarmonyLevel(HarmonyScore);
             
-            var auraOverlay = Visuals.GoldenAuraOverlay.GetInstance();
+            var auraOverlay = TakoyakiPhysics.Visuals.GoldenAuraOverlay.GetInstance();
             if (auraOverlay) auraOverlay.AdjustAuraStrength(HarmonyScore);
             
             if (AchievedZenState && sustainedZenDuration > 2f)
             {
-                var audioMgr = Feedback.AudioManager.Instance;
-                if (audioMgr && Mathf.FloorToInt(sustainedZenDuration) % 3 == 0 && Time.frameCount % 180 == 0)
+                var audioMgr = TakoyakiPhysics.Feedback.AudioManager.Instance;
+                if (audioMgr && Time.time - lastChimeTime > 3f)
                 {
                     audioMgr.PlayPerfect();
+                    lastChimeTime = Time.time;
                 }
             }
         }

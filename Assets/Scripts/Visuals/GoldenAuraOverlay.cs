@@ -28,7 +28,15 @@ namespace TakoyakiPhysics.Visuals
 
         void Start()
         {
-            Shader overlayShader = Shader.Find("Unlit/Color");
+            // Note: This requires a custom shader with _GlowColor, _Intensity, _EdgeThickness, _EdgeSoftness properties
+            // Fallback to standard shader if custom shader not available
+            Shader overlayShader = Shader.Find("Hidden/GoldenAuraVignette");
+            if (!overlayShader)
+            {
+                overlayShader = Shader.Find("Unlit/Transparent");
+                Debug.LogWarning("[GoldenAuraOverlay] Custom shader not found, using fallback. Effect may not render correctly.");
+            }
+            
             if (overlayShader)
             {
                 postProcessMat = new Material(overlayShader);

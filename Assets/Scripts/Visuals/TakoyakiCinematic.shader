@@ -122,5 +122,48 @@ Shader "Takoyaki/TakoyakiCinematic"
         }
         ENDCG
     }
+    
+    // Simpler SubShader for lower-end devices (LOD 200)
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+        
+        CGPROGRAM
+        #pragma surface surf Standard fullforwardshadows
+        #pragma target 3.0
+        
+        sampler2D _MainTex;
+        sampler2D _CookedTex;
+        sampler2D _BurntTex;
+        
+        struct Input
+        {
+            float2 uv_MainTex;
+        };
+        
+        half _CookLevel;
+        half _BatterAmount;
+        
+        void surf (Input IN, inout SurfaceOutputStandard o)
+        {
+            // Simplified version without displacement, SSS, or advanced effects
+            fixed4 c_raw = tex2D (_MainTex, IN.uv_MainTex);
+            fixed4 c_cooked = tex2D (_CookedTex, IN.uv_MainTex);
+            fixed4 c_burnt = tex2D (_BurntTex, IN.uv_MainTex);
+            
+            float toCooked = smoothstep(0.2, 0.8, _CookLevel);
+            float toBurnt = smoothstep(1.2, 1.8, _CookLevel);
+            
+            fixed4 albedo = lerp(c_raw, c_cooked, toCooked);
+            albedo = lerp(albedo, c_burnt, toBurnt);
+            
+            o.Albedo = albedo.rgb;
+            o.Smoothness = lerp(0.3, 0.7, toCooked);
+            o.Metallic = 0.0;
+        }
+        ENDCG
+    }
+    
     FallBack "Diffuse"
 }

@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace TakoyakiPhysics.Visuals
 {
+    /// <summary>
+    /// Procedural particle effects for takoyaki cooking
+    /// Supports object pooling for better performance
+    /// </summary>
     public static class ProceduralFX
     {
         public static ParticleSystem CreateSteamFX(Transform parent)

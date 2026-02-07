@@ -293,10 +293,16 @@ class TakoyakiGame {
         const g = Math.floor(69 + cookRatio * 100);
         const b = 19;
         
-        // Gradient
-        const gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.takoyakiRadius);
-        gradient.addColorStop(0, `rgb(${r + 30}, ${g + 30}, ${b})`);
-        gradient.addColorStop(1, `rgb(${r}, ${g}, ${b})`);
+        // Gradient for 3D sphere effect - offset highlight to top-left
+        const highlightOffsetX = -this.takoyakiRadius * 0.3;
+        const highlightOffsetY = -this.takoyakiRadius * 0.3;
+        const gradient = this.ctx.createRadialGradient(
+            highlightOffsetX, highlightOffsetY, this.takoyakiRadius * 0.1,
+            0, 0, this.takoyakiRadius
+        );
+        gradient.addColorStop(0, `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 30)})`);
+        gradient.addColorStop(0.4, `rgb(${r + 20}, ${g + 20}, ${b})`);
+        gradient.addColorStop(1, `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 30)}, ${Math.max(0, b - 10)})`);
         
         this.ctx.fillStyle = gradient;
         this.ctx.beginPath();

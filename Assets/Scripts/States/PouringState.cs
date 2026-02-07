@@ -12,7 +12,7 @@ namespace TakoyakiPhysics.States
         {
             base.Enter();
             Debug.Log("Start Pouring Physics...");
-            AudioManager.Instance.StartPouring();
+            AudioManager.Instance.PlayPour();
             
             // Reset values
             Controller.BatterAmount = 0f;
@@ -23,7 +23,7 @@ namespace TakoyakiPhysics.States
         public override void Exit()
         {
             base.Exit();
-            AudioManager.Instance.StopPouring();
+            // Pour sound is one-shot, no need to stop
         }
 
         public override void UpdateState()

@@ -65,7 +65,23 @@ namespace TakoyakiPhysics.Visuals
 
         public void PlaySteam(bool isPlaying)
         {
-            // Override or manual control (Legacy)
+            // Manual control for steam particles
+            if (steamParticles == null) return;
+            
+            if (isPlaying)
+            {
+                if (!steamParticles.isPlaying)
+                {
+                    steamParticles.Play();
+                }
+            }
+            else
+            {
+                if (steamParticles.isPlaying)
+                {
+                    steamParticles.Stop();
+                }
+            }
         }
 
         public void PlayOilSplatter(Vector3 position)

@@ -92,7 +92,5 @@ namespace TakoyakiPhysics.Visuals
             
             return ps;
         }
-
-
-}
+    }
 }

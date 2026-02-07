@@ -7,7 +7,6 @@ namespace TakoyakiPhysics.Visuals
     public class TakoyakiSoftBody : MonoBehaviour
     {
         [Header("Mass-Spring Settings")]
-        [Header("Mass-Spring Settings")]
         [SerializeField] private float intensity = 1.2f; // Increased
         [SerializeField] private float mass = 0.8f; // Lighter -> More reactive
         [SerializeField] private float stiffness = 3.5f; // Looser springs

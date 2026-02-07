@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Takoyaki Soul: Zen Mastery Edition - Web Version 🦀🔥</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <h1>🐙 Takoyaki Soul 🐙</h1>
+            <h2>Zen Mastery Edition</h2>
+            <p class="subtitle">Web Version</p>
+            <button id="start-button" class="game-button">Start Cooking</button>
+            <div class="info">
+                <p>🖱️ マウスで回転 / Mouse to rotate</p>
+                <p>🎯 完璧な球体を目指せ / Aim for perfect sphere</p>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div id="hud">
+                <div class="hud-section">
+                    <div class="label">Shaping Progress</div>
+                    <div class="progress-bar">
+                        <div id="shaping-bar" class="progress-fill shaping"></div>
+                    </div>
+                </div>
+                <div class="hud-section">
+                    <div class="label">Cook Level</div>
+                    <div class="progress-bar">
+                        <div id="cooking-bar" class="progress-fill cooking"></div>
+                    </div>
+                </div>
+                <div class="hud-section">
+                    <div class="label">Mastery</div>
+                    <div class="progress-bar">
+                        <div id="mastery-bar" class="progress-fill mastery"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <canvas id="game-canvas"></canvas>
+            
+            <div id="controls">
+                <div class="control-hint">
+                    <p>🔄 回転を維持 / Keep rotating steadily</p>
+                    <p id="rotation-feedback" class="feedback">---</p>
+                </div>
+                <button id="shake-button" class="game-button">🎨 Add Toppings (Shake)</button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="screen">
+            <h1>🎉 完成！ / Complete! 🎉</h1>
+            <div id="score-display">
+                <div class="score-item">
+                    <span class="label">Total Score:</span>
+                    <span id="total-score" class="value">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="label">Shape:</span>
+                    <span id="shape-score" class="value">0%</span>
+                </div>
+                <div class="score-item">
+                    <span class="label">Cook:</span>
+                    <span id="cook-score" class="value">0%</span>
+                </div>
+            </div>
+            <p id="comment" class="comment">---</p>
+            <button id="restart-button" class="game-button">もう一度 / Restart</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

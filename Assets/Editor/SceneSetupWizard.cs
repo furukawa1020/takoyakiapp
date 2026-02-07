@@ -259,4 +259,40 @@ public class SceneSetupWizard : EditorWindow
 
         return panel;
     }
+
+    private static GameObject CreateText(GameObject parent, string name, string text, int fontSize, Vector2 position, Vector2 sizeDelta, Font font)
+    {
+        GameObject textObj = new GameObject(name);
+        textObj.transform.SetParent(parent.transform, false);
+        RectTransform rt = textObj.AddComponent<RectTransform>();
+        rt.anchoredPosition = position;
+        rt.sizeDelta = sizeDelta;
+
+        Text textComp = textObj.AddComponent<Text>();
+        textComp.text = text;
+        textComp.fontSize = fontSize;
+        textComp.alignment = TextAnchor.MiddleCenter;
+        textComp.color = Color.white;
+        if (font != null) textComp.font = font;
+
+        return textObj;
+    }
+
+    private static GameObject CreateArrowButton(GameObject parent, string name, Vector2 direction, Vector2 position, float rotation)
+    {
+        GameObject buttonObj = new GameObject(name);
+        buttonObj.transform.SetParent(parent.transform, false);
+        RectTransform rt = buttonObj.AddComponent<RectTransform>();
+        rt.anchoredPosition = position;
+        rt.sizeDelta = new Vector2(100, 100);
+        rt.localRotation = Quaternion.Euler(0, 0, rotation);
+
+        UnityEngine.UI.Image img = buttonObj.AddComponent<UnityEngine.UI.Image>();
+        img.color = new Color(1, 1, 1, 0.5f);
+
+        VirtualArrowButton vab = buttonObj.AddComponent<VirtualArrowButton>();
+        vab.direction = direction;
+
+        return buttonObj;
+    }
 }

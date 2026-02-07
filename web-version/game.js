@@ -43,15 +43,15 @@ class TakoyakiGame {
     }
     
     initCanvas() {
-        const resizeCanvas = () => {
+        this.resizeCanvas = () => {
             const container = this.canvas.parentElement;
             this.canvas.width = container.clientWidth;
             this.canvas.height = container.clientHeight;
             this.takoyakiX = this.canvas.width / 2;
             this.takoyakiY = this.canvas.height / 2;
         };
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        // Don't call resizeCanvas() here - will be called when game starts
+        window.addEventListener('resize', this.resizeCanvas);
     }
     
     setupEventListeners() {
@@ -134,6 +134,8 @@ class TakoyakiGame {
     startGame() {
         this.state = 'playing';
         this.showScreen('game-screen');
+        // Initialize canvas size now that the game screen is visible
+        this.resizeCanvas();
     }
     
     resetGame() {

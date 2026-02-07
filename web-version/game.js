@@ -28,7 +28,7 @@ class TakoyakiGame {
         
         // Toppings
         this.toppings = [];
-        this.hasSource = false;
+        this.hasSauce = false;
         this.hasMayo = false;
         this.hasAonori = false;
         this.hasKatsuobushi = false;
@@ -144,7 +144,7 @@ class TakoyakiGame {
         this.rotationSpeed = 0;
         this.deformAmount = 1.0;
         this.toppings = [];
-        this.hasSource = false;
+        this.hasSauce = false;
         this.hasMayo = false;
         this.hasAonori = false;
         this.hasKatsuobushi = false;
@@ -159,7 +159,7 @@ class TakoyakiGame {
         // Add random toppings based on progress
         const types = [];
         
-        if (!this.hasSource && this.shapeProgress < 80) {
+        if (!this.hasSauce && this.shapeProgress < 80) {
             types.push('sauce');
         }
         if (!this.hasMayo && this.shapeProgress < 60) {
@@ -189,7 +189,7 @@ class TakoyakiGame {
             }
             
             // Mark as added
-            if (type === 'sauce') this.hasSource = true;
+            if (type === 'sauce') this.hasSauce = true;
             if (type === 'mayo') this.hasMayo = true;
             if (type === 'aonori') this.hasAonori = true;
             if (type === 'katsuobushi') this.hasKatsuobushi = true;

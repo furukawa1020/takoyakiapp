@@ -51,10 +51,19 @@ HUDに表示される3本の細いバーは、あなたの操作に対するRust
 *   **Dynamic Toppings**:
     ソース、マヨネーズ、青のりが、シェイク（加速度センサー）によってダイナミックにふりかかる。
 
-## クイックセットアップ
+## プラットフォーム別セットアップ
+
+### Android 版（Unity + Rust）
 1.  **Build Rust**: `Takoyaki.Native/` をビルドし、`libtakores.so` を生成。
 2.  **Unity Setup**: 上部メニュー **Takoyaki > Setup > Create Game Scene** を実行。
 3.  **Run**: Android端末（推奨: Pixel 8以降）へデプロイ。
+
+### Web 版（ブラウザ）
+ブラウザで今すぐプレイ可能！ジャイロセンサー不要のマウス/タッチ操作版。
+
+🌐 **[Play Now on GitHub Pages](https://furukawa1020.github.io/takoyakiapp/)**
+
+詳細は [`web-version/README.md`](web-version/README.md) を参照。
 
 ---
 そこに、魂（ソウル）はあるか？

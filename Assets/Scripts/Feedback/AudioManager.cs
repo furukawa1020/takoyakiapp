@@ -45,6 +45,9 @@ namespace TakoyakiPhysics.Feedback
 
         private void GenerateProceduralSounds()
         {
+            // Initialize random with a seed for consistent audio generation
+            Random.InitState(12345);
+            
             // Generate simple procedural sounds if clips are not assigned
             if (sizzleSound == null)
             {
@@ -66,6 +69,9 @@ namespace TakoyakiPhysics.Feedback
             {
                 burnSound = GenerateWhiteNoise(0.8f, 0.5f);
             }
+            
+            // Reset random state after generation
+            Random.InitState(System.Environment.TickCount);
         }
 
         private AudioClip GenerateWhiteNoise(float duration, float volume)
@@ -172,16 +178,6 @@ namespace TakoyakiPhysics.Feedback
             {
                 _audioSource.PlayOneShot(clip, volume);
             }
-        }
-
-        public void StartPouring()
-        {
-            PlayPour();
-        }
-
-        public void StopPouring()
-        {
-            // Pour sound is one-shot, so nothing to stop
         }
 
         public void PlayToppingSound()

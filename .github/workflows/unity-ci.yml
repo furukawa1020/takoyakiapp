@@ -17,6 +17,9 @@ on:
       - 'Packages/**'
       - '.github/workflows/unity-ci.yml'
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Validate Unity Project

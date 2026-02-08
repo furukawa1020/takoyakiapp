@@ -6,23 +6,25 @@ This repository is configured to automatically deploy the web version to GitHub 
 
 The `deploy-web.yml` workflow is configured to automatically deploy the `web-version/` directory to GitHub Pages whenever changes are pushed to the main branch.
 
-## What Happens When This PR is Merged
+## How It Works
 
-1. The workflow will run automatically because we've modified files in `web-version/`
-2. It will create a `gh-pages` branch (if it doesn't exist)
-3. It will push the web version files to that branch
-4. GitHub Pages should automatically serve the site from the `gh-pages` branch
+The deployment uses GitHub's official Pages actions:
+1. `actions/configure-pages@v4` - Automatically configures GitHub Pages settings
+2. `actions/upload-pages-artifact@v3` - Packages the web-version files
+3. `actions/deploy-pages@v4` - Deploys to GitHub Pages
 
-## Manual Steps (if needed)
+This approach ensures GitHub Pages is properly configured and activated automatically without manual intervention.
 
-If the site is not accessible after the workflow runs successfully, you may need to manually enable GitHub Pages in the repository settings:
+## What Happens When Changes are Pushed
 
-1. Go to Repository Settings → Pages
-2. Under "Build and deployment" > "Source", select "Deploy from a branch"
-3. Under "Branch", select `gh-pages` and `/ (root)` directory
-4. Click Save
+1. The workflow runs automatically when:
+   - Files in `web-version/` are modified
+   - The `deploy-web.yml` workflow file is modified
+2. The workflow validates the web files (HTML, JS, CSS)
+3. It packages and deploys the content to GitHub Pages
+4. GitHub Pages serves the site at: https://furukawa1020.github.io/takoyakiapp/
 
-The site will then be available at: https://furukawa1020.github.io/takoyakiapp/
+No manual configuration in repository settings is required!
 
 ## Manually Triggering Deployment
 
@@ -37,7 +39,7 @@ If you need to redeploy without making code changes:
 ## Troubleshooting
 
 If you see a 404 error:
-- Wait a few minutes for GitHub Pages to build and deploy
+- Wait a few minutes for GitHub Pages to build and deploy (first deployment can take 5-10 minutes)
 - Check that the workflow ran successfully in the Actions tab
-- Verify the `gh-pages` branch exists and contains the web files
-- Ensure GitHub Pages is enabled in repository settings (see "Manual Steps" above)
+- Verify the deployment shows a green checkmark in the workflow run
+- The official GitHub Pages actions automatically configure the repository settings

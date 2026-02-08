@@ -66,6 +66,5 @@ sysinfo.txt
 **/obj/
 # VS Code
 .vscode/
-# Rust build artifacts
+# Rust build artifacts (but keep Cargo.lock for reproducible builds)
 **/target/
-Cargo.lock

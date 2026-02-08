@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Quick Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check repository structure
+        run: |
+          echo "========================================="
+          echo "Takoyaki App CI - Repository Overview"
+          echo "========================================="
+          echo ""
+          echo "Project components:"
+          
+          if [ -d "Assets" ]; then
+            echo "✓ Unity project (Assets/)"
+          fi
+          
+          if [ -d "TakoyakiNative" ]; then
+            echo "✓ Native Android app (TakoyakiNative/)"
+          fi
+          
+          if [ -d "TakoyakiNative/Takoyaki.Native" ]; then
+            echo "✓ Rust native library (TakoyakiNative/Takoyaki.Native/)"
+          fi
+          
+          if [ -d "web-version" ]; then
+            echo "✓ Web version (web-version/)"
+          fi
+          
+          echo ""
+          echo "CI Workflows:"
+          echo "- Rust CI: Tests and builds native library"
+          echo "- Unity CI: Validates Unity project structure"
+          echo "- Web Deploy: Tests and deploys web version"
+          echo "========================================="
+      
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for accidentally committed files..."
+          
+          # Check for common sensitive file patterns
+          found_issues=false
+          
+          if find . -name "*.keystore" -o -name "*.jks" | grep -v ".git" | grep .; then
+            echo "⚠️  Warning: Keystore files found"
+            found_issues=true
+          fi
+          
+          if find . -name ".env" -o -name "*.key" -o -name "*.pem" | grep -v ".git" | grep -v "node_modules" | grep .; then
+            echo "⚠️  Warning: Potential secret files found"
+            found_issues=true
+          fi
+          
+          if [ "$found_issues" = true ]; then
+            echo ""
+            echo "Please review these files to ensure no secrets are committed"
+            # Don't fail the build, just warn
+          else
+            echo "✓ No obvious sensitive files found"
+          fi
+      
+      - name: Collect metrics
+        run: |
+          echo "Repository metrics:"
+          echo "- C# scripts: $(find Assets -name "*.cs" 2>/dev/null | wc -l)"
+          echo "- Rust files: $(find TakoyakiNative -name "*.rs" 2>/dev/null | wc -l)"
+          echo "- Web version files: $(ls -1 web-version/*.js web-version/*.html web-version/*.css 2>/dev/null | wc -l)"
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check file endings
+        run: |
+          echo "Checking for CRLF line endings..."
+          if git ls-files | xargs file | grep CRLF | grep -v ".meta" | grep .; then
+            echo "⚠️  Warning: CRLF line endings found in some files"
+            echo "Consider converting to LF for consistency"
+          else
+            echo "✓ No CRLF line endings detected"
+          fi
+      
+      - name: Check for trailing whitespace
+        run: |
+          echo "Checking for trailing whitespace..."
+          # This is informational only, don't fail the build
+          if git ls-files | xargs grep -l " $" 2>/dev/null | grep -v ".meta" | head -5; then
+            echo "Note: Some files have trailing whitespace (showing first 5)"
+          fi
+          echo "✓ Whitespace check complete"

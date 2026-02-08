@@ -19,7 +19,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    name: Test Web Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Validate HTML
+        run: |
+          echo "Validating web-version files..."
+          if [ ! -f "web-version/index.html" ]; then
+            echo "Error: index.html not found"
+            exit 1
+          fi
+          if [ ! -f "web-version/game.js" ]; then
+            echo "Error: game.js not found"
+            exit 1
+          fi
+          if [ ! -f "web-version/style.css" ]; then
+            echo "Error: style.css not found"
+            exit 1
+          fi
+          echo "✓ All required files present"
+      
+      - name: Check JavaScript syntax
+        run: |
+          cd web-version
+          node --check game.js || {
+            echo "JavaScript syntax error in game.js"
+            exit 1
+          }
+          echo "✓ JavaScript syntax valid"
+      
+      - name: File size check
+        run: |
+          cd web-version
+          total_size=$(du -sb . | cut -f1)
+          echo "Total web-version size: $total_size bytes"
+          if [ "$total_size" -gt 1000000 ]; then
+            echo "Warning: Total size exceeds 1MB"
+          fi
+  
   deploy:
+    name: Deploy to GitHub Pages
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

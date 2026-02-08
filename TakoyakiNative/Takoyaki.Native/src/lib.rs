@@ -23,12 +23,22 @@ pub struct PhysicsParams {
 }
 
 struct KalmanFilter {
-    q: f32, r: f32, x: f32, p: f32, k: f32,
+    q: f32,
+    r: f32,
+    x: f32,
+    p: f32,
+    k: f32,
 }
 
 impl KalmanFilter {
     fn new(init_x: f32) -> Self {
-        Self { q: 0.01, r: 0.1, x: init_x, p: 1.0, k: 0.0 }
+        Self {
+            q: 0.01,
+            r: 0.1,
+            x: init_x,
+            p: 1.0,
+            k: 0.0,
+        }
     }
     fn update(&mut self, m: f32) -> f32 {
         self.p += self.q;
@@ -71,13 +81,23 @@ pub struct RhythmEngine {
 impl RhythmEngine {
     fn new() -> Self {
         Self {
-            kf_x: KalmanFilter::new(0.0), kf_y: KalmanFilter::new(0.0), kf_z: KalmanFilter::new(0.0),
-            last_error: 0.0, integral: 0.0, mastery: 0.0,
-            shaping_progress: 1.0, batter_level: 0.0, cook_level: 0.0,
+            kf_x: KalmanFilter::new(0.0),
+            kf_y: KalmanFilter::new(0.0),
+            kf_z: KalmanFilter::new(0.0),
+            last_error: 0.0,
+            integral: 0.0,
+            mastery: 0.0,
+            shaping_progress: 1.0,
+            batter_level: 0.0,
+            cook_level: 0.0,
             game_phase: GamePhase::Raw,
-            combo_count: 0, stability_timer: 0.0,
-            score: 0, result_ready: false,
-            p_term: 0.0, i_term: 0.0, d_term: 0.0,
+            combo_count: 0,
+            stability_timer: 0.0,
+            score: 0,
+            result_ready: false,
+            p_term: 0.0,
+            i_term: 0.0,
+            d_term: 0.0,
         }
     }
 
@@ -85,19 +105,19 @@ impl RhythmEngine {
         let fx = self.kf_x.update(x);
         let fy = self.kf_y.update(y);
         let fz = self.kf_z.update(z);
-        let mag = (fx*fx + fy*fy + fz*fz).sqrt();
-        
+        let mag = (fx * fx + fy * fy + fz * fz).sqrt();
+
         let error = target - mag;
         self.integral += error * dt;
         let der = (error - self.last_error) / dt;
         self.last_error = error;
-        
+
         self.p_term = 1.5 * error;
         self.i_term = 0.5 * self.integral;
         self.d_term = 0.2 * der;
-        
+
         let output = self.p_term + self.i_term + self.d_term;
-        
+
         if mag > 2.0 {
             let harmony = (1.0 - (output.abs() / target)).clamp(0.0, 1.0);
             let is_perfect = harmony > 0.85;
@@ -111,14 +131,17 @@ impl RhythmEngine {
                 self.mastery = (self.mastery + dt * 0.5).min(1.0);
             } else {
                 self.stability_timer = 0.0;
-                if harmony < 0.5 { self.combo_count = 0; }
+                if harmony < 0.5 {
+                    self.combo_count = 0;
+                }
                 self.mastery = (self.mastery - dt * 0.2).max(0.0);
             }
 
             // Target roughly 20 seconds for full completion at perfect harmony
             let pressure = harmony * (1.0 + self.mastery * 1.5);
-            let shaping_speed = 0.05; 
-            self.shaping_progress = (self.shaping_progress - pressure * shaping_speed * dt).max(0.0);
+            let shaping_speed = 0.05;
+            self.shaping_progress =
+                (self.shaping_progress - pressure * shaping_speed * dt).max(0.0);
         } else {
             self.combo_count = 0;
             self.mastery = (self.mastery - dt * 1.0).max(0.0);
@@ -130,25 +153,29 @@ impl RhythmEngine {
             GamePhase::Raw => {
                 // Rapidly fill batter (1 second total)
                 self.batter_level = (self.batter_level + dt * 1.0).min(1.0);
-                if self.batter_level >= 1.0 { self.game_phase = GamePhase::Cooking; }
-            },
+                if self.batter_level >= 1.0 {
+                    self.game_phase = GamePhase::Cooking;
+                }
+            }
             GamePhase::Cooking => {
                 // Heat up while cooking
                 self.cook_level = (self.cook_level + dt * 0.15).min(2.0);
                 // Transition to turned when shaped enough
-                if self.shaping_progress < 0.5 { self.game_phase = GamePhase::Turned; }
-            },
+                if self.shaping_progress < 0.5 {
+                    self.game_phase = GamePhase::Turned;
+                }
+            }
             GamePhase::Turned => {
                 // Continue heating
                 self.cook_level = (self.cook_level + dt * 0.12).min(2.0);
                 // Final finish when reaching perfect sphere
-                if self.shaping_progress <= 0.05 { 
+                if self.shaping_progress <= 0.05 {
                     self.game_phase = GamePhase::Finished;
                     self.calculate_score();
                     self.result_ready = true;
                 }
-            },
-            GamePhase::Finished => {},
+            }
+            GamePhase::Finished => {}
         }
 
         mag
@@ -159,15 +186,26 @@ impl RhythmEngine {
         let cook_err = (self.cook_level - 1.0).abs();
         let cook_score = (100.0 - cook_err * 60.0).clamp(0.0, 100.0);
         let shape_score = (1.0 - self.shaping_progress) * 40.0;
-        
+
         let mut total = (cook_score + shape_score) as i32;
-        if self.cook_level < 0.6 { total -= 40; } // Penalty for raw
-        if self.cook_level > 1.6 { total -= 30; } // Penalty for burnt
-        
+        if self.cook_level < 0.6 {
+            total -= 40;
+        } // Penalty for raw
+        if self.cook_level > 1.6 {
+            total -= 30;
+        } // Penalty for burnt
+
         self.score = total.clamp(0, 100);
     }
 
-    fn step_physics(&self, states: &mut [VertexState], params: &PhysicsParams, gravity: &Vec3, accel: &Vec3, dt: f32) {
+    fn step_physics(
+        &self,
+        states: &mut [VertexState],
+        params: &PhysicsParams,
+        gravity: &Vec3,
+        accel: &Vec3,
+        dt: f32,
+    ) {
         let dt_ratio = dt * 60.0;
         let d_factor = (1.0 - params.damping).powf(dt_ratio);
         for v in states.iter_mut() {
@@ -183,20 +221,24 @@ impl RhythmEngine {
             v.velocity.x += (fx / params.mass) * dt;
             v.velocity.y += (fy / params.mass) * dt;
             v.velocity.z += (fz / params.mass) * dt;
-            v.velocity.x *= d_factor; v.velocity.y *= d_factor; v.velocity.z *= d_factor;
+            v.velocity.x *= d_factor;
+            v.velocity.y *= d_factor;
+            v.velocity.z *= d_factor;
             v.position.x += v.velocity.x * dt;
             v.position.y += v.velocity.y * dt;
             v.position.z += v.velocity.z * dt;
             let cur_dx = v.position.x - v.original_pos.x;
             let cur_dy = v.position.y - v.original_pos.y;
             let cur_dz = v.position.z - v.original_pos.z;
-            let dist_sq = cur_dx*cur_dx + cur_dy*cur_dy + cur_dz*cur_dz;
+            let dist_sq = cur_dx * cur_dx + cur_dy * cur_dy + cur_dz * cur_dz;
             if dist_sq > 0.09 {
                 let d = dist_sq.sqrt();
                 v.position.x = v.original_pos.x + (cur_dx / d) * 0.3;
                 v.position.y = v.original_pos.y + (cur_dy / d) * 0.3;
                 v.position.z = v.original_pos.z + (cur_dz / d) * 0.3;
-                v.velocity.x *= 0.1; v.velocity.y *= 0.1; v.velocity.z *= 0.1;
+                v.velocity.x *= 0.1;
+                v.velocity.y *= 0.1;
+                v.velocity.z *= 0.1;
             }
         }
     }
@@ -210,7 +252,14 @@ pub extern "C" fn tako_init() -> *mut RhythmEngine {
 }
 
 #[no_mangle]
-pub extern "C" fn tako_update(e: *mut RhythmEngine, gx: f32, gy: f32, gz: f32, dt: f32, target: f32) -> f32 {
+pub extern "C" fn tako_update(
+    e: *mut RhythmEngine,
+    gx: f32,
+    gy: f32,
+    gz: f32,
+    dt: f32,
+    target: f32,
+) -> f32 {
     let e = unsafe { &mut *e };
     e.update(gx, gy, gz, dt, target)
 }
@@ -226,7 +275,15 @@ pub extern "C" fn tako_get_pid_terms(e: *mut RhythmEngine, p: *mut f32, i: *mut 
 }
 
 #[no_mangle]
-pub extern "C" fn tako_step_physics(e: *mut RhythmEngine, states: *mut VertexState, count: i32, params: *const PhysicsParams, g: *const Vec3, a: *const Vec3, dt: f32) {
+pub extern "C" fn tako_step_physics(
+    e: *mut RhythmEngine,
+    states: *mut VertexState,
+    count: i32,
+    params: *const PhysicsParams,
+    g: *const Vec3,
+    a: *const Vec3,
+    dt: f32,
+) {
     let e = unsafe { &mut *e };
     let s_slice = unsafe { std::slice::from_raw_parts_mut(states, count as usize) };
     let p = unsafe { &*params };
@@ -237,42 +294,50 @@ pub extern "C" fn tako_step_physics(e: *mut RhythmEngine, states: *mut VertexSta
 
 #[no_mangle]
 pub extern "C" fn tako_get_mastery(e: *mut RhythmEngine) -> f32 {
-    let e = unsafe { &*e }; e.mastery
+    let e = unsafe { &*e };
+    e.mastery
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_progress(e: *mut RhythmEngine) -> f32 {
-    let e = unsafe { &*e }; e.shaping_progress
+    let e = unsafe { &*e };
+    e.shaping_progress
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_combo(e: *mut RhythmEngine) -> i32 {
-    let e = unsafe { &*e }; e.combo_count
+    let e = unsafe { &*e };
+    e.combo_count
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_phase(e: *mut RhythmEngine) -> i32 {
-    let e = unsafe { &*e }; e.game_phase as i32
+    let e = unsafe { &*e };
+    e.game_phase as i32
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_batter(e: *mut RhythmEngine) -> f32 {
-    let e = unsafe { &*e }; e.batter_level
+    let e = unsafe { &*e };
+    e.batter_level
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_cooked_level(e: *mut RhythmEngine) -> f32 {
-    let e = unsafe { &*e }; e.cook_level
+    let e = unsafe { &*e };
+    e.cook_level
 }
 
 #[no_mangle]
 pub extern "C" fn tako_get_score(e: *mut RhythmEngine) -> i32 {
-    let e = unsafe { &*e }; e.score
+    let e = unsafe { &*e };
+    e.score
 }
 
 #[no_mangle]
 pub extern "C" fn tako_is_result_ready(e: *mut RhythmEngine) -> bool {
-    let e = unsafe { &*e }; e.result_ready
+    let e = unsafe { &*e };
+    e.result_ready
 }
 
 #[no_mangle]
@@ -293,7 +358,11 @@ pub extern "C" fn tako_reset(e: *mut RhythmEngine) {
 
 #[no_mangle]
 pub extern "C" fn tako_free(e: *mut RhythmEngine) {
-    if !e.is_null() { unsafe { let _ = Box::from_raw(e); } }
+    if !e.is_null() {
+        unsafe {
+            let _ = Box::from_raw(e);
+        }
+    }
 }
 
 #[no_mangle]
@@ -307,24 +376,24 @@ pub extern "C" fn tako_smooth_mesh(
     if vertices.is_null() || base_vertices.is_null() || count <= 0 {
         return;
     }
-    
+
     let verts = unsafe { std::slice::from_raw_parts_mut(vertices, count as usize) };
     let bases = unsafe { std::slice::from_raw_parts(base_vertices, count as usize) };
-    
+
     // Smooth vertices towards sphere shape based on shaping progress
     let smooth_speed = 2.0 * dt;
-    
+
     for i in 0..count as usize {
         let base = &bases[i];
         let vert = &mut verts[i];
-        
+
         // Calculate direction from origin to base position (sphere surface)
         let len = (base.x * base.x + base.y * base.y + base.z * base.z).sqrt();
         if len > 0.001 {
             let target_x = base.x / len;
             let target_y = base.y / len;
             let target_z = base.z / len;
-            
+
             // Smoothly interpolate current position towards sphere surface
             vert.x += (target_x * len - vert.x) * smooth_speed;
             vert.y += (target_y * len - vert.y) * smooth_speed;

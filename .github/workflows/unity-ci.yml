@@ -1,0 +1,98 @@
+name: Unity CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'Assets/**'
+      - 'ProjectSettings/**'
+      - 'Packages/**'
+      - '.github/workflows/unity-ci.yml'
+  pull_request:
+    paths:
+      - 'Assets/**'
+      - 'ProjectSettings/**'
+      - 'Packages/**'
+      - '.github/workflows/unity-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Unity Project
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check for Unity version
+        run: |
+          if [ -f "ProjectSettings/ProjectVersion.txt" ]; then
+            echo "Unity version found:"
+            cat ProjectSettings/ProjectVersion.txt
+          else
+            echo "Warning: ProjectVersion.txt not found"
+          fi
+      
+      - name: Validate project structure
+        run: |
+          echo "Checking required directories..."
+          for dir in Assets ProjectSettings Packages; do
+            if [ -d "$dir" ]; then
+              echo "✓ $dir exists"
+            else
+              echo "✗ $dir missing"
+              exit 1
+            fi
+          done
+      
+      - name: Check for C# scripts
+        run: |
+          script_count=$(find Assets -name "*.cs" | wc -l)
+          echo "Found $script_count C# scripts"
+          if [ "$script_count" -eq 0 ]; then
+            echo "Warning: No C# scripts found"
+          fi
+      
+      - name: List main scripts
+        run: |
+          echo "Main game scripts:"
+          find Assets/Scripts -name "*.cs" -type f | head -20 || true
+
+  # Note: Full Unity build requires a Unity license and is resource-intensive
+  # For a complete CI/CD setup, consider using Unity's Cloud Build or GameCI
+  # This workflow focuses on validation only
+  
+  build-info:
+    name: Build Information
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Display build requirements
+        run: |
+          echo "========================================="
+          echo "Unity Android Build Requirements"
+          echo "========================================="
+          echo ""
+          echo "To build this project, you would need:"
+          echo "- Unity Editor (version from ProjectVersion.txt)"
+          echo "- Android SDK and NDK"
+          echo "- Rust toolchain for native library"
+          echo ""
+          echo "For automated builds, consider:"
+          echo "- Unity Cloud Build"
+          echo "- GameCI (https://game.ci/)"
+          echo "- Self-hosted runners with Unity license"
+          echo ""
+          echo "Current validation checks:"
+          echo "✓ Project structure validation"
+          echo "✓ Rust native library CI (separate workflow)"
+          echo "✓ Web version deployment (existing workflow)"
+          echo "========================================="

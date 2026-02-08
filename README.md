@@ -1,5 +1,10 @@
 # Takoyaki Soul: Zen Mastery Edition 🦀🔥
 
+[![CI](https://github.com/furukawa1020/takoyakiapp/actions/workflows/ci.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/ci.yml)
+[![Rust CI](https://github.com/furukawa1020/takoyakiapp/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/rust-ci.yml)
+[![Unity CI](https://github.com/furukawa1020/takoyakiapp/actions/workflows/unity-ci.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/unity-ci.yml)
+[![Deploy Web](https://github.com/furukawa1020/takoyakiapp/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/deploy-web.yml)
+
 ![Takoyaki Cinematic Render](takoyaki_render.png)
 
 ## 概要
@@ -64,6 +69,43 @@ HUDに表示される3本の細いバーは、あなたの操作に対するRust
 🌐 **[Play Now on GitHub Pages](https://furukawa1020.github.io/takoyakiapp/)**
 
 詳細は [`web-version/README.md`](web-version/README.md) を参照。
+
+## CI/CD とデプロイメント
+
+このプロジェクトは GitHub Actions による完全な CI/CD パイプラインを備えている。
+
+### 🔄 自動化されたワークフロー
+
+#### 1. **Rust CI** (`rust-ci.yml`)
+- Rust ネイティブライブラリのビルドとテスト
+- コードフォーマットとリンティング (clippy)
+- Android 向けクロスコンパイル (aarch64, armv7)
+- ビルド成果物 (`libtakores.so`) のアーティファクト保存
+
+#### 2. **Unity CI** (`unity-ci.yml`)
+- Unity プロジェクト構造の検証
+- C# スクリプトの存在確認
+- プロジェクト設定の妥当性チェック
+
+#### 3. **Web デプロイ** (`deploy-web.yml`)
+- Web 版の自動テストとデプロイ
+- HTML/JavaScript/CSS の検証
+- GitHub Pages への自動デプロイ
+- デプロイ URL: https://furukawa1020.github.io/takoyakiapp/
+
+#### 4. **統合 CI** (`ci.yml`)
+- リポジトリ全体の健全性チェック
+- ファイル形式とコーディング規約の確認
+- プロジェクトメトリクスの収集
+
+### 🚀 デプロイメント戦略
+
+- **Web 版**: `web-version/` 配下の変更時に自動デプロイ
+- **Rust ライブラリ**: プルリクエストで自動ビルド・テスト
+- **Unity プロジェクト**: 構造検証のみ（完全ビルドは Unity ライセンスが必要）
+
+### 📊 ステータスバッジ
+README 上部のバッジで、各ワークフローの状態を確認可能。
 
 ---
 そこに、魂（ソウル）はあるか？

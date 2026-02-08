@@ -5,5 +5,6 @@
 fn test_rhythm_engine_creation() {
     // Just verify the library compiles and links correctly
     // The actual functionality is tested via the C# wrapper
-    assert!(true);
+    
+    // Simple smoke test - no assertions needed
 }

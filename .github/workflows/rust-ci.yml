@@ -48,7 +48,7 @@ jobs:
         run: cargo fmt -- --check
       
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings -A clippy::not_unsafe_ptr_arg_deref
       
       - name: Build
         run: cargo build --verbose

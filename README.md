@@ -1,4 +1,4 @@
-# Takoyaki Soul: Zen Mastery Edition 🦀🔥
+# Takoyaki Soul: Zen Mastery Edition たこ🐙🔥
 
 [![CI](https://github.com/furukawa1020/takoyakiapp/actions/workflows/ci.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/ci.yml)
 [![Rust CI](https://github.com/furukawa1020/takoyakiapp/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/furukawa1020/takoyakiapp/actions/workflows/rust-ci.yml)

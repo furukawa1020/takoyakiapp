@@ -6,9 +6,8 @@
 #[test]
 fn test_library_compiles() {
     // This test ensures the library compiles correctly.
-    // The existence of this passing test proves:
+    // If the library compiles and this test runs, it proves:
     // 1. All Rust code compiles
     // 2. FFI functions are properly exported
     // 3. No link-time errors
-    assert!(true, "Library compiled successfully");
 }

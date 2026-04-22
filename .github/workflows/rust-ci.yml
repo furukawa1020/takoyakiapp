@@ -107,7 +107,7 @@ jobs:
         run: cargo ndk --target ${{ matrix.target }} build --release
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: libtakores-${{ matrix.target }}
           path: TakoyakiNative/Takoyaki.Native/target/${{ matrix.target }}/release/libtakores.so
